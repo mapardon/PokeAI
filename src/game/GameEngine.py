@@ -1,3 +1,4 @@
+import copy
 import random
 import time
 
@@ -89,11 +90,11 @@ class GameEngine:
         while not game_finished:
             # send game to ui for display
             game_state = self.game.get_player1_view()
-            to_ui.put(game_state)
+            to_ui.put(copy.deepcopy(game_state))
             playable_moves = self.game.get_player1_moves()
             to_ui.put(playable_moves)
 
-            # player 1 move (wait for input if human, ask ai otherwise)
+            # player 1 move (wait for input if human, ask AI otherwise)
             if player1_human:
                 player1_move = from_ui.get()
             else:
@@ -104,23 +105,30 @@ class GameEngine:
 
             # send to game
             fainted = self.game.apply_player_moves(player1_move, player2_move)
+            last_moves = [player1_move if self.game.game_state.on_field1.name not in fainted else self.game.game_state.on_field1.name + " fained",
+                          player2_move if self.game.game_state.on_field2.name not in fainted else self.game.game_state.on_field2.name + " fained"]
+            to_ui.put(last_moves)
             to_ui.put(fainted)
             game_finished = self.game.game_finished()
             to_ui.put(game_finished)
 
-            # NB: handle multiple faints
+            # TODO: handle multiple faints
             # if any side has fainted and game is not over, next move is choosing replacement
             if not game_finished and fainted:
+                player1_move = None
+                player2_move = None
+
                 # notify presence of faints and send intermediate state
-                p1_has_fainted = "player1" in fainted
+                p1_has_fainted = self.game.game_state.on_field1.name in fainted
                 to_ui.put(p1_has_fainted)
                 game_state = self.game.get_player1_view()
-                to_ui.put(game_state)
+                to_ui.put(copy.deepcopy(game_state))
+
+                playable_moves = self.game.get_player1_moves()
+                to_ui.put(playable_moves)
 
                 if "player1" in fainted:
                     if player1_human:
-                        playable_moves = self.game
-                        to_ui.put(playable_moves)
                         player1_move = from_ui.get()
 
                     else:
@@ -130,6 +138,8 @@ class GameEngine:
                     player2_move = players[1].make_move(self.game)
 
                 self.game.apply_player_moves(player1_move, player2_move)
+                last_moves = [player1_move, player2_move]
+                to_ui.put(last_moves)
 
             # notify game progression
             #ui_communicate["turn_nb"] += 1
@@ -138,7 +148,7 @@ class GameEngine:
         game_state = self.game.get_player1_view()
         to_ui.put(game_state)
         result = "player 1 victory" if self.game.first_player_won() else "player 2 victory"
-        to_ui.put(result)
+        to_ui.put([result])
 
     def train_mode(self, players, nb_games, from_ui, to_ui):
         for _ in range(nb_games):

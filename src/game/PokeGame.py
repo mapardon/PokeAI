@@ -145,18 +145,20 @@ class PokeGame:
 
     def get_player1_moves(self):
         """ Returns moves that player 1 can choose """
+        switches = ["switch " + p.name for p in self.game_state.team1 if p.hp > 0 and p.name != self.game_state.on_field1.name]
         if not self.game_state.on_field1.is_alive():  # if current pokemon is k.o., only options are switches
-            moves = ["switch " + p.name for p in self.game_state.team1 if p.hp > 0]
+            moves = switches
         else:
-            moves = [m.name for m in self.game_state.on_field1.moves] + ["switch " + p.name for p in self.game_state.team1 if p.hp > 0]
+            moves = [m.name for m in self.game_state.on_field1.moves] + switches
         return moves
 
     def get_player2_moves(self):
         """ Returns moves that player 2 can choose """
-        if not self.game_state.on_field1.is_alive():
-            moves = ["switch " + p.name for p in self.game_state.team2 if p.hp > 0]
+        switches = ["switch " + p.name for p in self.game_state.team2 if p.hp > 0 and p.name != self.game_state.on_field2.name]
+        if not self.game_state.on_field2.is_alive():
+            moves = switches
         else:
-            moves = [m.name for m in self.game_state.on_field2.moves] + ["switch " + p.name for p in self.game_state.team2 if p.hp > 0]
+            moves = [m.name for m in self.game_state.on_field2.moves] + switches
         return moves
 
     @staticmethod
@@ -180,24 +182,23 @@ class PokeGame:
         :param player1_move: name of attack or 'switch {name}'
         :param player2_move: same
         """
-        dsp = "p1 selection: {}, p1 movepool: {}\np2 selection: {}, p2 movepool: {}".format(player1_move, [m.name for m in self.game_state.on_field1.moves], player2_move, [m.name for m in self.game_state.on_field2.moves])
 
-        if "switch" in player1_move and "switch" in player2_move:
+        if player1_move is not None and "switch" in player1_move and player2_move is None and "switch" in player2_move:
             # TODO: consider speed
             self.game_state.on_field1 = self.game_state.team1[[n.name for n in self.game_state.team1].index(player1_move.split(" ")[1])]
             self.game_state.on_field2 = self.game_state.team2[[n.name for n in self.game_state.team2].index(player2_move.split(" ")[1])]
 
-        elif "switch" in player1_move:
+        elif player1_move is not None and "switch" in player1_move:
             self.game_state.on_field1 = self.game_state.team1[[n.name for n in self.game_state.team1].index(player1_move.split(" ")[1])]
             if player2_move is not None:
-                self.game_state.on_field2.cur_hp = max(0, self.game_state.on_field2.cur_hp - self.damage_formula(self.game_state.on_field2.move_from_name(player2_move), self.game_state.on_field2, self.game_state.on_field1))
+                self.game_state.on_field1.cur_hp = max(0, self.game_state.on_field1.cur_hp - self.damage_formula(self.game_state.on_field2.move_from_name(player2_move), self.game_state.on_field2, self.game_state.on_field1))
 
-        elif "switch" in player2_move:
+        elif player2_move is not None and "switch" in player2_move:
             self.game_state.on_field2 = self.game_state.team2[[n.name for n in self.game_state.team2].index(player2_move.split(" ")[1])]
             if player1_move is not None:
-                self.game_state.on_field1.cur_hp = max(0, self.game_state.on_field1.cur_hp - self.damage_formula(self.game_state.on_field1.move_from_name(player1_move), self.game_state.on_field1, self.game_state.on_field2))
+                self.game_state.on_field2.cur_hp = max(0, self.game_state.on_field2.cur_hp - self.damage_formula(self.game_state.on_field1.move_from_name(player1_move), self.game_state.on_field1, self.game_state.on_field2))
 
-        else:  # both attack
+        else:  # both attack (cannot be both None at same time)
             # first, determine attack order
             attack_order = [(self.game_state.on_field1, player1_move), (self.game_state.on_field2, player2_move)]
             if self.game_state.on_field1.spe > self.game_state.on_field2.spe:
@@ -216,10 +217,10 @@ class PokeGame:
         if not self.game_finished():
             # test if some Pokemon has fainted and additional switch is required
             if not self.game_state.on_field1.is_alive():
-                fainted.append("player1")
+                fainted.append(self.game_state.on_field1.name)
 
             if not self.game_state.on_field1.is_alive():
-                fainted.append("player2")
+                fainted.append(self.game_state.on_field2.name)
 
         return fainted
 

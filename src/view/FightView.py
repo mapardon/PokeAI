@@ -5,12 +5,15 @@ import time
 class FightView:
 
     @staticmethod
-    def display_game(game_config, player1_human, playable_moves, turn_nb, game_finished):
+    def display_game(game_config, player1_human, playable_moves, played_moves, turn_nb, game_finished):
         """ Display game state from first player point of view and wait for user choice.
 
-            game_config: cf 'GameStruct'
-
-            :return: move selected by user
+            :param game_config: 'GameStruct' type (under view of player 1)
+            :param player1_human: boolean indicating if player 1 is played by user
+            :param playable_moves: possible choices for player 1
+            :param played_moves: last turn players choice
+            turn_nb and game_finished speak for themselves
+            :return: move selected by user if applicable
         """
         user_move = None
 
@@ -20,9 +23,11 @@ class FightView:
         print("team 2: " + ' | '.join(p.name for p in game_config.team2))
         print("field team 2: {} ({}/{})".format(game_config.on_field2.name, game_config.on_field2.cur_hp, game_config.on_field2.hp), end='\n\n')
         print("field team 1: {} ({}/{})".format(game_config.on_field1.name, game_config.on_field1.cur_hp, game_config.on_field1.hp))
-        print("team 1: " + ' | '.join(p.name for p in game_config.team1), end="\n\n")
+        print("team 1: " + ' | '.join(p.name for p in game_config.team1))
+        print("moves: " + ' - '.join(playable_moves), end="\n\n")
 
-        print("game_finished: {}".format(game_finished))
+        print("Last turn: p1 {} - p2 {}".format(*played_moves))
+        print("game_finished: {}".format("yes" if game_finished else "no"))
         if not game_finished:
             if player1_human:
                 print("playable moves: " + ' '.join(playable_moves))

@@ -4,7 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="" />
+    <list default="true" id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/PokeAI.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/PokeAI.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controller/FightController.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/controller/FightController.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/game/GameEngine.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/game/GameEngine.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/game/PokeGame.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/game/PokeGame.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/view/FightView.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/view/FightView.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/TestGame.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/TestGame.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -18,6 +28,9 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
@@ -26,12 +39,13 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">
-    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="Python" />
-    <property name="full.screen.before.presentation.mode" value="false" />
-    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
-  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  }
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/game" />
@@ -41,7 +55,7 @@
       <recent name="$PROJECT_DIR$/src" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python tests.Unittests in TestGame.py">
     <configuration name="PokeGame" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PokeAI" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -148,8 +162,8 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.PokeGame" />
       <item itemvalue="Python.main" />
+      <item itemvalue="Python.PokeGame" />
       <item itemvalue="Python.scratch" />
       <item itemvalue="Python tests.Unittests for TestGame.MyTestCase.test_damage" />
       <item itemvalue="Python tests.Unittests for TestGame.MyTestCase.test_init_game_struct" />
@@ -157,8 +171,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.scratch" />
         <item itemvalue="Python tests.Unittests in TestGame.py" />
+        <item itemvalue="Python.scratch" />
         <item itemvalue="Python.PokeGame" />
         <item itemvalue="Python tests.Unittests for TestGame.MyTestCase.test_damage" />
         <item itemvalue="Python tests.Unittests for TestGame.MyTestCase.test_init_game_struct" />
@@ -175,43 +189,5 @@
       <updated>1676639051576</updated>
     </task>
     <servers />
-  </component>
-  <component name="WindowStateProjectService">
-    <state width="1818" height="358" key="GridCell.Tab.0.bottom" timestamp="1678476946257">
-      <screen x="74" y="34" width="1846" height="1046" />
-    </state>
-    <state width="1818" height="358" key="GridCell.Tab.0.bottom/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946257" />
-    <state width="1818" height="358" key="GridCell.Tab.0.center" timestamp="1678476946255">
-      <screen x="74" y="34" width="1846" height="1046" />
-    </state>
-    <state width="1818" height="358" key="GridCell.Tab.0.center/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946255" />
-    <state width="1818" height="358" key="GridCell.Tab.0.left" timestamp="1678476946253">
-      <screen x="74" y="34" width="1846" height="1046" />
-    </state>
-    <state width="1818" height="358" key="GridCell.Tab.0.left/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946253" />
-    <state width="1818" height="358" key="GridCell.Tab.0.right" timestamp="1678476946256">
-      <screen x="74" y="34" width="1846" height="1046" />
-    </state>
-    <state width="1818" height="358" key="GridCell.Tab.0.right/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946256" />
-    <state width="1818" height="358" key="GridCell.Tab.1.bottom" timestamp="1678476946260">
-      <screen x="74" y="34" width="1846" height="1046" />
-    </state>
-    <state width="1818" height="358" key="GridCell.Tab.1.bottom/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946260" />
-    <state width="1818" height="358" key="GridCell.Tab.1.center" timestamp="1678476946259">
-      <screen x="74" y="34" width="1846" height="1046" />
-    </state>
-    <state width="1818" height="358" key="GridCell.Tab.1.center/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946259" />
-    <state width="1818" height="358" key="GridCell.Tab.1.left" timestamp="1678476946258">
-      <screen x="74" y="34" width="1846" height="1046" />
-    </state>
-    <state width="1818" height="358" key="GridCell.Tab.1.left/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946258" />
-    <state width="1818" height="358" key="GridCell.Tab.1.right" timestamp="1678476946259">
-      <screen x="74" y="34" width="1846" height="1046" />
-    </state>
-    <state width="1818" height="358" key="GridCell.Tab.1.right/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946259" />
-    <state x="576" y="45" width="840" height="1034" key="search.everywhere.popup" timestamp="1677956966262">
-      <screen x="74" y="34" width="1846" height="1046" />
-    </state>
-    <state x="576" y="45" width="840" height="1034" key="search.everywhere.popup/74.34.1846.1046@74.34.1846.1046" timestamp="1677956966262" />
   </component>
 </project>

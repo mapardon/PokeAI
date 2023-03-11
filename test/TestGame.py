@@ -70,8 +70,23 @@ class MyTestCase(unittest.TestCase):
         dmg = PokeGame.damage_formula(move, attacker, target)
         self.assertEqual(dmg, expect_dmg)
 
-    def test_game_finished(self):
-        pass
+    @parameterized.expand([
+        ("team1", True),
+        ("team2", True),
+        ("", False)
+    ])
+    def test_game_finished(self, down_team, expected_output):
+        game = PokeGame(dummy_team_specs)
+        if down_team == "team1":
+            for p in game.game_state.team1:
+                p.cur_hp = 0
+        elif down_team == "team2":
+            for p in game.game_state.team2:
+                p.cur_hp = 0
+        else:  # not whole team down
+            game.game_state.team1[0].cur_hp = 0
+            game.game_state.team2[0].cur_hp = 0
+        self.assertEqual(game.game_finished(), expected_output)
 
 
 if __name__ == '__main__':

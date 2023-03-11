@@ -59,21 +59,24 @@ class FightController:
         # wait for player1 type
         player1_human = from_backend.get()
         game_finished = from_backend.get()
+        last_moves = [None, None]
 
         while not game_finished:
 
             # wait until receiving game state (to display it)
             game_state = from_backend.get()
+            input("{}, {}".format(type(game_state), game_state))
             playable_moves = from_backend.get()
 
             # send to view and wait for answer (user move)
             if player1_human:
-                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, 1, False)
+                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, 1, False)
                 to_backend.put(user_move)
             else:  # no input required, only send for display purposes
-                self.fight_view.display_game(game_state, player1_human, playable_moves, 1, False)
+                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, 1, False)
 
             # outcome of turn
+            last_moves = from_backend.get()
             fainted = from_backend.get()
             game_finished = from_backend.get()
 
@@ -83,20 +86,22 @@ class FightController:
                 p1_has_fainted = from_backend.get()
                 game_state = from_backend.get()
 
-                if p1_has_fainted and player1_human:
-                    playable_moves = from_backend.get()
+                playable_moves = from_backend.get()
 
-                    user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, 1, False)
+                if p1_has_fainted and player1_human:
+                    user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, 1, False)
                     to_backend.put(user_move)
 
                 else:
-                    self.fight_view.display_game(game_state, player1_human, playable_moves, 1, False)
+                    user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, 1, False)
+
+                last_moves = from_backend.get()
 
         # wait final results
         game_state = from_backend.get()
         result = from_backend.get()
 
-        self.fight_view.display_game(game_state, player1_human, result, 1, True)
+        self.fight_view.display_game(game_state, player1_human, result, last_moves, 1, True)
 
 
 if __name__ == "__main__":
