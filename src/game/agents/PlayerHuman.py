@@ -1,0 +1,3 @@
+
+class PlayerHuman:
+    pass

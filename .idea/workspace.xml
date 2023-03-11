@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Unit Test" />
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2LrpRzOvPh3DSRWktB1zHdWCYCd" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="com.intellij.ide.scratch.LRUPopupBuilder$1/New Scratch File" value="Python" />
+    <property name="full.screen.before.presentation.mode" value="false" />
+    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+  </component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/game" />
+      <recent name="$PROJECT_DIR$/src/agents" />
+      <recent name="$PROJECT_DIR$/src/Game/agents" />
+      <recent name="$PROJECT_DIR$/src/Controller" />
+      <recent name="$PROJECT_DIR$/src" />
+    </key>
+  </component>
+  <component name="RunManager" selected="Python.main">
+    <configuration name="PokeGame" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PokeAI" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/game" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/game/PokeGame.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
+      <module name="PokeAI" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="true" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="scratch" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="PokeAI" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$APPLICATION_CONFIG_DIR$/scratches" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$APPLICATION_CONFIG_DIR$/scratches/scratch.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for TestGame.MyTestCase.test_damage" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="PokeAI" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;TestGame.MyTestCase.test_damage&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for TestGame.MyTestCase.test_init_game_struct" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="PokeAI" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;TestGame.MyTestCase.test_init_game_struct&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests in TestGame.py" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="PokeAI" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/test/TestGame.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.PokeGame" />
+      <item itemvalue="Python.main" />
+      <item itemvalue="Python.scratch" />
+      <item itemvalue="Python tests.Unittests for TestGame.MyTestCase.test_damage" />
+      <item itemvalue="Python tests.Unittests for TestGame.MyTestCase.test_init_game_struct" />
+      <item itemvalue="Python tests.Unittests in TestGame.py" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.scratch" />
+        <item itemvalue="Python tests.Unittests in TestGame.py" />
+        <item itemvalue="Python.PokeGame" />
+        <item itemvalue="Python tests.Unittests for TestGame.MyTestCase.test_damage" />
+        <item itemvalue="Python tests.Unittests for TestGame.MyTestCase.test_init_game_struct" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="" />
+      <created>1676639051576</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1676639051576</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state width="1818" height="358" key="GridCell.Tab.0.bottom" timestamp="1678476946257">
+      <screen x="74" y="34" width="1846" height="1046" />
+    </state>
+    <state width="1818" height="358" key="GridCell.Tab.0.bottom/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946257" />
+    <state width="1818" height="358" key="GridCell.Tab.0.center" timestamp="1678476946255">
+      <screen x="74" y="34" width="1846" height="1046" />
+    </state>
+    <state width="1818" height="358" key="GridCell.Tab.0.center/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946255" />
+    <state width="1818" height="358" key="GridCell.Tab.0.left" timestamp="1678476946253">
+      <screen x="74" y="34" width="1846" height="1046" />
+    </state>
+    <state width="1818" height="358" key="GridCell.Tab.0.left/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946253" />
+    <state width="1818" height="358" key="GridCell.Tab.0.right" timestamp="1678476946256">
+      <screen x="74" y="34" width="1846" height="1046" />
+    </state>
+    <state width="1818" height="358" key="GridCell.Tab.0.right/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946256" />
+    <state width="1818" height="358" key="GridCell.Tab.1.bottom" timestamp="1678476946260">
+      <screen x="74" y="34" width="1846" height="1046" />
+    </state>
+    <state width="1818" height="358" key="GridCell.Tab.1.bottom/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946260" />
+    <state width="1818" height="358" key="GridCell.Tab.1.center" timestamp="1678476946259">
+      <screen x="74" y="34" width="1846" height="1046" />
+    </state>
+    <state width="1818" height="358" key="GridCell.Tab.1.center/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946259" />
+    <state width="1818" height="358" key="GridCell.Tab.1.left" timestamp="1678476946258">
+      <screen x="74" y="34" width="1846" height="1046" />
+    </state>
+    <state width="1818" height="358" key="GridCell.Tab.1.left/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946258" />
+    <state width="1818" height="358" key="GridCell.Tab.1.right" timestamp="1678476946259">
+      <screen x="74" y="34" width="1846" height="1046" />
+    </state>
+    <state width="1818" height="358" key="GridCell.Tab.1.right/74.34.1846.1046@74.34.1846.1046" timestamp="1678476946259" />
+    <state x="576" y="45" width="840" height="1034" key="search.everywhere.popup" timestamp="1677956966262">
+      <screen x="74" y="34" width="1846" height="1046" />
+    </state>
+    <state x="576" y="45" width="840" height="1034" key="search.everywhere.popup/74.34.1846.1046@74.34.1846.1046" timestamp="1677956966262" />
+  </component>
+</project>
