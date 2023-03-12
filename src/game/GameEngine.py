@@ -105,8 +105,8 @@ class GameEngine:
 
             # send to game
             fainted = self.game.apply_player_moves(player1_move, player2_move)
-            last_moves = [player1_move if self.game.game_state.on_field1.name not in fainted else self.game.game_state.on_field1.name + " fained",
-                          player2_move if self.game.game_state.on_field2.name not in fainted else self.game.game_state.on_field2.name + " fained"]
+            last_moves = [player1_move if self.game.game_state.on_field1.name not in fainted else self.game.game_state.on_field1.name + " fainted",
+                          player2_move if self.game.game_state.on_field2.name not in fainted else self.game.game_state.on_field2.name + " fainted"]
             to_ui.put(last_moves)
             to_ui.put(fainted)
             game_finished = self.game.game_finished()
@@ -127,14 +127,14 @@ class GameEngine:
                 playable_moves = self.game.get_player1_moves()
                 to_ui.put(playable_moves)
 
-                if "player1" in fainted:
+                if self.game.game_state.on_field1.name in fainted:
                     if player1_human:
                         player1_move = from_ui.get()
 
                     else:
                         player1_move = players[0].make_move(self.game)
 
-                if "player2" in fainted:
+                if self.game.game_state.on_field2.name in fainted:
                     player2_move = players[1].make_move(self.game)
 
                 self.game.apply_player_moves(player1_move, player2_move)

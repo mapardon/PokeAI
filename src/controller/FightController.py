@@ -65,7 +65,6 @@ class FightController:
 
             # wait until receiving game state (to display it)
             game_state = from_backend.get()
-            input("{}, {}".format(type(game_state), game_state))
             playable_moves = from_backend.get()
 
             # send to view and wait for answer (user move)
