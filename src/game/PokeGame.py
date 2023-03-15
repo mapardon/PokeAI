@@ -182,7 +182,9 @@ class PokeGame:
 
         :param player1_move: name of attack or 'switch {name}'
         :param player2_move: same
+        :returns: dict of the following shape: {p1_moved: bool, p1_fainted: bool, p2_moved: bool, p2_fainted: bool}
         """
+        ret = {'p1_moved': player1_move is not None, 'p1_fainted': False, 'p2_moved': player2_move is not None, 'p2_fainted': False}
 
         if player1_move is not None and "switch" in player1_move and player2_move is not None and "switch" in player2_move:
             # TODO: consider speed
@@ -213,17 +215,17 @@ class PokeGame:
             # second attacker must be alive to attack
             if attack_order[1][0].is_alive():
                 attack_order[0][0].cur_hp = max(0,  attack_order[0][0].cur_hp - self.damage_formula(attack_order[1][0].move_from_name(attack_order[1][1]), attack_order[1][0], attack_order[0][0]))
+            else:
+                ret["p2_moved"] = False
 
-        fainted = list()
-        if not self.game_finished():
-            # test if some Pokemon has fainted and additional switch is required
-            if not self.game_state.on_field1.is_alive():
-                fainted.append(self.game_state.on_field1.name)
+        # test if some Pokemon has fainted and additional switch is required
+        if not self.game_state.on_field1.is_alive():
+            ret["p1_fainted"] = True
 
-            if not self.game_state.on_field2.is_alive():
-                fainted.append(self.game_state.on_field2.name)
+        if not self.game_state.on_field2.is_alive():
+            ret["p2_fainted"] = True
 
-        return fainted
+        return ret
 
 
 if __name__ == '__main__':

@@ -14,6 +14,15 @@ team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100),
                         (("d2", "DRAGON", 100, 80, 100, 80, 100, 100),
                          (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]
 
+team_specs_for_game2 = [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100),
+                          (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+                         (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100),
+                          (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+                        [(("d1", "WATER", 100, 100, 100, 100, 100, 99),
+                          (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+                         (("d2", "DRAGON", 100, 80, 100, 80, 100, 100),
+                          (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]
+
 
 def gen_move_list_1():
     return [PokeGame.Move("light_psychic", "PSYCHIC", 50), PokeGame.Move("heavy_fire", "FIRE", 100)]
@@ -192,6 +201,17 @@ class TestCasePokeGame(unittest.TestCase):
             succeeded &= gs.on_field2.name == exp_field2_name
 
         self.assertTrue(succeeded)
+
+    @parameterized.expand([
+        ("switch p2", "switch d2", {'p1_moved': True, 'p1_fainted': False, 'p2_moved': True, 'p2_fainted': False}),
+        ("light_psychic", "light_steel", {'p1_moved': True, 'p1_fainted': False, 'p2_moved': True, 'p2_fainted': False}),
+        ("light_psychic", "heavy_water", {'p1_moved': True, 'p1_fainted': True, 'p2_moved': True, 'p2_fainted': False}),
+        ("light_psychic", "switch d2", {'p1_moved': True, 'p1_fainted': False, 'p2_moved': True, 'p2_fainted': False})
+    ])
+    def test_apply_player_moves_2(self, p1_move, p2_move, exp_out):
+        game = PokeGame(team_specs_for_game2)
+        res = game.apply_player_moves(p1_move, p2_move)
+        self.assertEqual(res, exp_out)
 
 
 if __name__ == '__main__':

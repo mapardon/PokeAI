@@ -31,7 +31,7 @@ class FightController:
 
         while ui_input.mode != "leave":
 
-            # self.menu.menu_loop()
+            self.menu.menu_loop()
 
             if ui_input.mode == "leave":
                 break
@@ -66,32 +66,33 @@ class FightController:
             # wait until receiving game state (to display it)
             game_state = from_backend.get()
             playable_moves = from_backend.get()
+            turn_nb = from_backend.get()
 
             # send to view and wait for answer (user move)
             if player1_human:
-                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, 1, False)
+                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, turn_nb, False)
                 to_backend.put(user_move)
             else:  # no input required, only send for display purposes
-                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, 1, False)
+                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, turn_nb, False)
 
             # outcome of turn
             last_moves = from_backend.get()
-            fainted = from_backend.get()
+            turn_res = from_backend.get()
             game_finished = from_backend.get()
 
             # additional switch required in case of faint
-            if not game_finished and fainted:
+            if not game_finished and (turn_res["p1_fainted"] or turn_res["p2_fainted"]):
 
-                p1_has_fainted = from_backend.get()
                 game_state = from_backend.get()
 
-                playable_moves = from_backend.get()
+                if turn_res["p1_fainted"] and player1_human:
+                    playable_moves = from_backend.get()
 
-                if p1_has_fainted and player1_human:
                     user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, 1, False)
                     to_backend.put(user_move)
 
                 else:
+                    playable_moves = ["None"]  # p1 must not make choice
                     user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, 1, False)
 
                 last_moves = from_backend.get()
@@ -100,7 +101,7 @@ class FightController:
         game_state = from_backend.get()
         result = from_backend.get()
 
-        self.fight_view.display_game(game_state, player1_human, result, last_moves, 1, True)
+        self.fight_view.display_game(game_state, player1_human, result, last_moves, turn_nb, True)
 
 
 if __name__ == "__main__":

@@ -27,10 +27,8 @@ class FightView:
         print("moves: " + ' - '.join(playable_moves), end="\n\n")
 
         print("Last turn: p1 {} - p2 {}".format(*played_moves))
-        print("game_finished: {}".format("yes" if game_finished else "no"))
         if not game_finished:
             if player1_human:
-                print("playable moves: " + ' '.join(playable_moves))
                 while user_move not in playable_moves:
                     user_move = input("move choice > ")
             else:
@@ -38,7 +36,7 @@ class FightView:
                 user_move = input("move choice > ")
                 #time.sleep(0)
         else:
-            print("game ended: {}".format(playable_moves))
+            print("game ended: {}".format(playable_moves[0]))
             user_move = input("press enter to quit > ")
 
         return user_move

@@ -6,8 +6,6 @@ class MainMenu:
     def menu_loop(self):
         warning = None
         out = None
-        # TODO change
-        out = {"mode": "fight"}
 
         while warning is not None or out is None:
             os.system("clear" if os.name == "posix" else "cls")

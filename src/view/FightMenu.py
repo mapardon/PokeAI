@@ -27,6 +27,7 @@ class FightMenu:
             # launch something
             if inputted[0] == "leave":
                 self.params.mode = "leave"
+                out = True
 
             elif inputted[0] == "fight":
                 types_specified = None not in [pars.player1, pars.player2]

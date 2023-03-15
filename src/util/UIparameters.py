@@ -2,7 +2,7 @@
 
 class AbstractUIParams:
     """ Contain the parameters gathered from UI. Bound to behave as a C struct so members will
-     be directly accessed. """
+     be accessed directly. """
 
     def __init__(self):
         self.mode = str()
