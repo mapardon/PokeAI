@@ -18,17 +18,17 @@ class GameEngine:
         """
 
         # retrieve specified teams specs from database to initialize game
-        self.game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
-        players = self.init_players(ui_input.player1, ui_input.player2)
+        self.game = None
+        players = self.init_players(ui_input.agent1type, ui_input.agent2type)
 
         if ui_input.mode == "fight":
-            self.fight_mode(players, from_ui, to_ui)
+            self.fight_mode(players, ui_input, from_ui, to_ui)
 
         elif ui_input.mode == "train":
-            self.train_mode(players, ui_input.nb, from_ui, to_ui)
+            self.train_mode(players, ui_input, to_ui)
 
         elif ui_input.mode == "test":
-            self.test_mode(players, ui_input.nb, from_ui, to_ui)
+            self.test_mode(players, ui_input, to_ui)
 
     # utility methods
 
@@ -43,8 +43,14 @@ class GameEngine:
         out = list()
         NB_POKEMONS = 2  # TODO: update
         if team_src == "random":
-            for _ in range(NB_POKEMONS):
+            # names (can't have duplicates)
+            names = list()
+            while len(names) < NB_POKEMONS:
                 p_name = ''.join([chr(random.randint(ord('a'), ord('z'))) for _ in range(3)])
+                if p_name not in names:
+                    names.append(p_name)
+
+            for _, p_name in zip(range(NB_POKEMONS), names):
                 p_type = random.choice(TYPES)
                 p_stats = [random.randint(80, 200) for _ in range(6)]
                 poke = [tuple([p_name, p_type] + p_stats)]
@@ -82,13 +88,15 @@ class GameEngine:
 
     # game loops
 
-    def fight_mode(self, players, from_ui, to_ui):
+    def fight_mode(self, players, ui_input, from_ui, to_ui):
+        self.game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
+        turn_nb = 1
+
         player1_human = isinstance(players[0], PlayerHuman)
         to_ui.put(player1_human)
 
         game_finished = False
         to_ui.put(game_finished)
-        turn_nb = 1
 
         while not game_finished:
             # send game to ui for display
@@ -195,7 +203,7 @@ class GameEngine:
             if ui_communicate is not None:
                 ui_communicate["prog"] += 1
 
-    def test_mode(self, players, nb_games, ui_communicate):
+    def test_mode(self, players, ui_input, ui_communicate):
         """
 
         :param players: 2-tuple with Player objects that will run "make_move" function
@@ -207,14 +215,15 @@ class GameEngine:
         max_rounds = 50
         p1_victories = int()
 
-        for i in range(nb_games):
-            turn_nb = int()
+        for i in range(ui_input.nb):
+            self.game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
+            turn_nb = 1
             game_finished = False
 
             # game loop
             while not game_finished and turn_nb < max_rounds:
-                player1_move = players[0].make_move(self.game.get_player1_view())
-                player2_move = players[1].make_move(self.game.get_player2_view())
+                player1_move = players[0].make_move(self.game)
+                player2_move = players[1].make_move(self.game)
 
                 turn_res = self.game.apply_player_moves(player1_move, player2_move)
                 game_finished = self.game.game_finished()
@@ -230,12 +239,10 @@ class GameEngine:
                     self.game.apply_player_moves(player1_move, player2_move)
                 turn_nb += 1
 
-            victory = game_finished and self.game.first_player_won()
-            players[0].end_game(self.game, victory)
-            p1_victories += victory
+            p1_victories += game_finished and self.game.first_player_won()
 
             # UI communication
             if ui_communicate is not None:
                 ui_communicate["prog"] += 1
 
-        ui_communicate["res"] = p1_victories / nb_games
+        ui_communicate["res"] = p1_victories / ui_input.nb

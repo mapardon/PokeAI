@@ -45,13 +45,13 @@ class TestController:
 
         ui_communicate = {"prog": int(), "res": float()}
         cur_prog = int()
-        t = Thread(target=GameEngine, args=(self.ui_input, ui_communicate,))
+        t = Thread(target=GameEngine, args=(self.ui_input, None, ui_communicate,))
         t.start()
 
         while 1 <= ui_communicate["prog"] < self.ui_input.nb - 1:
             if cur_prog != ui_communicate["prog"]:
                 cur_prog = ui_communicate["prog"]
-                os.system("clear")
+                os.system("clear" if os.name == "posix" else "cls")
                 n_syms = ceil(20 * cur_prog / self.ui_input.nb)
                 print("Progression ({}): {}".format(ui_communicate["prog"], "#" * n_syms + "_" * (20 - n_syms)))
 

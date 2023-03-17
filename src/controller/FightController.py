@@ -16,7 +16,6 @@ class FightController:
     def __init__(self):
 
         self.ui_input = FightUIParams()
-        self.ui_input.mode = "fight"
         self.ui_input.player1 = "random"
         self.ui_input.player2 = "random"
         self.menu = FightMenu(self.ui_input)

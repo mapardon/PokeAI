@@ -1,7 +1,6 @@
 import os
 
 from src.db.dbmanager import available_ml_agents, available_teams
-from src.util.UIparameters import FightUIParams
 
 PLAYER_TYPES = ["ml", "minimax", "human", "random"]
 
@@ -26,7 +25,7 @@ class FightMenu:
 
             # launch something
             if inputted[0] == "leave":
-                self.params.mode = "leave"
+                pars.mode = "leave"
                 out = True
 
             elif inputted[0] == "fight":
@@ -46,9 +45,9 @@ class FightMenu:
                     warning = "Player 2 can only be artificial player"
                 elif inputted[1] in PLAYER_TYPES:
                     if inputted[0] == "p1":
-                        pars.player1 = inputted[1]
+                        pars.agent1type = inputted[1]
                     else:
-                        pars.player2 = inputted[1]
+                        pars.agent2type = inputted[1]
                 else:
                     warning = "Please provide an existing type of agent"
 
@@ -94,8 +93,8 @@ class FightMenu:
     def display_parameters(self):
         pars = self.params
         contexts = [
-            "player1 type          : {}".format(pars.player1),
-            "player2 type          : {}".format(pars.player2),
+            "player1 type          : {}".format(pars.agent1type),
+            "player2 type          : {}".format(pars.agent2type),
             "Testing random factor : {}".format(self.params.eps),
             "ML player 1           : {}".format(pars.ml1),
             "ML player 2           : {}".format(pars.ml2),

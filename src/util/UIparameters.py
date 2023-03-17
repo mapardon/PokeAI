@@ -7,7 +7,8 @@ class AbstractUIParams:
     def __init__(self):
         self.mode = str()
         self.eps = 0.1
-        # TODO introduce player category
+        self.agent1type = None
+        self.agent2type = None
         self.ml1 = None
         self.ml2 = None
         self.team1 = "random"
@@ -24,8 +25,6 @@ class AbstractUIParams:
 class TestUIParams(AbstractUIParams):
     def __init__(self):
         super().__init__()
-        self.agent1 = None
-        self.agent2 = None
         self.nb = 1000
         self.minimax1 = 1
         self.minimax2 = 1
@@ -37,6 +36,9 @@ class TestUIParams(AbstractUIParams):
 class TrainUIParams(AbstractUIParams):
     def __init__(self):
         super().__init__()
+        self.agent1type = "ml"
+        self.agent2type = "ml"
+
         self.newfname = None
         self.newls = None
         self.newshape = None
@@ -54,7 +56,5 @@ class TrainUIParams(AbstractUIParams):
 class FightUIParams(AbstractUIParams):
     def __init__(self):
         super().__init__()
-        self.player1 = None
-        self.player2 = None
         self.minimax1 = 1
         self.minimax2 = 1

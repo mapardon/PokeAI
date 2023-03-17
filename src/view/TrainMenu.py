@@ -32,7 +32,8 @@ class TrainMenu:
 
             # launch something inputs
             if inputted[0] == "leave":
-                out = pars.mode = "leave"
+                pars.mode = "leave"
+                out = True
 
             elif inputted[0] == "create":
                 if None in [pars.newfname, pars.newls, pars.newshape, pars.newinit, pars.newactf,
@@ -144,6 +145,7 @@ class TrainMenu:
             "New AI init method    : {}".format(pars.newinit),
             "New AI activation fun : {}".format(pars.newactf),
             "New AI lambda param.  : {}".format(pars.newlamb),
+            "",
             "Training first AI     : {}".format(pars.ml1),
             "Training second AI    : {}".format(pars.ml2),
             "Training rounds       : {}".format(pars.nb),
