@@ -29,16 +29,15 @@ class TestController:
 
     def menu_loop(self):
         """ Select parameters for training """
-        ui_input = {"mode": str()}
 
-        while ui_input["mode"] != "leave":
+        while self.ui_input.mode != "leave":
 
             self.menu.menu_loop()
 
-            if ui_input["mode"] == "leave":
+            if self.ui_input.mode == "leave":
                 break
 
-            elif ui_input["mode"] == "test":
+            elif self.ui_input.mode == "test":
                 self.test_phase()
 
     def test_phase(self):

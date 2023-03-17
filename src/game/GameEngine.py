@@ -152,12 +152,7 @@ class GameEngine:
         result = "player 1 victory" if self.game.first_player_won() else "player 2 victory"
         to_ui.put([result])
 
-    def train_mode(self, players, nb_games, from_ui, to_ui):
-        for _ in range(nb_games):
-            to_ui["prog"] += 1
-            time.sleep(0.1)
-
-    def train_modes(self, players, nb_games, ui_communicate=None):
+    def train_mode(self, players, nb_games, ui_communicate=None):
         """
 
         :param players: 2-tuple with Player objects that will run "make_move" function
@@ -170,30 +165,37 @@ class GameEngine:
         max_rounds = 50
 
         for i in range(nb_games):
-            n_rounds = int()
+            turn_nb = int()
+            game_finished = False
 
             # game loop
-            while not self.game.game_finished() and n_rounds < max_rounds:
+            while not game_finished and turn_nb < max_rounds:
                 player1_move = players[0].make_move(self.game.get_player1_view())
                 player2_move = players[1].make_move(self.game.get_player2_view())
 
-                self.game.apply_player_moves(player1_move, player2_move)
-                n_rounds += 1
+                turn_res = self.game.apply_player_moves(player1_move, player2_move)
+                game_finished = self.game.game_finished()
+                if not game_finished and (turn_res["p1_fainted"] or turn_res["p2_fainted"]):
+                    player1_move = None
+                    player2_move = None
 
-            victory = self.game.first_player_won()
+                    if turn_res["p1_fainted"]:
+                        player1_move = players[0].make_move(self.game)
+                    if turn_res["p2_fainted"]:
+                        player2_move = players[1].make_move(self.game)
+
+                    self.game.apply_player_moves(player1_move, player2_move)
+
+                turn_nb += 1
+
+            victory = game_finished and self.game.first_player_won()
             players[0].end_game(self.game, victory)
 
             # UI communication
             if ui_communicate is not None:
                 ui_communicate["prog"] += 1
 
-    def test_mode(self, players, nb_games, from_ui, to_ui):
-        for _ in range(nb_games):
-            to_ui["prog"] += 1
-            time.sleep(0.1)
-        to_ui["res"] = random.random()
-
-    def test_modes(self, players, nb_games, ui_communicate):
+    def test_mode(self, players, nb_games, ui_communicate):
         """
 
         :param players: 2-tuple with Player objects that will run "make_move" function
@@ -206,18 +208,29 @@ class GameEngine:
         p1_victories = int()
 
         for i in range(nb_games):
-            n_rounds = int()
+            turn_nb = int()
+            game_finished = False
 
             # game loop
-            while not self.game.game_finished() and n_rounds < max_rounds:
-                cur_state = self.game.get_game_state()
-                player1_move = players[0].make_move(cur_state)
-                player2_move = players[1].make_move(cur_state)
+            while not game_finished and turn_nb < max_rounds:
+                player1_move = players[0].make_move(self.game.get_player1_view())
+                player2_move = players[1].make_move(self.game.get_player2_view())
 
-                self.game.apply_player_moves(player1_move, player2_move)
-                n_rounds += 1
+                turn_res = self.game.apply_player_moves(player1_move, player2_move)
+                game_finished = self.game.game_finished()
+                if not game_finished and (turn_res["p1_fainted"] or turn_res["p2_fainted"]):
+                    player1_move = None
+                    player2_move = None
 
-            victory = self.game.first_player_won()
+                    if turn_res["p1_fainted"]:
+                        player1_move = players[0].make_move(self.game)
+                    if turn_res["p2_fainted"]:
+                        player2_move = players[1].make_move(self.game)
+
+                    self.game.apply_player_moves(player1_move, player2_move)
+                turn_nb += 1
+
+            victory = game_finished and self.game.first_player_won()
             players[0].end_game(self.game, victory)
             p1_victories += victory
 

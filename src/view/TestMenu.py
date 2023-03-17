@@ -36,6 +36,7 @@ class TestMenu:
                     warning = "Please first fill all required parameters"
 
                 else:
+                    pars.mode = inputted[0]
                     out = True
 
             # training parameters

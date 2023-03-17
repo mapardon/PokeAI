@@ -37,7 +37,7 @@ class FightMenu:
                 if not types_specified or not (agent1_coherent and agent2_coherent):
                     warning = "Please first fill all required parameters"
                 else:
-                    self.params.mode = "fight"
+                    pars.mode = "fight"
                     out = True
 
             # training parameters

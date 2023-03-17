@@ -22,18 +22,14 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="Continued fight mode">
-      <change beforePath="$PROJECT_DIR$/.idea/PokeAI.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/PokeAI.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="Finished fight mode">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controller/FightController.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/controller/FightController.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controller/TestController.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/controller/TestController.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/game/GameEngine.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/game/GameEngine.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/game/PokeGame.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/game/PokeGame.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/util/UIparameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/util/UIparameters.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/view/FightMenu.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/view/FightMenu.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/view/FightView.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/view/FightView.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/view/MainMenu.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/view/MainMenu.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/TestGame.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/TestGame.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/view/TestMenu.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/view/TestMenu.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,7 +72,7 @@
       <recent name="$PROJECT_DIR$/src" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python tests.Unittests in TestGame.py">
     <configuration name="PokeGame" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PokeAI" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -183,8 +179,8 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.main" />
       <item itemvalue="Python.PokeGame" />
+      <item itemvalue="Python.main" />
       <item itemvalue="Python.scratch" />
       <item itemvalue="Python tests.Unittests in TestGame.py" />
     </list>
@@ -212,7 +208,14 @@
       <option name="project" value="LOCAL" />
       <updated>1678551777672</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Finished fight mode">
+      <created>1678844514000</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1678844514000</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -229,49 +232,50 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Continued fight mode" />
-    <option name="LAST_COMMIT_MESSAGE" value="Continued fight mode" />
+    <MESSAGE value="Finished fight mode" />
+    <option name="LAST_COMMIT_MESSAGE" value="Finished fight mode" />
   </component>
   <component name="WindowStateProjectService">
-    <state width="1818" height="418" key="GridCell.Tab.0.bottom" timestamp="1678833660879">
+    <state width="1818" height="418" key="GridCell.Tab.0.bottom" timestamp="1678893846802">
       <screen x="74" y="34" width="1846" height="1046" />
     </state>
-    <state width="1818" height="418" key="GridCell.Tab.0.bottom/74.34.1846.1046@74.34.1846.1046" timestamp="1678833660879" />
-    <state width="1818" height="418" key="GridCell.Tab.0.center" timestamp="1678833660879">
+    <state width="1818" height="418" key="GridCell.Tab.0.bottom/74.34.1846.1046@74.34.1846.1046" timestamp="1678893846802" />
+    <state width="1818" height="418" key="GridCell.Tab.0.center" timestamp="1678893846799">
       <screen x="74" y="34" width="1846" height="1046" />
     </state>
-    <state width="1818" height="418" key="GridCell.Tab.0.center/74.34.1846.1046@74.34.1846.1046" timestamp="1678833660879" />
-    <state width="1818" height="418" key="GridCell.Tab.0.left" timestamp="1678833660879">
+    <state width="1818" height="418" key="GridCell.Tab.0.center/74.34.1846.1046@74.34.1846.1046" timestamp="1678893846799" />
+    <state width="1818" height="418" key="GridCell.Tab.0.left" timestamp="1678893846798">
       <screen x="74" y="34" width="1846" height="1046" />
     </state>
-    <state width="1818" height="418" key="GridCell.Tab.0.left/74.34.1846.1046@74.34.1846.1046" timestamp="1678833660879" />
-    <state width="1818" height="418" key="GridCell.Tab.0.right" timestamp="1678833660879">
+    <state width="1818" height="418" key="GridCell.Tab.0.left/74.34.1846.1046@74.34.1846.1046" timestamp="1678893846798" />
+    <state width="1818" height="418" key="GridCell.Tab.0.right" timestamp="1678893846801">
       <screen x="74" y="34" width="1846" height="1046" />
     </state>
-    <state width="1818" height="418" key="GridCell.Tab.0.right/74.34.1846.1046@74.34.1846.1046" timestamp="1678833660879" />
-    <state width="1818" height="358" key="GridCell.Tab.1.bottom" timestamp="1678833477097">
+    <state width="1818" height="418" key="GridCell.Tab.0.right/74.34.1846.1046@74.34.1846.1046" timestamp="1678893846801" />
+    <state width="1818" height="358" key="GridCell.Tab.1.bottom" timestamp="1678844526285">
       <screen x="74" y="34" width="1846" height="1046" />
     </state>
-    <state width="1818" height="358" key="GridCell.Tab.1.bottom/74.34.1846.1046@74.34.1846.1046" timestamp="1678833477097" />
-    <state width="1818" height="358" key="GridCell.Tab.1.center" timestamp="1678833477095">
+    <state width="1818" height="358" key="GridCell.Tab.1.bottom/74.34.1846.1046@74.34.1846.1046" timestamp="1678844526285" />
+    <state width="1818" height="358" key="GridCell.Tab.1.center" timestamp="1678844526283">
       <screen x="74" y="34" width="1846" height="1046" />
     </state>
-    <state width="1818" height="358" key="GridCell.Tab.1.center/74.34.1846.1046@74.34.1846.1046" timestamp="1678833477095" />
-    <state width="1818" height="358" key="GridCell.Tab.1.left" timestamp="1678833477095">
+    <state width="1818" height="358" key="GridCell.Tab.1.center/74.34.1846.1046@74.34.1846.1046" timestamp="1678844526283" />
+    <state width="1818" height="358" key="GridCell.Tab.1.left" timestamp="1678844526281">
       <screen x="74" y="34" width="1846" height="1046" />
     </state>
-    <state width="1818" height="358" key="GridCell.Tab.1.left/74.34.1846.1046@74.34.1846.1046" timestamp="1678833477095" />
-    <state width="1818" height="358" key="GridCell.Tab.1.right" timestamp="1678833477096">
+    <state width="1818" height="358" key="GridCell.Tab.1.left/74.34.1846.1046@74.34.1846.1046" timestamp="1678844526281" />
+    <state width="1818" height="358" key="GridCell.Tab.1.right" timestamp="1678844526284">
       <screen x="74" y="34" width="1846" height="1046" />
     </state>
-    <state width="1818" height="358" key="GridCell.Tab.1.right/74.34.1846.1046@74.34.1846.1046" timestamp="1678833477096" />
+    <state width="1818" height="358" key="GridCell.Tab.1.right/74.34.1846.1046@74.34.1846.1046" timestamp="1678844526284" />
     <state x="477" y="243" width="1030" height="635" key="IDE.errors.dialog" timestamp="1678811489823">
       <screen x="74" y="34" width="1846" height="1046" />
     </state>
     <state x="477" y="243" width="1030" height="635" key="IDE.errors.dialog/74.34.1846.1046@74.34.1846.1046" timestamp="1678811489823" />
-    <state x="492" y="230" width="1000" height="661" key="Vcs.Push.Dialog.v2" timestamp="1678832874004">
+    <state x="492" y="230" width="1000" height="661" key="Vcs.Push.Dialog.v2" timestamp="1678844519632">
       <screen x="74" y="34" width="1846" height="1046" />
     </state>
-    <state x="492" y="230" width="1000" height="661" key="Vcs.Push.Dialog.v2/74.34.1846.1046@74.34.1846.1046" timestamp="1678832874004" />
+    <state x="492" y="230" width="1000" height="661" key="Vcs.Push.Dialog.v2/74.34.1846.1046@74.34.1846.1046" timestamp="1678844519632" />
     <state x="74" y="34" width="1818" height="993" key="dock-window-1" timestamp="1678826548220">
       <screen x="74" y="34" width="1846" height="1046" />
     </state>

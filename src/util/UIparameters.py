@@ -1,12 +1,13 @@
 
 
 class AbstractUIParams:
-    """ Contain the parameters gathered from UI. Bound to behave as a C struct so members will
-     be accessed directly. """
+    """ Contain the parameters gathered from menus and forwarded to controllers. Bound to behave as a C struct so
+    members will be accessed directly. """
 
     def __init__(self):
         self.mode = str()
         self.eps = 0.1
+        # TODO introduce player category
         self.ml1 = None
         self.ml2 = None
         self.team1 = "random"

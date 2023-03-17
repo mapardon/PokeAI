@@ -203,7 +203,7 @@ class PokeGame:
 
         else:  # both attack (cannot be both None at same time)
             # first, determine attack order
-            attack_order = [(self.game_state.on_field1, player1_move), (self.game_state.on_field2, player2_move)]
+            attack_order = [(self.game_state.on_field1, player1_move, 'p1'), (self.game_state.on_field2, player2_move, 'p2')]
             if self.game_state.on_field1.spe > self.game_state.on_field2.spe:
                 pass
             elif self.game_state.on_field1.spe < self.game_state.on_field2.spe:
@@ -216,7 +216,10 @@ class PokeGame:
             if attack_order[1][0].is_alive():
                 attack_order[0][0].cur_hp = max(0,  attack_order[0][0].cur_hp - self.damage_formula(attack_order[1][0].move_from_name(attack_order[1][1]), attack_order[1][0], attack_order[0][0]))
             else:
-                ret["p2_moved"] = False
+                if attack_order[1][2] == "p1":
+                    ret["p1_moved"] = False
+                else:
+                    ret["p2_moved"] = False
 
         # test if some Pokemon has fainted and additional switch is required
         if not self.game_state.on_field1.is_alive():
