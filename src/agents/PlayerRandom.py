@@ -1,6 +1,6 @@
 import random
 
-from src.game.agents.AbstractPlayer import AbstractPlayer
+from src.agents.AbstractPlayer import AbstractPlayer
 
 
 class PlayerRandom(AbstractPlayer):

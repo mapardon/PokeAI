@@ -22,16 +22,18 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="Continued fight mode + tests on PokeGame class">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="test mode integration">
+      <change afterPath="$PROJECT_DIR$/src/agents/PlayerML.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/agents/init_NN.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/Testdb.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controller/FightController.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/controller/FightController.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/controller/TestController.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/controller/TestController.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/controller/TrainController.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/controller/TrainController.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/db/dbmanager.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/db/dbmanager.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/game/GameEngine.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/game/GameEngine.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/game/agents/AbstractPlayer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/AbstractPlayer.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/game/agents/PlayerHuman.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/PlayerHuman.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/game/agents/PlayerRandom.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/PlayerRandom.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/util/UIparameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/util/UIparameters.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/view/FightMenu.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/view/FightMenu.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/view/TestMenu.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/view/TestMenu.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/view/TrainMenu.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/view/TrainMenu.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -66,16 +68,23 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToStringList": {
+    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "Python"
+    ]
+  }
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\mathi\PycharmProjects\PokeAI\src" />
       <recent name="$PROJECT_DIR$/src/game" />
       <recent name="$PROJECT_DIR$/src/agents" />
       <recent name="$PROJECT_DIR$/src/Game/agents" />
       <recent name="$PROJECT_DIR$/src/Controller" />
-      <recent name="$PROJECT_DIR$/src" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.main">
+  <component name="RunManager" selected="Python.scratch">
     <configuration name="PokeGame" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="PokeAI" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -191,8 +200,8 @@
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python tests.Unittests in TestGame.py" />
         <item itemvalue="Python.scratch" />
+        <item itemvalue="Python tests.Unittests in TestGame.py" />
         <item itemvalue="Python.PokeGame" />
       </list>
     </recent_temporary>
@@ -220,7 +229,14 @@
       <option name="project" value="LOCAL" />
       <updated>1678844514000</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="test mode integration">
+      <created>1679083575907</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1679083575907</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -237,6 +253,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Continued fight mode" />
     <MESSAGE value="Finished fight mode" />
-    <option name="LAST_COMMIT_MESSAGE" value="Finished fight mode" />
+    <MESSAGE value="test mode integration" />
+    <option name="LAST_COMMIT_MESSAGE" value="test mode integration" />
   </component>
 </project>

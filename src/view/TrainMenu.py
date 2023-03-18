@@ -5,10 +5,15 @@ from src.db.dbmanager import available_ml_agents, available_teams
 LS = ["Q-learning",
       "TD-lambda"]
 
+ACT_F = ["sigmoid",
+         "ReLU"]
+
 INITS = ["normal"]
 
 MVSEL = ["eps-greedy",
          "softmax-exp"]
+
+ML_TYPES = ["perceptron"]
 
 
 class TrainMenu:
@@ -20,6 +25,16 @@ class TrainMenu:
         warning = None
         out = False
         inputted = ["Be Stronger"]
+
+        # TODO delete
+        pars.newfname = "test-gene"
+        pars.newmltype = "perceptron"
+        pars.newls = "TD-lambda"
+        pars.newshape = ["128", "50", 1]
+        pars.newinit = "normal"
+        pars.newactf = "sigmoid"
+        pars.newlamb = 0.5
+        #############
 
         while warning is not None or not out:
             os.system("clear" if os.name == "posix" else "cls")
@@ -36,31 +51,39 @@ class TrainMenu:
                 out = True
 
             elif inputted[0] == "create":
-                if None in [pars.newfname, pars.newls, pars.newshape, pars.newinit, pars.newactf,
+                if None in [pars.newfname, pars.newmltype, pars.newls, pars.newshape, pars.newinit, pars.newactf,
                             pars.newlamb]:
                     warning = "Please first fill all required parameters"
 
                 else:
+                    pars.mode = "create"
                     out = True
 
             elif inputted[0] == "train":
                 if pars.ml1 is None:
                     warning = "Must at least load one AI"
                 else:
+                    pars.mode = "train"
                     out = True
 
             # new agents parameters
             elif inputted[0] == "new-name" and len(inputted) == 2:
                 if inputted[0] not in available_ml_agents():
-                    warning = "TODO: create new AI"
+                    pars.newfname = inputted[1]
                 else:
                     warning = "This name is already used in the database"
 
-            elif inputted[0] == "new-ls" and len(inputted) == 2:
-                if inputted[1] not in LS:
-                    print("Unknown learning strategy")
+            elif inputted[0] == "new-type" and len(inputted) == 2:
+                if inputted[1] in ML_TYPES:
+                    pars.newmltype = inputted[1]
                 else:
+                    warning = "Unknown machine learning type"
+
+            elif inputted[0] == "new-ls" and len(inputted) == 2:
+                if inputted[1] in LS:
                     pars.newls = inputted[1]
+                else:
+                    warning = "Unknown learning strategy"
 
             elif inputted[0] == "new-shape" and len(inputted) > 1:
                 try:
@@ -77,7 +100,7 @@ class TrainMenu:
                     pars.newinit = inputted[1]
 
             elif inputted[0] == "new-actf" and len(inputted) == 2:
-                if inputted[1] not in INITS:
+                if inputted[1] not in ACT_F:
                     print("Unknown activation function")
                 else:
                     pars.newactf = inputted[1]
@@ -140,6 +163,7 @@ class TrainMenu:
         pars = self.params
         contexts = [
             "New AI filename       : {}".format(pars.newfname),
+            "New agent type        : {}".format(pars.newmltype),
             "New AI learning strat : {}".format(pars.newls),
             "New AI shape          : {}".format(pars.newshape),  # can be several numbers
             "New AI init method    : {}".format(pars.newinit),
@@ -162,17 +186,19 @@ class TrainMenu:
     def display_instructions(self):
         instructions = [
             "new-name z # new agent will be identified z",
-            "new-ls z   # learning strategy for new agent",
+            "new-type z # type of ml for new agent ({})".format(' - '.join(ML_TYPES)),
+            "new-ls z   # learning strategy for new agent ({})".format(' - '.join(LS)),
             "new-shape m n ... z",
             "           # dimensions for new NN",
-            "new-init z # network initialization method",
-            "new-actf z # network activation function",
+            "new-init z # network initialization method ({})".format(' - '.join(INITS)),
+            "new-actf z # network activation function ({})".format(' - '.join(ACT_F)),
             "new-lamb f # set lambda value for TD-lambda",
             "create     # create new agent with specified params",
+            "",
             "ai1 z      # load AI named z from database for role ai1",
             "ai2 z      # load AI named z from database for role ai2",
             "nb n       # set number of games for training",
-            "mvsel z    # move selection method for training",
+            "mvsel z    # move selection method for training ".format(' - '.join(MVSEL)),
             "lr f       # set learning rate to f",
             "eps f      # set epsilon greedy to f",
             "team1/2    # toggle team1/2 type",
@@ -182,3 +208,4 @@ class TrainMenu:
         print("\n * Settings:\n")
         for i in instructions:
             print("\t" + i)
+        print()

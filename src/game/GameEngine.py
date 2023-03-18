@@ -1,11 +1,10 @@
 import copy
 import random
-import time
 
 from src.db.dbmanager import retrieve_team
 from src.game.PokeGame import PokeGame, TYPES
-from src.game.agents.PlayerHuman import PlayerHuman
-from src.game.agents.PlayerRandom import PlayerRandom
+from src.agents.PlayerHuman import PlayerHuman
+from src.agents.PlayerRandom import PlayerRandom
 
 
 class GameEngine:
@@ -160,7 +159,7 @@ class GameEngine:
         result = "player 1 victory" if self.game.first_player_won() else "player 2 victory"
         to_ui.put([result])
 
-    def train_mode(self, players, nb_games, ui_communicate=None):
+    def train_mode(self, players, ui_input, ui_communicate):
         """
 
         :param players: 2-tuple with Player objects that will run "make_move" function
@@ -171,15 +170,17 @@ class GameEngine:
         """
 
         max_rounds = 50
+        p1_victories = int()
 
-        for i in range(nb_games):
-            turn_nb = int()
+        for i in range(ui_input.nb):
+            self.game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
+            turn_nb = 1
             game_finished = False
 
             # game loop
             while not game_finished and turn_nb < max_rounds:
-                player1_move = players[0].make_move(self.game.get_player1_view())
-                player2_move = players[1].make_move(self.game.get_player2_view())
+                player1_move = players[0].make_move(self.game)
+                player2_move = players[1].make_move(self.game)
 
                 turn_res = self.game.apply_player_moves(player1_move, player2_move)
                 game_finished = self.game.game_finished()
@@ -193,15 +194,16 @@ class GameEngine:
                         player2_move = players[1].make_move(self.game)
 
                     self.game.apply_player_moves(player1_move, player2_move)
-
                 turn_nb += 1
 
-            victory = game_finished and self.game.first_player_won()
-            players[0].end_game(self.game, victory)
+            p1_victories += game_finished and self.game.first_player_won()
 
             # UI communication
             if ui_communicate is not None:
                 ui_communicate["prog"] += 1
+
+            # TODO: both (?)
+            players[0].end_game(self.game, bool(self.game.first_player_won()))
 
     def test_mode(self, players, ui_input, ui_communicate):
         """

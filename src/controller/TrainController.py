@@ -39,7 +39,7 @@ class TrainController:
                 self.train_phase()
 
     def create_ai(self):
-        print("new agents")
+        print("TODO: create new agent")
         input(self.ui_input)
         return
 

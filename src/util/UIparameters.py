@@ -36,18 +36,21 @@ class TestUIParams(AbstractUIParams):
 class TrainUIParams(AbstractUIParams):
     def __init__(self):
         super().__init__()
+        # part "train agent"
         self.agent1type = "ml"
         self.agent2type = "ml"
+        self.nb = 1000
+        self.mvsel = "eps-greedy"
+        self.lr = 0.3
 
+        # part "create new agent"
         self.newfname = None
-        self.newls = None
+        self.newmltype = None
+        self.newls = None  # ls will be fixed with a NN
         self.newshape = None
         self.newinit = None
         self.newactf = None
         self.newlamb = None
-        self.nb = 1000
-        self.mvsel = "eps-greedy"
-        self.lr = 0.3
 
     def set_nb(self, val):
         self.nb = abs(int(val))
