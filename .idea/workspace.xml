@@ -22,19 +22,16 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="test mode integration">
-      <change afterPath="$PROJECT_DIR$/src/agents/PlayerML.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/agents/init_NN.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/Testdb.py" afterDir="false" />
+    <list default="true" id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="Developing player ML">
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/db/Storage.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/TestAgent.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/init_NN.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/init_NN.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/controller/TrainController.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/controller/TrainController.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/db/dbmanager.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/db/dbmanager.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/game/GameEngine.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/game/GameEngine.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/game/agents/AbstractPlayer.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/AbstractPlayer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/game/agents/PlayerHuman.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/PlayerHuman.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/game/agents/PlayerRandom.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/PlayerRandom.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/util/UIparameters.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/util/UIparameters.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/view/TrainMenu.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/view/TrainMenu.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/Testdb.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/Testdb.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,8 +41,8 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="Python Unit Test" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
@@ -69,6 +66,9 @@
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true"
+  },
   "keyToStringList": {
     "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
       "Python"
@@ -84,28 +84,7 @@
       <recent name="$PROJECT_DIR$/src/Controller" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.scratch">
-    <configuration name="PokeGame" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="PokeAI" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/game" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/game/PokeGame.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+  <component name="RunManager" selected="Python tests.Python tests in Testdb.py">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="PokeAI" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -127,28 +106,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="scratch" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="PokeAI" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$APPLICATION_CONFIG_DIR$/scratches" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$APPLICATION_CONFIG_DIR$/scratches/scratch.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="Python tests for TestGame.TestCaseGameStruct" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for Testdb.MyTestCase.test_available_ml_agents" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="PokeAI" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -158,11 +116,11 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;TestGame.TestCaseGameStruct&quot;" />
+      <option name="_new_target" value="&quot;Testdb.MyTestCase.test_available_ml_agents&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for TestGame.TestCasePokeGame.test_first_player_won" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for Testdb.MyTestCase.test_load_ml_agent" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="PokeAI" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -172,11 +130,11 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;TestGame.TestCasePokeGame.test_first_player_won&quot;" />
+      <option name="_new_target" value="&quot;Testdb.MyTestCase.test_load_ml_agent&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Unittests in TestGame.py" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for Testdb.MyTestCase.test_remove_ml_agent" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="PokeAI" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -185,6 +143,63 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;Testdb.MyTestCase.test_remove_ml_agent&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests for Testdb.MyTestCase.test_update_agent" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="PokeAI" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;Testdb.MyTestCase.test_update_agent&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests in TestAgent.py" type="tests" factoryName="Autodetect" nameIsGenerated="true">
+      <module name="PokeAI" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/test/TestAgent.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests in Testdb.py" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="PokeAI" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/test/Testdb.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests in TestGame.py" type="tests" factoryName="Unittests" nameIsGenerated="true">
+      <module name="PokeAI" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_pattern" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;$PROJECT_DIR$/test/TestGame.py&quot;" />
       <option name="_new_targetType" value="&quot;PATH&quot;" />
@@ -192,17 +207,21 @@
     </configuration>
     <list>
       <item itemvalue="Python.main" />
-      <item itemvalue="Python.PokeGame" />
-      <item itemvalue="Python.scratch" />
-      <item itemvalue="Python tests.Python tests for TestGame.TestCaseGameStruct" />
-      <item itemvalue="Python tests.Python tests for TestGame.TestCasePokeGame.test_first_player_won" />
+      <item itemvalue="Python tests.Python tests in TestAgent.py" />
       <item itemvalue="Python tests.Unittests in TestGame.py" />
+      <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_available_ml_agents" />
+      <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_load_ml_agent" />
+      <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_remove_ml_agent" />
+      <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_update_agent" />
+      <item itemvalue="Python tests.Python tests in Testdb.py" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.scratch" />
-        <item itemvalue="Python tests.Unittests in TestGame.py" />
-        <item itemvalue="Python.PokeGame" />
+        <item itemvalue="Python tests.Python tests in Testdb.py" />
+        <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_load_ml_agent" />
+        <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_remove_ml_agent" />
+        <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_update_agent" />
+        <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_available_ml_agents" />
       </list>
     </recent_temporary>
   </component>
@@ -236,7 +255,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679083575907</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Developing player ML">
+      <created>1679170900994</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1679170900994</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -254,6 +280,7 @@
     <MESSAGE value="Continued fight mode" />
     <MESSAGE value="Finished fight mode" />
     <MESSAGE value="test mode integration" />
-    <option name="LAST_COMMIT_MESSAGE" value="test mode integration" />
+    <MESSAGE value="Developing player ML" />
+    <option name="LAST_COMMIT_MESSAGE" value="Developing player ML" />
   </component>
 </project>

@@ -8,7 +8,10 @@ LS = ["Q-learning",
 ACT_F = ["sigmoid",
          "ReLU"]
 
-INITS = ["normal"]
+INITS = ["normal",
+         "xavier",
+         "normalized-xavier",
+         "He"]
 
 MVSEL = ["eps-greedy",
          "softmax-exp"]
@@ -30,7 +33,7 @@ class TrainMenu:
         pars.newfname = "test-gene"
         pars.newmltype = "perceptron"
         pars.newls = "TD-lambda"
-        pars.newshape = ["128", "50", 1]
+        pars.newshape = ["20"]
         pars.newinit = "normal"
         pars.newactf = "sigmoid"
         pars.newlamb = 0.5

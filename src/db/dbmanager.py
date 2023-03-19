@@ -1,8 +1,7 @@
 import os
-import shelve
+from src.db.Storage import Storage
 
-
-STORAGE = "./src/db/stored-networks" if os.name == "posix" else ".\\src\\db\\stored-networks"
+STORAGE_PATH = "stored-networks"
 
 
 # ML agents management
@@ -12,49 +11,49 @@ def available_ml_agents():
     """ Return list of names of stored networks """
 
     networks = list()
-    with shelve.open(STORAGE) as db:
-        for k in db.keys():
-            networks.append(k)
-
+    db = Storage(STORAGE_PATH)
+    for k in db.keys():
+        networks.append(k)
     return networks
 
 
 def update_ml_agent(network_name, network):
     """ Update weight matrices of a stored network (after training)
 
-    :param network_name: name of the network, identifying key inside the shelve
-    :param network: tuple of 2 or 3 matrices representing weights of the network """
+    :param network_name: name of the network, identifying key inside the storage
+    :param network: tuple of ndarrays of the new network """
 
-    with shelve.open(STORAGE, writeback=True) as db:
-        db[network_name]["network"] = network
+    db = Storage(STORAGE_PATH)
+    agent = db[network_name]
+    agent["network"] = network
+    db[network_name] = agent
 
 
-def save_new_agent(network_name, ls, act_f, network, lamb):
+def save_new_agent(network_name, network, ls, lamb, act_f):
     """ Receive initialized network and identifier in order to store it in the database. Network is stored with
     its strategy, activation function and lambda parameter
 
-    :param network: tuple of numpy arrays (variable lengths for deep learning)
+    :param network: list of numpy arrays (variable lengths for deep learning)
     """
+    print(os.getcwd())
 
-    with shelve.open(STORAGE, writeback=True) as db:
-        db[network_name] = dict()
-        db[network_name]["ls"], db[network_name]["act_f"], db[network_name]["network"], \
-            db[network_name]["lamb"] = ls, act_f, network, lamb
+    db = Storage(STORAGE_PATH)
+    db[network_name] = {"network": network, "ls": ls, "lamb": lamb, "act_f": act_f}
 
 
 def load_ml_agent(network_name):
     """ Retrieve stored weights and associated parameters """
 
-    with shelve.open(STORAGE, writeback=True) as db:
-        ls, act_f, network, lamb = db[network_name]["ls"], db[network_name]["act_f"], db[network_name]["network"], \
-                                   db[network_name]["lamb"]
+    db = Storage(STORAGE_PATH)
+    network, ls, lamb, act_f = db[network_name]["network"], db[network_name]["ls"], db[network_name]["lamb"], \
+        db[network_name]["act_f"]
 
-    return ls, act_f, network, lamb
+    return network, ls, lamb, act_f
 
 
 def remove_ml_agent(network_name):
-    with shelve.open(STORAGE, writeback=True) as db:
-        del db[network_name]
+    db = Storage(STORAGE_PATH)
+    del db[network_name]
 
 
 # pokemon teams management
@@ -62,10 +61,11 @@ def remove_ml_agent(network_name):
 TEAMS_TEMP = {"alpha": [
     (("b", "ground", 80, 80, 125, 80, 125, 80), (("heavy_ground", "ground", 100), ("light_fire", "fire", 50))),
     (("c", "water", 60, 120, 60, 120, 60, 120), (("heavy_water", "water", 100), ("light_psychic", "psychic", 50)))],
-              "zeta": [(("y", "electric", 70, 70, 70, 70, 70, 125),
-                        (("heavy_electric", "electric", 100), ("light_flying", "flying", 50))),
-                       (("z", "fire", 130, 130, 50, 50, 50, 130),
-                        (("heavy_fire", "fire", 100), ("light_dragon", "dragon", 50)))]}
+    "zeta": [(("y", "electric", 70, 70, 70, 70, 70, 125),
+              (("heavy_electric", "electric", 100), ("light_flying", "flying", 50))),
+             (("z", "fire", 130, 130, 50, 50, 50, 130),
+              (("heavy_fire", "fire", 100), ("light_dragon", "dragon", 50)))]}
+
 
 def available_teams():
     return TEAMS_TEMP.keys()
