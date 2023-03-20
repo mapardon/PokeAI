@@ -22,16 +22,16 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="Developing player ML">
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/db/Storage.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/TestAgent.py" afterDir="false" />
+    <list default="true" id="bb1aa9be-e621-4481-90cc-0da9acde8623" name="Default Changelist" comment="Initialize networks + storage + tests">
+      <change afterPath="$PROJECT_DIR$/old/PlayerMLold.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/agents/init_NN.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/init_NN.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/agents/PlayerML.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/agents/PlayerML.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/controller/ManageController.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/controller/ManageController.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/controller/TrainController.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/controller/TrainController.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/db/dbmanager.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/db/dbmanager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/game/GameEngine.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/game/GameEngine.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/view/TrainMenu.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/view/TrainMenu.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test/Testdb.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/Testdb.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/test/TestAgent.py" beforeDir="false" afterPath="$PROJECT_DIR$/test/TestAgent.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -67,7 +67,8 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true"
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "last_opened_file_path": "C:/Users/mathi/PycharmProjects/PokeAI/old"
   },
   "keyToStringList": {
     "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
@@ -76,15 +77,18 @@
   }
 }]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\mathi\PycharmProjects\PokeAI\old" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\mathi\PycharmProjects\PokeAI\old" />
       <recent name="C:\Users\mathi\PycharmProjects\PokeAI\src" />
       <recent name="$PROJECT_DIR$/src/game" />
       <recent name="$PROJECT_DIR$/src/agents" />
       <recent name="$PROJECT_DIR$/src/Game/agents" />
-      <recent name="$PROJECT_DIR$/src/Controller" />
     </key>
   </component>
-  <component name="RunManager" selected="Python tests.Python tests in Testdb.py">
+  <component name="RunManager" selected="Python tests.Python tests for TestAgent.MyTestCase.test_ml_agent_train">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="PokeAI" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -106,7 +110,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="Python tests for Testdb.MyTestCase.test_available_ml_agents" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+    <configuration name="Python tests for TestAgent.MyTestCase.test_ml_agent_train" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="PokeAI" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -116,7 +120,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;Testdb.MyTestCase.test_available_ml_agents&quot;" />
+      <option name="_new_target" value="&quot;TestAgent.MyTestCase.test_ml_agent_train&quot;" />
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
@@ -209,7 +213,7 @@
       <item itemvalue="Python.main" />
       <item itemvalue="Python tests.Python tests in TestAgent.py" />
       <item itemvalue="Python tests.Unittests in TestGame.py" />
-      <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_available_ml_agents" />
+      <item itemvalue="Python tests.Python tests for TestAgent.MyTestCase.test_ml_agent_train" />
       <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_load_ml_agent" />
       <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_remove_ml_agent" />
       <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_update_agent" />
@@ -217,11 +221,11 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Python tests for TestAgent.MyTestCase.test_ml_agent_train" />
         <item itemvalue="Python tests.Python tests in Testdb.py" />
         <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_load_ml_agent" />
         <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_remove_ml_agent" />
         <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_update_agent" />
-        <item itemvalue="Python tests.Python tests for Testdb.MyTestCase.test_available_ml_agents" />
       </list>
     </recent_temporary>
   </component>
@@ -262,7 +266,14 @@
       <option name="project" value="LOCAL" />
       <updated>1679170900994</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Initialize networks + storage + tests">
+      <created>1679257720139</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1679257720139</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -281,6 +292,7 @@
     <MESSAGE value="Finished fight mode" />
     <MESSAGE value="test mode integration" />
     <MESSAGE value="Developing player ML" />
-    <option name="LAST_COMMIT_MESSAGE" value="Developing player ML" />
+    <MESSAGE value="Initialize networks + storage + tests" />
+    <option name="LAST_COMMIT_MESSAGE" value="Initialize networks + storage + tests" />
   </component>
 </project>

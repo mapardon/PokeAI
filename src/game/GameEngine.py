@@ -1,7 +1,8 @@
 import copy
 import random
 
-from src.db.dbmanager import retrieve_team
+from old.PlayerMLold import PlayerML
+from src.db.dbmanager import retrieve_team, load_ml_agent
 from src.game.PokeGame import PokeGame, TYPES
 from src.agents.PlayerHuman import PlayerHuman
 from src.agents.PlayerRandom import PlayerRandom
@@ -18,7 +19,7 @@ class GameEngine:
 
         # retrieve specified teams specs from database to initialize game
         self.game = None
-        players = self.init_players(ui_input.agent1type, ui_input.agent2type)
+        players = self.init_players(ui_input)
 
         if ui_input.mode == "fight":
             self.fight_mode(players, ui_input, from_ui, to_ui)
@@ -29,7 +30,7 @@ class GameEngine:
         elif ui_input.mode == "test":
             self.test_mode(players, ui_input, to_ui)
 
-    # utility methods
+    # init team and players
 
     def get_team_specs(self, team_src):
         """
@@ -74,13 +75,20 @@ class GameEngine:
 
         return out
 
-    def init_players(self, player1_type, player2_type):
+    def init_players(self, ui_input):
         players = list()
-        for p, n in zip([player1_type, player2_type], [1, 2]):
+        # TODO: both player in ML and train mode -> same NN
+        for p, n in zip([ui_input.agent1type, ui_input.agent2type], [1, 2]):
             if p == "random":
                 players.append(PlayerRandom(str(n)))
+
             elif p == "human":
                 players.append(PlayerHuman())
+
+            elif p == "ml":
+                network, ls, lamb, act_f = load_ml_agent(ui_input.ml1)
+                players.append(PlayerML(ui_input.mode, n, network, ls, lamb, act_f, ui_input.eps, ui_input.lr, ui_input.mvsel))
+
             else:
                 players.append(None)
         return players
@@ -203,7 +211,9 @@ class GameEngine:
                 ui_communicate["prog"] += 1
 
             # TODO: both (?)
-            players[0].end_game(self.game, bool(self.game.first_player_won()))
+            victory = bool(self.game.first_player_won())
+            players[0].end_game(self.game, victory)
+            players[1].end_game(self.game, not victory)
 
     def test_mode(self, players, ui_input, ui_communicate):
         """

@@ -43,7 +43,7 @@ class TrainController:
 
     def create_ai(self):
         uip = self.ui_input
-        network = initialize_NN(self.ui_input.newinit, self.ui_input.newshape)
+        network = initialize_NN(self.ui_input.newshape, self.ui_input.newinit)
         print("TODO: create new agent: {}, {}, {}, {}, {}, {}".format(self.ui_input.newfname, self.ui_input.newshape, self.ui_input.newls, self.ui_input.newlamb, self.ui_input.newactf, self.ui_input.newinit))
         save_new_agent(uip.newfname, network, uip.newls, uip.newlamb, uip.newactf)
         input()
@@ -60,8 +60,8 @@ class TrainController:
             if cur_prog != ui_communicate["prog"]:
                 cur_prog = ui_communicate["prog"]
                 os.system("clear" if os.name == "posix" else "cls")
-                n_syms = ceil(20 * cur_prog / self.ui_input.nb)
-                print("Progression ({}): {}".format(ui_communicate["prog"], "#" * n_syms + "_" * (20 - n_syms)))
+                prog_bar = ceil(20 * cur_prog / self.ui_input.nb)
+                print("Progression ({}): {}".format(ui_communicate["prog"], "#" * prog_bar + "_" * (20 - prog_bar)))
 
         t.join()
         input("Press enter to exit")

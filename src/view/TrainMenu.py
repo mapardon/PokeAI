@@ -6,6 +6,7 @@ LS = ["Q-learning",
       "TD-lambda"]
 
 ACT_F = ["sigmoid",
+         "hyperbloic tangent",
          "ReLU"]
 
 INITS = ["normal",
@@ -33,7 +34,7 @@ class TrainMenu:
         pars.newfname = "test-gene"
         pars.newmltype = "perceptron"
         pars.newls = "TD-lambda"
-        pars.newshape = ["20"]
+        pars.newshape = [20]
         pars.newinit = "normal"
         pars.newactf = "sigmoid"
         pars.newlamb = 0.5

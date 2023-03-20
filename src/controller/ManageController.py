@@ -31,10 +31,10 @@ class ManageController:
                     remove_ml_agent(ui_input[1])
 
     def display_instructions(self, agents):
-        print("delete z   # remove agent z from database", end='\n')
         print("\n * Available agents:\n")
         for i in agents:
             print("\t - " + i)
+        print("\ndelete z   # remove agent z from database", end='\n\n')
 
 
 if __name__ == '__main__':
