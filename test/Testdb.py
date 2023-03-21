@@ -8,12 +8,10 @@ from src.db.Storage import Storage
 from src.db.dbmanager import STORAGE_PATH, save_new_agent, available_ml_agents, update_ml_agent, load_ml_agent, \
     remove_ml_agent
 
-TEST_STORAGE = "stored-networks"
-
 
 def reset_storage():
-    if os.path.exists(TEST_STORAGE):
-        os.remove(TEST_STORAGE)
+    if os.path.exists(STORAGE_PATH):
+        os.remove(STORAGE_PATH)
 
 
 class MyTestCase(unittest.TestCase):
@@ -24,22 +22,22 @@ class MyTestCase(unittest.TestCase):
 
         sentinel = True
         msg = str()
-        if os.path.exists(TEST_STORAGE):
-            os.remove(TEST_STORAGE)
+        if os.path.exists(STORAGE_PATH):
+            os.remove(STORAGE_PATH)
         try:
-            storage = Storage(TEST_STORAGE)
+            storage = Storage(STORAGE_PATH)
         except Exception as e:
             sentinel = False
             msg = "Failed during initialization"
         else:
-            sentinel &= os.path.exists(TEST_STORAGE)
+            sentinel &= os.path.exists(STORAGE_PATH)
         self.assertTrue(sentinel, msg)
 
     def test_read_write_storage(self):
         reset_storage()
 
         dummy_stored = {'a': 128, 'b': "abcd", 'c': ['a', 10, (1, 3, 2)]}
-        storage = Storage(TEST_STORAGE)
+        storage = Storage(STORAGE_PATH)
         storage['a'] = 128
         storage['b'] = "abcd"
         storage['c'] = ['a', 10, (1, 3, 2)]
@@ -50,7 +48,7 @@ class MyTestCase(unittest.TestCase):
         reset_storage()
 
         k = ('a', 'b')
-        storage = Storage(TEST_STORAGE)
+        storage = Storage(STORAGE_PATH)
         storage['a'] = np.random.uniform(-np.sqrt(6 / (20)), np.sqrt(6 / (20)), (10, 10))
         storage['b'] = np.random.uniform(-np.sqrt(6 / (24)), np.sqrt(6 / (24)), (12, 12))
         self.assertTupleEqual(storage.keys(), k)
@@ -59,7 +57,7 @@ class MyTestCase(unittest.TestCase):
         reset_storage()
 
         dummy_stored = {'a': 128, 'c': ['a', 10, (1, 3, 2)]}
-        storage = Storage(TEST_STORAGE)
+        storage = Storage(STORAGE_PATH)
         storage['a'] = 128
         storage['b'] = "abcd"
         storage['c'] = ['a', 10, (1, 3, 2)]
@@ -82,14 +80,14 @@ class MyTestCase(unittest.TestCase):
 
         save_new_agent(network_name, network, ls, lamb, act_f)
 
-        buf = Storage(TEST_STORAGE)[network_name]
+        buf = Storage(STORAGE_PATH)[network_name]
         self.assertDictEqual(buf, {"network": network, "ls": ls, "lamb": lamb, "act_f": act_f})
 
     def test_available_ml_agents(self):
         reset_storage()
 
         agent_names = ["protocol-1", "ia_20_50_trained_10k", "agent_test_2"]
-        db = Storage(TEST_STORAGE)
+        db = Storage(STORAGE_PATH)
         for n in agent_names:
             db[n] = None
 
@@ -104,7 +102,7 @@ class MyTestCase(unittest.TestCase):
         ls = "strat"
         lamb = None
         act_f = "activator"
-        db = Storage(TEST_STORAGE)
+        db = Storage(STORAGE_PATH)
         db[network_name] = {"network": nn_old, "ls": ls, "lamb": lamb, "act_f": act_f}
         update_ml_agent(network_name, nn_new)
         self.assertEqual(db[network_name]["network"], nn_new)
@@ -117,7 +115,7 @@ class MyTestCase(unittest.TestCase):
         ls = "strat"
         lamb = None
         act_f = "activator"
-        db = Storage(TEST_STORAGE)
+        db = Storage(STORAGE_PATH)
         db[network_name] = {"network": network, "ls": ls, "lamb": lamb, "act_f": act_f}
         self.assertEqual(load_ml_agent(network_name), (network, ls, lamb, act_f))
 
@@ -125,7 +123,7 @@ class MyTestCase(unittest.TestCase):
         reset_storage()
 
         agent_names = ["protocol-1", "ia_20_50_trained_10k", "agent_test_2"]
-        db = Storage(TEST_STORAGE)
+        db = Storage(STORAGE_PATH)
         for n in agent_names:
             db[n] = None
         remove_ml_agent("protocol-1")
