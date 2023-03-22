@@ -75,7 +75,7 @@ class PlayerML(AbstractPlayer):
     def make_move(self, game):
         """ Format game states then call adequate function to choose a move (and eventually learn)
 
-        :returns Selected move """
+        :returns: Selected move """
 
         options = game.get_player1_moves() if self.role == "1" else game.get_player2_moves()
         cur_state = game.get_cur_state()
@@ -87,6 +87,7 @@ class PlayerML(AbstractPlayer):
 
         else:  # match or test
             new_s = self.eps_greedy_move(options)[0]
+
         return new_s
 
     def end_game(self, state, player1_won):
@@ -145,11 +146,11 @@ class PlayerML(AbstractPlayer):
         """ Use the knowledge of the network to make an estimation of the victory probability of the white (2nd) player
         of a provided game state. """
 
-        W_int = self.network[0]
-        W_out = self.network[1]
-        P_int = self.act_f(np.dot(W_int, state))
-        p_out = self.act_f(P_int.dot(W_out))  # estimation of the probability
-        return p_out
+        res = state
+        for layer in self.network[:-1]:
+            res = sigmoid(np.dot(layer, res))
+        res = sigmoid(self.network[-1].dot(res))
+        return res
 
     def q_learning_backpropagation(self, cur_state, chosen_state, best_next_prob):
         """
@@ -159,20 +160,34 @@ class PlayerML(AbstractPlayer):
         :param chosen_state: state selected for next move
         :param best_next_prob: victory estimation of the best possible option
         """
+        p_out = self.forward_pass(cur_state)
+        delta = p_out - best_next_prob
 
-        cur_prob = self.forward_pass(cur_state)
-        delta = cur_prob - best_next_prob
+        grad_out = sigmoid_gradient(p_out)
+        layer = cur_state
+        for weights in self.network[:-1]:  # retrieve last hidden layer before output neuron
+            layer = sigmoid(np.dot(weights, layer))
 
-        W_int = self.network[0]
-        W_out = self.network[1]
-        P_int = self.act_f(np.dot(W_int, cur_state))
-        p_out = self.act_f(P_int.dot(W_out))
-        grad_out = self.grad(p_out)
-        grad_int = self.grad(P_int)
-        Delta_int = grad_out * W_out * grad_int
+        # first update: last weights matrix
+        self.network[-1] -= 0.15 * delta * grad_out * layer
 
-        W_int -= self.lr * delta * np.outer(Delta_int, cur_state)
-        W_out -= self.lr * delta * grad_out * P_int
+        # update other layers sequentially
+        for i in range(len(self.network) - 2, -1, -1):
+            w_0 = self.network[i]
+            w_1 = self.network[i + 1]
+            p_0 = cur_state
+            for weights in self.network[:i]:  # last hidden layer before weights to update
+                p_0 = sigmoid(np.dot(weights, p_0))
+            p_1 = sigmoid(np.dot(self.network[i], p_0))
+
+            if i + 2 < len(self.network):
+                p_2 = sigmoid(np.dot(self.network[i + 1], p_1))
+                tmp = sigmoid_gradient(p_2) @ w_1 @ sigmoid_gradient(p_1)
+                w_0 -= 0.15 * delta * np.outer(tmp, p_0)
+            else:
+                p_2 = sigmoid(layer.dot(self.network[i + 1]))
+                tmp = sigmoid_gradient(p_2) * w_1 * sigmoid_gradient(p_1)
+                w_0 -= 0.15 * delta * np.outer(tmp, p_0)
 
     def sarsa_backpropagation(self, cur_state, chosen_state, best_next_prob):
         """

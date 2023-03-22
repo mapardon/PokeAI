@@ -129,6 +129,14 @@ class PokeGame:
         self.player1_view = self.game_state
         self.player2_view = self.game_state
 
+    def get_cur_state(self):
+        return copy.deepcopy(self.game_state)
+
+    @staticmethod
+    def get_binary_repr(state):
+        """ Converts the provided state (GameStruct) in binary representation """
+
+
     def game_finished(self):
         return sum([p.is_alive() for p in self.game_state.team1]) == 0 or sum([p.is_alive() for p in self.game_state.team2]) == 0
 

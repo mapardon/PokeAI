@@ -77,7 +77,7 @@ class GameEngine:
 
     def init_players(self, ui_input):
         players = list()
-        # TODO: both player in ML and train mode -> same NN
+        # TODO: train mode, both player in ML and same NN -> share object
         for p, n in zip([ui_input.agent1type, ui_input.agent2type], [1, 2]):
             if p == "random":
                 players.append(PlayerRandom(str(n)))

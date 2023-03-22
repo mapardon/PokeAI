@@ -20,11 +20,11 @@ def init_he(layer_prev, layer_next):
     return np.random.normal(0, np.sqrt(2 / layer_prev), (layer_next, layer_prev))
 
 
-def initialize_NN(shape, init_mode):
+def initialize_NN(shape, init_mode, in_out_specified=False):
     """
 ²   :param shape: list of integers indicating size of intermediate layers (input and output excluded) """
-
-    shape = [N_INPUT] + shape + [N_OUT]
+    if not in_out_specified:
+        shape = [N_INPUT] + shape + [N_OUT]
     weights = list()
 
     init = {"normal": init_normal,
