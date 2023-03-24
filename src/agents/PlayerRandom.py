@@ -10,5 +10,5 @@ class PlayerRandom(AbstractPlayer):
     def make_move(self, game):
         """ :returns Random move among playable moves """
 
-        options = game.get_player1_moves() if self.role == "1" else game.get_player2_moves()
+        options = game.get_moves_from_state(self.role, None)
         return random.choice(options)

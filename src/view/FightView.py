@@ -24,16 +24,17 @@ class FightView:
         print("field team 2: {} ({}/{})".format(game_config.on_field2.name, game_config.on_field2.cur_hp, game_config.on_field2.hp), end='\n\n')
         print("field team 1: {} ({}/{})".format(game_config.on_field1.name, game_config.on_field1.cur_hp, game_config.on_field1.hp))
         print("team 1: " + ' | '.join("{} ({}/{})".format(p.name, p.cur_hp, p.hp) for p in game_config.team1))
-        print("moves: " + ' - '.join(playable_moves), end="\n\n")
+        print("moves: " + ' - '.join(playable_moves if None not in playable_moves else ["None"]), end="\n\n")
 
         print("Last turn: p1 {} - p2 {}".format(*played_moves))
         if not game_finished:
-            if player1_human:
-                while user_move not in playable_moves:
+            if player1_human and playable_moves != [None]:
+                while str(user_move) not in playable_moves:
                     user_move = input("move choice > ")
             else:
-                # no human player, just display a little before continuing
-                user_move = input("move choice > ")
+                # no human player (or must not choose), just display a little before continuing
+                input("continue > ")
+                user_move = None
                 #time.sleep(0)
         else:
             print("game ended: {}".format(playable_moves[0]))

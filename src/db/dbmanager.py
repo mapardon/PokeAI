@@ -1,7 +1,7 @@
 import os
 from src.db.Storage import Storage
 
-STORAGE_PATH = "db/stored-networks"
+STORAGE_PATH = "db/stored-networks" if os.name == "posix" else "db\\stored-networks"
 
 
 # ML agents management

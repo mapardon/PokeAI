@@ -76,25 +76,7 @@ class FightController:
 
             # outcome of turn
             last_moves = from_backend.get()
-            turn_res = from_backend.get()
             game_finished = from_backend.get()
-
-            # additional switch required in case of faint
-            if not game_finished and (turn_res["p1_fainted"] or turn_res["p2_fainted"]):
-
-                game_state = from_backend.get()
-
-                if turn_res["p1_fainted"] and player1_human:
-                    playable_moves = from_backend.get()
-
-                    user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, 1, False)
-                    to_backend.put(user_move)
-
-                else:
-                    playable_moves = ["None"]  # p1 must not make choice
-                    user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, 1, False)
-
-                last_moves = from_backend.get()
 
         # wait final results
         game_state = from_backend.get()

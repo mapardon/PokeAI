@@ -108,8 +108,8 @@ class GameEngine:
         while not game_finished:
             # send game to ui for display
             game_state = self.game.get_player1_view()
-            to_ui.put(copy.deepcopy(game_state))
-            playable_moves = self.game.get_player1_moves()
+            to_ui.put(game_state)
+            playable_moves = self.game.get_moves_from_state("p1", None)
             to_ui.put(playable_moves)
             to_ui.put(turn_nb)
 
@@ -123,43 +123,20 @@ class GameEngine:
             player2_move = players[1].make_move(self.game)
 
             # send to game
-            turn_res = self.game.apply_player_moves(player1_move, player2_move)
+            turn_res = self.game.apply_and_swap_states(player1_move, player2_move)
+            input(turn_res)
+            player1_move  = "None" if player1_move is None else player1_move
+            player2_move = "None" if player2_move is None else player2_move
             last_moves = [player1_move * turn_res["p1_moved"] + " & " * (turn_res["p1_moved"] and turn_res["p1_fainted"]) + (self.game.game_state.on_field1.name + " fainted") * turn_res["p1_fainted"],
                           player2_move * turn_res["p2_moved"] + " & " * (turn_res["p2_moved"] and turn_res["p2_fainted"]) + (self.game.game_state.on_field2.name + " fainted") * turn_res["p2_fainted"]]
             to_ui.put(last_moves)
-            to_ui.put(turn_res)
 
-            game_finished = self.game.game_finished()
+            game_finished = self.game.is_end_state(None)
             to_ui.put(game_finished)
 
-            # TODO: handle multiple faints
-            # if any side has fainted and game is not over, must choose replacement before next turn
-            if not game_finished and (turn_res["p1_fainted"] or turn_res["p2_fainted"]):
-                player1_move = None
-                player2_move = None
-
-                # notify presence of faints and send intermediate state
-                game_state = self.game.get_player1_view()
-                to_ui.put(copy.deepcopy(game_state))
-
-                if turn_res["p1_fainted"]:
-                    if player1_human:
-                        playable_moves = self.game.get_player1_moves()
-                        to_ui.put(playable_moves)
-
-                        player1_move = from_ui.get()
-
-                    else:
-                        player1_move = players[0].make_move(self.game)
-
-                if turn_res["p2_fainted"]:
-                    player2_move = players[1].make_move(self.game)
-
-                self.game.apply_player_moves(player1_move, player2_move)
-                last_moves = [player1_move, player2_move]
-                to_ui.put(last_moves)
-
-            turn_nb += 1
+            if self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
+                # turn change once attacks have been applied and fainted pokemons switched
+                turn_nb += 1
 
         # send final state
         game_state = self.game.get_player1_view()
@@ -190,8 +167,8 @@ class GameEngine:
                 player1_move = players[0].make_move(self.game)
                 player2_move = players[1].make_move(self.game)
 
-                turn_res = self.game.apply_player_moves(player1_move, player2_move)
-                game_finished = self.game.game_finished()
+                turn_res = self.game.apply_and_swap_states(player1_move, player2_move)
+                game_finished = self.game.is_end_state(None)
                 if not game_finished and (turn_res["p1_fainted"] or turn_res["p2_fainted"]):
                     player1_move = None
                     player2_move = None
@@ -201,7 +178,7 @@ class GameEngine:
                     if turn_res["p2_fainted"]:
                         player2_move = players[1].make_move(self.game)
 
-                    self.game.apply_player_moves(player1_move, player2_move)
+                    self.game.apply_and_swap_states(player1_move, player2_move)
                 turn_nb += 1
 
             p1_victories += game_finished and self.game.first_player_won()
@@ -237,8 +214,8 @@ class GameEngine:
                 player1_move = players[0].make_move(self.game)
                 player2_move = players[1].make_move(self.game)
 
-                turn_res = self.game.apply_player_moves(player1_move, player2_move)
-                game_finished = self.game.game_finished()
+                turn_res = self.game.apply_and_swap_states(player1_move, player2_move)
+                game_finished = self.game.is_end_state(None)
                 if not game_finished and (turn_res["p1_fainted"] or turn_res["p2_fainted"]):
                     player1_move = None
                     player2_move = None
@@ -248,7 +225,7 @@ class GameEngine:
                     if turn_res["p2_fainted"]:
                         player2_move = players[1].make_move(self.game)
 
-                    self.game.apply_player_moves(player1_move, player2_move)
+                    self.game.apply_and_swap_states(player1_move, player2_move)
                 turn_nb += 1
 
             p1_victories += game_finished and self.game.first_player_won()

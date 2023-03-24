@@ -2,7 +2,7 @@ import os
 
 from src.db.dbmanager import available_ml_agents, available_teams
 
-PLAYER_TYPES = ["ml", "minimax", "human", "random"]
+PLAYER_TYPES = ["ml", "minimax", "human", "random", "treesearch"]
 
 
 class FightMenu:

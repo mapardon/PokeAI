@@ -77,7 +77,7 @@ class PlayerML(AbstractPlayer):
 
         :returns: Selected move """
 
-        options = game.get_player1_moves() if self.role == "1" else game.get_player2_moves()
+        options = game.get_moves_from_state(self.role, None)
         cur_state = game.get_cur_state()
         new_s = None
 

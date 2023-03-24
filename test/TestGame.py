@@ -115,7 +115,7 @@ class TestCasePokeGame(unittest.TestCase):
         else:  # not whole team down
             game.game_state.team1[0].cur_hp = 0
             game.game_state.team2[0].cur_hp = 0
-        self.assertEqual(game.game_finished(), expected_output)
+        self.assertEqual(game.is_end_state(game.get_cur_state()), expected_output)
 
     @parameterized.expand([
         (True, True),
@@ -138,24 +138,30 @@ class TestCasePokeGame(unittest.TestCase):
         pass
 
     @parameterized.expand([
-        (False, ["light_psychic", "heavy_fire", "switch p2"]),
-        (True, ["switch p2"])
+        (False, False, ["light_steel", "heavy_water", "switch d2"], "2"),
+        (True, False, ["switch d2"], "2"),
+        (False, False, ["light_psychic", "heavy_fire", "switch p2"], "1"),
+        (True, False, ["switch p2"], "1"),
+        (False, True, [None], "1"),
+        (True, True, ["switch p2"], "1"),
+        (False, True, [None], "2"),
+        (True, True, ["switch d2"], "2")
     ])
-    def test_get_player1_moves(self, fainted, expected_output):
+    def test_get_moves_from_state(self, fainted, opp_fainted, expected_output, player):
         game = PokeGame(team_specs_for_game)
         if fainted:
-            game.game_state.on_field1.cur_hp *= 0
-        self.assertEqual(game.get_player1_moves(), expected_output)
+            if player == "1":
+                game.game_state.on_field1.cur_hp *= 0
+            else:
+                game.game_state.on_field2.cur_hp *= 0
 
-    @parameterized.expand([
-        (False, ["light_steel", "heavy_water", "switch d2"]),
-        (True, ["switch d2"])
-    ])
-    def test_get_player2_moves(self, fainted, expected_output):
-        game = PokeGame(team_specs_for_game)
-        if fainted:
-            game.game_state.on_field2.cur_hp *= 0
-        self.assertEqual(game.get_player2_moves(), expected_output)
+        if opp_fainted:
+            if player == "2":
+                game.game_state.on_field1.cur_hp *= 0
+            else:
+                game.game_state.on_field2.cur_hp *= 0
+
+        self.assertListEqual(game.get_moves_from_state(player, game.get_cur_state()), expected_output)
 
     @parameterized.expand([
         (PokeGame.Move("light_fire", "FIRE", 50), PokeGame.Pokemon("p1", "FIRE", [100] * 6, [None]),
@@ -172,7 +178,7 @@ class TestCasePokeGame(unittest.TestCase):
          PokeGame.Pokemon("p2", "GRASS", [100] * 6, [None]), 74)  # no stab, weakness
     ])
     def test_damage(self, move, attacker, target, expect_dmg):
-        dmg = PokeGame.damage_formula(move, attacker, target, True)
+        dmg = PokeGame.damage_formula(move, attacker, target, 0.85)
         self.assertEqual(dmg, expect_dmg)
 
     @parameterized.expand([
@@ -188,7 +194,7 @@ class TestCasePokeGame(unittest.TestCase):
         gs = game.game_state
         gs.on_field2.spe -= 1  # ensure attack order
 
-        game.apply_player_moves(player1_move, player2_move)
+        game.apply_and_swap_states(player1_move, player2_move)
         succeeded = True
         if player1_move is not None and not "switch" in player1_move:  # p1 attacked
             succeeded &= gs.on_field2.name == exp_field2_name and gs.on_field2.cur_hp < gs.on_field2.hp
@@ -210,7 +216,7 @@ class TestCasePokeGame(unittest.TestCase):
     ])
     def test_apply_player_moves_2(self, p1_move, p2_move, exp_out):
         game = PokeGame(team_specs_for_game2)
-        res = game.apply_player_moves(p1_move, p2_move)
+        res = game.apply_and_swap_states(p1_move, p2_move)
         self.assertEqual(res, exp_out)
 
 
