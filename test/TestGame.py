@@ -138,25 +138,25 @@ class TestCasePokeGame(unittest.TestCase):
         pass
 
     @parameterized.expand([
-        (False, False, ["light_steel", "heavy_water", "switch d2"], "2"),
-        (True, False, ["switch d2"], "2"),
-        (False, False, ["light_psychic", "heavy_fire", "switch p2"], "1"),
-        (True, False, ["switch p2"], "1"),
-        (False, True, [None], "1"),
-        (True, True, ["switch p2"], "1"),
-        (False, True, [None], "2"),
-        (True, True, ["switch d2"], "2")
+        (False, False, ["light_steel", "heavy_water", "switch d2"], "p2"),
+        (True, False, ["switch d2"], "p2"),
+        (False, False, ["light_psychic", "heavy_fire", "switch p2"], "p1"),
+        (True, False, ["switch p2"], "p1"),
+        (False, True, [None], "p1"),
+        (True, True, ["switch p2"], "p1"),
+        (False, True, [None], "p2"),
+        (True, True, ["switch d2"], "p2")
     ])
     def test_get_moves_from_state(self, fainted, opp_fainted, expected_output, player):
         game = PokeGame(team_specs_for_game)
         if fainted:
-            if player == "1":
+            if player == "p1":
                 game.game_state.on_field1.cur_hp *= 0
             else:
                 game.game_state.on_field2.cur_hp *= 0
 
         if opp_fainted:
-            if player == "2":
+            if player == "p2":
                 game.game_state.on_field1.cur_hp *= 0
             else:
                 game.game_state.on_field2.cur_hp *= 0
@@ -198,6 +198,7 @@ class TestCasePokeGame(unittest.TestCase):
         succeeded = True
         if player1_move is not None and not "switch" in player1_move:  # p1 attacked
             succeeded &= gs.on_field2.name == exp_field2_name and gs.on_field2.cur_hp < gs.on_field2.hp
+            pass
         else:
             succeeded &= gs.on_field1.name == exp_field1_name
 

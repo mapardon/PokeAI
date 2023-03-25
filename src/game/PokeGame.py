@@ -168,10 +168,12 @@ class PokeGame:
         state = state if state is not None else self.game_state
         return sum([p.is_alive() for p in state.team1]) == 0 or sum([p.is_alive() for p in state.team2]) == 0
 
-    def first_player_won(self):
+    def first_player_won(self, state=None):
         """ Check if some pokemon from team1 are not dead. Note: this function should be run after game_finished
         returned True. """
-        return sum([p.is_alive() for p in self.game_state.team1]) > 0
+
+        state = state if state is not None else self.game_state
+        return sum([p.is_alive() for p in state.team1]) > 0
 
     def swap_states(self, game_state):
         self.game_state = game_state
@@ -181,20 +183,20 @@ class PokeGame:
         return res[1]
 
     @staticmethod
-    def damage_formula(move, attacker, target, force_dmg=None):
+    def damage_formula(move, attacker, target, force_dmg=False):
         """ force_dmg can be set to a decimal number to force a given damage multiplier """
         # base damages
         dmg = (floor(floor((2 * 100 / 5 + 2) * move.base_pow * attacker.atk / target.des) / 50) + 2)
         # modifiers
         weather = 1
         critical = 1.5 if random.random() < 0 else 1  # TODO deal with that later
-        rd = random.randint(85, 100) / 100 if force_dmg is None else force_dmg
+        rd = random.randint(85, 100) / 100 if not force_dmg else force_dmg
         stab = 1.5 if move.move_type == attacker.poke_type else 1  # TODO terastall
         type_aff = 1 if target.poke_type not in TYPE_CHART[move.move_type] else TYPE_CHART[move.move_type][target.poke_type]
         dmg *= weather * critical * rd * stab * type_aff
         return floor(dmg)
 
-    def apply_player_moves(self, game_state, player1_move, player2_move):
+    def apply_player_moves(self, game_state, player1_move, player2_move, force_dmg=False):
         """
         Execute player choices with regard to game rules to the game_state passed as parameter. This function applies
         changes on a parameter game_state and not on the attribute because some strategies require to test potential
@@ -203,10 +205,14 @@ class PokeGame:
         :param game_state: state on which to apply the moves
         :param player1_move: name of attack or 'switch {name}'
         :param player2_move: same
-        :returns: dict of the following shape: {p1_moved: bool, p1_fainted: bool, p2_moved: bool, p2_fainted: bool}
+        :returns: state with applied player actions and dict of the following shape:
+            {p1_moved: bool, p1_fainted: bool, p2_moved: bool, p2_fainted: bool} (because it is difficult, from outer
+            scope, to determine who has moved, who has fainted and who has done both)
         """
+
         ret = {'p1_moved': player1_move is not None, 'p1_fainted': False, 'p2_moved': player2_move is not None, 'p2_fainted': False}
 
+        # both switch
         if player1_move is not None and "switch" in player1_move and player2_move is not None and "switch" in player2_move:
             # TODO: consider speed
             game_state.on_field1 = game_state.team1[[n.name for n in game_state.team1].index(player1_move.split(" ")[1])]
@@ -215,14 +221,15 @@ class PokeGame:
         elif player1_move is not None and "switch" in player1_move:
             game_state.on_field1 = game_state.team1[[n.name for n in game_state.team1].index(player1_move.split(" ")[1])]
             if player2_move is not None:
-                game_state.on_field1.cur_hp = max(0, game_state.on_field1.cur_hp - self.damage_formula(game_state.on_field2.move_from_name(player2_move), game_state.on_field2, game_state.on_field1))
+                game_state.on_field1.cur_hp = max(0, game_state.on_field1.cur_hp - self.damage_formula(game_state.on_field2.move_from_name(player2_move), game_state.on_field2, game_state.on_field1, force_dmg))
 
         elif player2_move is not None and "switch" in player2_move:
             game_state.on_field2 = game_state.team2[[n.name for n in game_state.team2].index(player2_move.split(" ")[1])]
             if player1_move is not None:
-                game_state.on_field2.cur_hp = max(0, game_state.on_field2.cur_hp - self.damage_formula(game_state.on_field1.move_from_name(player1_move), game_state.on_field1, game_state.on_field2))
+                game_state.on_field2.cur_hp = max(0, game_state.on_field2.cur_hp - self.damage_formula(game_state.on_field1.move_from_name(player1_move), game_state.on_field1, game_state.on_field2, force_dmg))
 
-        else:  # both attack (cannot be both None at same time)
+        # both attack (nb: cannot be both None at same time)
+        else:
             # first, determine attack order
             attack_order = [(game_state.on_field1, player1_move, 'p1'), (game_state.on_field2, player2_move, 'p2')]
             if game_state.on_field1.spe > game_state.on_field2.spe:
@@ -232,17 +239,17 @@ class PokeGame:
             else:
                 random.shuffle(attack_order)
 
-            attack_order[1][0].cur_hp = max(0, attack_order[1][0].cur_hp - self.damage_formula(attack_order[0][0].move_from_name(attack_order[0][1]), attack_order[0][0], attack_order[1][0]))
+            attack_order[1][0].cur_hp = max(0, attack_order[1][0].cur_hp - self.damage_formula(attack_order[0][0].move_from_name(attack_order[0][1]), attack_order[0][0], attack_order[1][0], force_dmg))
             # second attacker must be alive to attack
             if attack_order[1][0].is_alive():
-                attack_order[0][0].cur_hp = max(0,  attack_order[0][0].cur_hp - self.damage_formula(attack_order[1][0].move_from_name(attack_order[1][1]), attack_order[1][0], attack_order[0][0]))
+                attack_order[0][0].cur_hp = max(0,  attack_order[0][0].cur_hp - self.damage_formula(attack_order[1][0].move_from_name(attack_order[1][1]), attack_order[1][0], attack_order[0][0], force_dmg))
             else:
                 if attack_order[1][2] == "p1":
                     ret["p1_moved"] = False
                 else:
                     ret["p2_moved"] = False
 
-        # test if some Pokemon has fainted and additional switch is required
+        # test if any side has fainted
         if not game_state.on_field1.is_alive():
             ret["p1_fainted"] = True
 
