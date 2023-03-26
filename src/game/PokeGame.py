@@ -25,6 +25,27 @@ TYPE_CHART = {'NORMAL': {'ROCK': 0.5, 'GHOST': 0, 'STEEL': 0.5, 'NORMAL': 1, 'FI
               'STEEL': {'FIRE': 1, 'WATER': 1, 'ELECTRIC': 1, 'ICE': 2, 'ROCK': 2, 'STEEL': 0.5, 'FAIRY': 2, 'NORMAL': 1, 'GRASS': 1, 'FIGHTING': 1, 'POISON': 1, 'GROUND': 1, 'FLYING': 1, 'PSYCHIC': 1, 'BUG': 1, 'GHOST': 1, 'DRAGON': 1, 'DARK': 1},
               'FAIRY': {'FIRE': 0.5, 'FIGHTING': 2, 'POISON': 0.5, 'DRAGON': 2, 'DARK': 2, 'STEEL': 1, 'NORMAL': 1, 'WATER': 1, 'ELECTRIC': 1, 'GRASS': 1, 'ICE': 1, 'GROUND': 1, 'FLYING': 1, 'PSYCHIC': 1, 'BUG': 1, 'ROCK': 1, 'GHOST': 1, 'FAIRY': 1}}
 
+TYPES_INDEX = {
+    'NORMAL': 0,
+    'FIRE': 1,
+    'WATER': 2,
+    'ELECTRIC': 3,
+    'GRASS': 4,
+    'ICE': 5,
+    'FIGHTING': 6,
+    'POISON': 7,
+    'GROUND': 8,
+    'FLYING': 9,
+    'PSYCHIC': 10,
+    'BUG': 11,
+    'ROCK': 12,
+    'GHOST': 13,
+    'DRAGON': 14,
+    'DARK': 15,
+    'STEEL': 16,
+    'FAIRY': 17
+}
+
 
 class PokeGame:
     class Pokemon:
@@ -131,10 +152,20 @@ class PokeGame:
         self.player1_view = self.game_state
         self.player2_view = self.game_state
 
-    @staticmethod
-    def get_binary_repr(state):
+    def get_numeric_repr(self, state):
         """ Converts the provided state (GameStruct) in binary representation """
-        return
+
+        # TODO consider each side separately
+        of1 = state.on_field1
+        of2 = state.on_field2
+        num_state = list()
+        for t in [state.team1, state.team2]:
+            for p in [of1] + [p for p in t if p.name != of1.name]:
+                mvs = list()
+                for m in p.moves:
+                    mvs += [TYPES_INDEX[p.poke_type], m.base_pow]
+                num_state += [TYPES_INDEX[p.poke_type], p.cur_hp, p.atk, p.des, p.spa, p.spd, p.spe] + mvs
+        return num_state
 
     def get_cur_state(self):
         return copy.deepcopy(self.game_state)

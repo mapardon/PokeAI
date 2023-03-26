@@ -1,7 +1,7 @@
 import sys
 from queue import Queue
 
-from src.util.UIparameters import FightUIParams
+from src.view.util.UIparameters import FightUIParams
 
 sys.path.append('/home/mathieu/PycharmProjects/PokeAI')
 

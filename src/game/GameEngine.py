@@ -1,11 +1,11 @@
 import copy
 import random
 
-from old.PlayerMLold import PlayerML
 from src.db.dbmanager import retrieve_team, load_ml_agent
 from src.game.PokeGame import PokeGame, TYPES
 from src.agents.PlayerHuman import PlayerHuman
 from src.agents.PlayerRandom import PlayerRandom
+from src.agents.PlayerML import PlayerML
 
 
 class GameEngine:
@@ -135,7 +135,7 @@ class GameEngine:
             game_finished = self.game.is_end_state(None)
             to_ui.put(game_finished)
 
-            if self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
+            if not game_finished and self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
                 # turn change once attacks have been applied and fainted pokemons switched
                 turn_nb += 1
 
@@ -215,18 +215,11 @@ class GameEngine:
                 player1_move = players[0].make_move(self.game)
                 player2_move = players[1].make_move(self.game)
 
-                turn_res = self.game.apply_and_swap_states(player1_move, player2_move)
+                self.game.apply_and_swap_states(player1_move, player2_move)
                 game_finished = self.game.is_end_state(None)
-                if not game_finished and (turn_res["p1_fainted"] or turn_res["p2_fainted"]):
-                    player1_move = None
-                    player2_move = None
 
-                    if turn_res["p1_fainted"]:
-                        player1_move = players[0].make_move(self.game)
-                    if turn_res["p2_fainted"]:
-                        player2_move = players[1].make_move(self.game)
-
-                    self.game.apply_and_swap_states(player1_move, player2_move)
+            if not game_finished and self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
+                # turn change once attacks have been applied and fainted pokemons switched
                 turn_nb += 1
 
             p1_victories += game_finished and self.game.first_player_won()

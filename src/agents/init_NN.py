@@ -1,6 +1,6 @@
 import numpy as np
 
-N_INPUT = 5
+N_INPUT = 55
 N_OUT = 1
 
 

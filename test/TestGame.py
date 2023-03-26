@@ -220,6 +220,11 @@ class TestCasePokeGame(unittest.TestCase):
         res = game.apply_and_swap_states(p1_move, p2_move)
         self.assertEqual(res, exp_out)
 
+    def test_get_numeric_repr(self):
+        exp = [1, 100, 100, 100, 100, 100, 100, 1, 50, 1, 100, 3, 100, 80, 100, 80, 100, 100, 3, 50, 3, 100, 1, 100, 100, 100, 100, 100, 100, 1, 50, 1, 100, 2, 100, 100, 100, 100, 100, 100, 2, 50, 2, 100, 14, 100, 80, 100, 80, 100, 100, 14, 50, 14, 100]
+        game = PokeGame(team_specs_for_game)
+        self.assertListEqual(game.get_numeric_repr(game.game_state), exp)
+
 
 if __name__ == '__main__':
     unittest.main()

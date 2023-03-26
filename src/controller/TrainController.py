@@ -1,9 +1,8 @@
 import sys
 
-from src.agents import init_NN
 from src.agents.init_NN import initialize_NN
 from src.db.dbmanager import save_new_agent
-from src.util.UIparameters import TrainUIParams
+from src.view.util.UIparameters import TrainUIParams
 
 sys.path.append('/home/mathieu/PycharmProjects/PokeAI')
 
@@ -44,9 +43,12 @@ class TrainController:
     def create_ai(self):
         uip = self.ui_input
         network = initialize_NN(self.ui_input.newshape, self.ui_input.newinit)
-        print("TODO: create new agent: {}, {}, {}, {}, {}, {}".format(self.ui_input.newfname, self.ui_input.newshape, self.ui_input.newls, self.ui_input.newlamb, self.ui_input.newactf, self.ui_input.newinit))
+        input("creating new agent: {}, {}, {}, {}, {}, {}".format(self.ui_input.newfname, self.ui_input.newshape, self.ui_input.newls, self.ui_input.newlamb, self.ui_input.newactf, self.ui_input.newinit))
         save_new_agent(uip.newfname, network, uip.newls, uip.newlamb, uip.newactf)
-        input()
+
+        # reset input params
+        uip = self.ui_input
+        uip.newfname = uip.newls = uip.newactf = uip.newlamb = uip.newinit = uip.newshape = uip.newmltype = None
 
     def train_phase(self):
         """ Run training loop inside a thread and display progression """

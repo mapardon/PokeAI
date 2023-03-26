@@ -19,6 +19,8 @@ MVSEL = ["eps-greedy",
 
 ML_TYPES = ["perceptron"]
 
+AGENTS_TYPE = ["ml", "minimax", "random"]
+
 
 class TrainMenu:
     def __init__(self, ui_input):
@@ -28,17 +30,7 @@ class TrainMenu:
         pars = self.params  # alias
         warning = None
         out = False
-        inputted = ["Be Stronger"]
-
-        # TODO delete
-        pars.newfname = "test-gene"
-        pars.newmltype = "perceptron"
-        pars.newls = "TD-lambda"
-        pars.newshape = [20]
-        pars.newinit = "normal"
-        pars.newactf = "sigmoid"
-        pars.newlamb = 0.5
-        #############
+        inputted = list()
 
         while warning is not None or not out:
             os.system("clear" if os.name == "posix" else "cls")
@@ -55,8 +47,7 @@ class TrainMenu:
                 out = True
 
             elif inputted[0] == "create":
-                if None in [pars.newfname, pars.newmltype, pars.newls, pars.newshape, pars.newinit, pars.newactf,
-                            pars.newlamb]:
+                if None in [pars.newfname, pars.newmltype, pars.newls, pars.newshape, pars.newinit, pars.newactf] + [pars.newlamb] * ("lambda" in pars.newls):
                     warning = "Please first fill all required parameters"
 
                 else:
@@ -64,8 +55,12 @@ class TrainMenu:
                     out = True
 
             elif inputted[0] == "train":
-                if pars.ml1 is None:
-                    warning = "Must at least load one AI"
+                if None in [pars.agent1type, pars.agent2type]:
+                    warning = "Please specify ai type for both agents"
+                elif "ml" not in [pars.agent1type, pars.agent2type]:
+                    warning = "Please load at least one ml agent"
+                elif pars.agent1type == "ml" and pars.ml1 is None or pars.agent1type == "ml2" and pars.ml2 is None:
+                    warning = "Please load ai before launching training"
                 else:
                     pars.mode = "train"
                     out = True
@@ -120,6 +115,15 @@ class TrainMenu:
                     warning = "Please provide consistent value for lambda parameter"
 
             # train settings
+            elif inputted[0] in ("ai1", "ai2") and len(inputted) == 2:
+                if inputted[1] in AGENTS_TYPE:
+                    if inputted[0] == "ai1":
+                        pars.agent1type = inputted[1]
+                    else:
+                        pars.agent2type = inputted[1]
+                else:
+                    warning = "Unknown agent type"
+
             elif inputted[0] in ("ml1", "ml2") and len(inputted) == 2:
                 if inputted[1] in available_ml_agents():
                     if inputted[0] == "ml1":
@@ -174,8 +178,10 @@ class TrainMenu:
             "New AI activation fun : {}".format(pars.newactf),
             "New AI lambda param.  : {}".format(pars.newlamb),
             "",
-            "Training first AI     : {}".format(pars.ml1),
-            "Training second AI    : {}".format(pars.ml2),
+            "Agent 1 type          : {}".format(pars.agent1type),
+            "Agent 2 type          : {}".format(pars.agent2type),
+            "ML for agent 1 (train): {}".format(pars.ml1),
+            "ML for agent 2 (train): {}".format(pars.ml2),
             "Training rounds       : {}".format(pars.nb),
             "Training move select. : {}".format(pars.mvsel),
             "Training learning rate: {}".format(pars.lr),
@@ -199,8 +205,8 @@ class TrainMenu:
             "new-lamb f # set lambda value for TD-lambda",
             "create     # create new agent with specified params",
             "",
-            "ai1 z      # load AI named z from database for role ai1",
-            "ai2 z      # load AI named z from database for role ai2",
+            "ai1/2 z    # ai type z for agent 1/2 ({})".format(' - '.join(AGENTS_TYPE)),
+            "ml1/2 z    # load ml named z from database for role ai1/2 ({})".format(available_ml_agents()),
             "nb n       # set number of games for training",
             "mvsel z    # move selection method for training ".format(' - '.join(MVSEL)),
             "lr f       # set learning rate to f",

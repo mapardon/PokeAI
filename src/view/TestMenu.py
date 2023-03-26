@@ -1,9 +1,8 @@
 import os
 
 from src.db.dbmanager import available_ml_agents, available_teams
-from src.util.UIparameters import TestUIParams
 
-AGENTS_TYPE = ["ml", "minimax", "random", "treesearch"]
+AGENTS_TYPE = ["ml", "minimax", "random"]
 
 
 class TestMenu:

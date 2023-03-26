@@ -1,6 +1,6 @@
 import sys
 
-from src.util.UIparameters import TestUIParams
+from src.view.util.UIparameters import TestUIParams
 
 sys.path.append('/home/mathieu/PycharmProjects/PokeAI')
 
@@ -12,8 +12,6 @@ from threading import Thread
 from src.game.GameEngine import GameEngine
 
 sys.path.append('/home/mathieu/PycharmProjects/PokeAI')
-
-import time
 
 from src.view.TestMenu import TestMenu
 

@@ -77,7 +77,11 @@ class PlayerML(AbstractPlayer):
 
         :returns: Selected move """
 
-        options = game.get_moves_from_state(self.role, None)
+        options = list()
+        for m1 in game.get_moves_from_state("p1", None):
+            for m2 in game.get_moves_from_state("p2", None):
+                options.append(game.get_numeric_repr(game.apply_player_moves(game.get_cur_state(), m1, m2)[0]))
+        print(options)
         cur_state = game.get_cur_state()
         new_s = None
 
@@ -104,6 +108,7 @@ class PlayerML(AbstractPlayer):
         :returns tuple containing:
                 * list of the moves evaluated as most promising by the network (in case several moves are equally best)
                 * the probability estimation. """
+        # TODO: player 2 pov
 
         best_moves = list()
         best_value = None
