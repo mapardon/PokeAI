@@ -78,27 +78,30 @@ class PlayerML(AbstractPlayer):
         :returns: Selected move """
 
         options = list()
+        moves_name = dict()
         for m1 in game.get_moves_from_state("p1", None):
             for m2 in game.get_moves_from_state("p2", None):
-                options.append(game.get_numeric_repr(game.apply_player_moves(game.get_cur_state(), m1, m2)[0]))
-        print(options)
+                bin_state = game.get_numeric_repr(game.apply_player_moves(game.get_cur_state(), m1, m2)[0])
+                options.append(bin_state)
+                moves_name[tuple(bin_state)] = (m1, m2)
         cur_state = game.get_cur_state()
-        new_s = None
 
         if self.mode == "train":  # Move + update weight matrices
             new_s, best_p_out = self.move_selection(options)
-            self.backpropagation(cur_state, new_s, best_p_out)
+            self.backpropagation(game, cur_state, new_s, best_p_out)
 
         else:  # match or test
             new_s = self.eps_greedy_move(options)[0]
 
-        return new_s
+        new_s_name = moves_name[tuple(new_s)]
+        new_s_name = new_s_name[0] if self.role == "p1" else new_s_name[1]
 
-    def end_game(self, state, player1_won):
+        return new_s_name
+
+    def end_game(self, game, player1_won):
         """ Same as previous for the end of the game """
 
-        # todo: binarize state
-        self.backpropagation(state, None, player1_won if self.role == "1" else not player1_won)
+        self.backpropagation(game, game.get_cur_state(), None, player1_won if self.role == "1" else not player1_won)
 
     # Moves ranking #
 
@@ -157,7 +160,7 @@ class PlayerML(AbstractPlayer):
         res = sigmoid(self.network[-1].dot(res))
         return res
 
-    def q_learning_backpropagation(self, cur_state, chosen_state, best_next_prob):
+    def q_learning_backpropagation(self, game, cur_state, chosen_state, best_next_prob):
         """
         Apply backpropagation algorithm with Q-learning strategy
 
@@ -165,11 +168,12 @@ class PlayerML(AbstractPlayer):
         :param chosen_state: state selected for next move
         :param best_next_prob: victory estimation of the best possible option
         """
-        p_out = self.forward_pass(cur_state)
+
+        p_out = self.forward_pass(game.get_numeric_repr(cur_state))
         delta = p_out - best_next_prob
 
         grad_out = sigmoid_gradient(p_out)
-        layer = cur_state
+        layer = game.get_numeric_repr(cur_state)
         for weights in self.network[:-1]:  # retrieve last hidden layer before output neuron
             layer = sigmoid(np.dot(weights, layer))
 
@@ -180,7 +184,7 @@ class PlayerML(AbstractPlayer):
         for i in range(len(self.network) - 2, -1, -1):
             w_0 = self.network[i]
             w_1 = self.network[i + 1]
-            p_0 = cur_state
+            p_0 = game.get_numeric_repr(cur_state)
             for weights in self.network[:i]:  # last hidden layer before weights to update
                 p_0 = sigmoid(np.dot(weights, p_0))
             p_1 = sigmoid(np.dot(self.network[i], p_0))
@@ -194,7 +198,7 @@ class PlayerML(AbstractPlayer):
                 tmp = sigmoid_gradient(p_2) * w_1 * sigmoid_gradient(p_1)
                 w_0 -= 0.15 * delta * np.outer(tmp, p_0)
 
-    def sarsa_backpropagation(self, cur_state, chosen_state, best_next_prob):
+    def sarsa_backpropagation(self, game, cur_state, chosen_state, best_next_prob):
         """
         None value for chosen_state parameter indicates game is ended
         """
@@ -213,8 +217,8 @@ class PlayerML(AbstractPlayer):
         W_int -= self.lr * delta * np.outer(Delta_int, cur_state)
         W_out -= self.lr * delta * grad_out * P_int
 
-    def td_lambda_backpropagation(self, state, cur_prob, cmp_prob):
+    def td_lambda_backpropagation(self, game, state, cur_prob, cmp_prob):
         return
 
-    def q_lambda_backpropagation(self, state, cur_prob, cmp_prob):
+    def q_lambda_backpropagation(self, game, state, cur_prob, cmp_prob):
         return

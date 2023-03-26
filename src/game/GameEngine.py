@@ -87,8 +87,10 @@ class GameEngine:
                 players.append(PlayerHuman())
 
             elif p == "ml":
-                network, ls, lamb, act_f = load_ml_agent(ui_input.ml1)
-                players.append(PlayerML(ui_input.mode, n, network, ls, lamb, act_f, ui_input.eps, ui_input.lr, ui_input.mvsel))
+                network, ls, lamb, act_f = load_ml_agent(ui_input.ml1 if p == 1 else ui_input.ml2)
+                lr = ui_input.lr if ui_input.mode == "train" else None
+                mvsel = ui_input.mvsel if ui_input.mode == "train" else "eps-greedy"
+                players.append(PlayerML(ui_input.mode, n, network, ls, lamb, act_f, ui_input.eps, lr, mvsel))
 
             else:
                 players.append(None)
@@ -170,17 +172,9 @@ class GameEngine:
 
                 turn_res = self.game.apply_and_swap_states(player1_move, player2_move)
                 game_finished = self.game.is_end_state(None)
-                if not game_finished and (turn_res["p1_fainted"] or turn_res["p2_fainted"]):
-                    player1_move = None
-                    player2_move = None
 
-                    if turn_res["p1_fainted"]:
-                        player1_move = players[0].make_move(self.game)
-                    if turn_res["p2_fainted"]:
-                        player2_move = players[1].make_move(self.game)
-
-                    self.game.apply_and_swap_states(player1_move, player2_move)
-                turn_nb += 1
+                if not game_finished and self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
+                    turn_nb += 1
 
             p1_victories += game_finished and self.game.first_player_won()
 
@@ -190,8 +184,10 @@ class GameEngine:
 
             # TODO: both (?)
             victory = bool(self.game.first_player_won())
-            players[0].end_game(self.game, victory)
-            players[1].end_game(self.game, not victory)
+            if isinstance(players[0], PlayerML):
+                players[0].end_game(self.game, victory)
+            if isinstance(players[1], PlayerML):
+                players[1].end_game(self.game, not victory)
 
     def test_mode(self, players, ui_input, ui_communicate):
         """
@@ -218,9 +214,9 @@ class GameEngine:
                 self.game.apply_and_swap_states(player1_move, player2_move)
                 game_finished = self.game.is_end_state(None)
 
-            if not game_finished and self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
-                # turn change once attacks have been applied and fainted pokemons switched
-                turn_nb += 1
+                if not game_finished and self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
+                    # turn change once attacks have been applied and fainted pokemons switched
+                    turn_nb += 1
 
             p1_victories += game_finished and self.game.first_player_won()
 

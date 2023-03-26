@@ -51,7 +51,6 @@ class FightController:
 
         t_ge.join()
         t_fl.join()
-        print("joined")
 
     def fight_loop(self, from_backend, to_backend):
 

@@ -40,11 +40,11 @@ class FightMenu:
                     out = True
 
             # training parameters
-            elif inputted[0] in ("p1", "p2") and len(inputted) == 2:
-                if inputted[0] == "p2" and inputted[1] == "human":
+            elif inputted[0] in ("player1", "player2") and len(inputted) == 2:
+                if inputted[0] == "player2" and inputted[1] == "human":
                     warning = "Player 2 can only be artificial player"
                 elif inputted[1] in PLAYER_TYPES:
-                    if inputted[0] == "p1":
+                    if inputted[0] == "player1":
                         pars.agent1type = inputted[1]
                     else:
                         pars.agent2type = inputted[1]
