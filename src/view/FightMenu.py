@@ -2,7 +2,7 @@ import os
 
 from src.db.dbmanager import available_ml_agents, available_teams
 
-PLAYER_TYPES = ["ml", "minimax", "human", "random", "treesearch"]
+PLAYER_TYPES = ["ml", "mdm", "human", "random"]
 
 
 class FightMenu:
@@ -71,16 +71,6 @@ class FightMenu:
                 else:
                     warning = "Please provide existing agent name"
 
-            # minimax parameters
-            elif inputted[0] in ("minimax1", "minimax2") and len(inputted) == 2:
-                try:
-                    if inputted[0] == "minimax1":
-                        pars.minimax1 = abs(int(inputted[1]))
-                    else:
-                        pars.minimax2 = abs(int(inputted[1]))
-                except ValueError:
-                    warning = "Please provide consistent value for minimax depth"
-
             elif inputted[0] in ("team1", "team2") and len(inputted) == 2:
                 if inputted[0] in available_teams() + ["random"]:
                     if inputted[0] == "team1":
@@ -98,8 +88,6 @@ class FightMenu:
             "Testing random factor : {}".format(self.params.eps),
             "ML player 1           : {}".format(pars.ml1),
             "ML player 2           : {}".format(pars.ml2),
-            "Minimax agent 1 depth : {}".format(pars.minimax1),
-            "Minimax agent 2 depth : {}".format(pars.minimax2),
             "team1                 : {}".format(pars.team1),
             "team2                 : {}".format(pars.team2)
         ]
@@ -110,13 +98,11 @@ class FightMenu:
 
     def display_instructions(self):
         instructions = [
-            "player1 t  # type of agent 1 (ml/minimax/human/...)",
+            "player1 t  # type of agent 1 {}".format(' - '.join(PLAYER_TYPES)),
             "player2 t  # learning strategy for new agent",
             "eps f      # set epsilon greedy to f",
             "ml1 z      # load AI named z from database for role agent1",
             "ml2 z      # load AI named z from database for role agent2",
-            "minimax1 n # move selection method for training",
-            "minimax2 n # set learning rate to f",
             "team1/2 z  # team1/2 name",
             "fight      # launch match",
             "leave      # exit program"]

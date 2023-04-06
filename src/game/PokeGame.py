@@ -72,7 +72,7 @@ class PokeGame:
 
         def move_from_name(self, move_name):
             """ Returns a reference to the move object whose name is passed as parameter """
-            return self.moves[[m.name for m in self.moves].index(move_name)]
+            return None if move_name is None else self.moves[[m.name for m in self.moves].index(move_name)]
 
         def __eq__(self, other):
             test = self.name == other.name and self.poke_type == other.poke_type
@@ -216,11 +216,13 @@ class PokeGame:
     @staticmethod
     def damage_formula(move, attacker, target, force_dmg=False):
         """ force_dmg can be set to a decimal number to force a given damage multiplier """
+        if move is None:
+            return 0
         # base damages
         dmg = (floor(floor((2 * 100 / 5 + 2) * move.base_pow * attacker.atk / target.des) / 50) + 2)
         # modifiers
         weather = 1
-        critical = 1.5 if random.random() < 0 else 1  # TODO deal with that later
+        critical = 1.5 if random.random() < 0 else 1  # TODO deal with that
         rd = random.randint(85, 100) / 100 if not force_dmg else force_dmg
         stab = 1.5 if move.move_type == attacker.poke_type else 1  # TODO terastall
         type_aff = 1 if target.poke_type not in TYPE_CHART[move.move_type] else TYPE_CHART[move.move_type][target.poke_type]
@@ -273,7 +275,7 @@ class PokeGame:
             attack_order[1][0].cur_hp = max(0, attack_order[1][0].cur_hp - self.damage_formula(attack_order[0][0].move_from_name(attack_order[0][1]), attack_order[0][0], attack_order[1][0], force_dmg))
             # second attacker must be alive to attack
             if attack_order[1][0].is_alive():
-                attack_order[0][0].cur_hp = max(0,  attack_order[0][0].cur_hp - self.damage_formula(attack_order[1][0].move_from_name(attack_order[1][1]), attack_order[1][0], attack_order[0][0], force_dmg))
+                attack_order[0][0].cur_hp = max(0, attack_order[0][0].cur_hp - self.damage_formula(attack_order[1][0].move_from_name(attack_order[1][1]), attack_order[1][0], attack_order[0][0], force_dmg))
             else:
                 if attack_order[1][2] == "p1":
                     ret["p1_moved"] = False

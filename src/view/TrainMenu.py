@@ -19,7 +19,7 @@ MVSEL = ["eps-greedy",
 
 ML_TYPES = ["perceptron"]
 
-AGENTS_TYPE = ["ml", "minimax", "random"]
+AGENTS_TYPE = ["ml", "mdm", "random"]
 
 
 class TrainMenu:

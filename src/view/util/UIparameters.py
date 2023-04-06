@@ -26,8 +26,6 @@ class TestUIParams(AbstractUIParams):
     def __init__(self):
         super().__init__()
         self.nb = 1000
-        self.minimax1 = 1
-        self.minimax2 = 1
 
     def set_nb(self, val):
         self.nb = abs(int(val))
@@ -59,5 +57,3 @@ class TrainUIParams(AbstractUIParams):
 class FightUIParams(AbstractUIParams):
     def __init__(self):
         super().__init__()
-        self.minimax1 = 1
-        self.minimax2 = 1

@@ -6,6 +6,7 @@ from src.game.PokeGame import PokeGame, TYPES
 from src.agents.PlayerHuman import PlayerHuman
 from src.agents.PlayerRandom import PlayerRandom
 from src.agents.PlayerML import PlayerML
+from src.agents.PlayerMDM import PlayerMDM
 
 
 class GameEngine:
@@ -85,6 +86,9 @@ class GameEngine:
 
             elif p == "human":
                 players.append(PlayerHuman())
+
+            elif p == "mdm":
+                players.append(PlayerMDM(n))
 
             elif p == "ml":
                 network, ls, lamb, act_f = load_ml_agent(ui_input.ml1 if p == 1 else ui_input.ml2)
