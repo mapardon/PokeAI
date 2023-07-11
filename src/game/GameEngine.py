@@ -1,8 +1,10 @@
 import copy
 import random
 
-from src.db.dbmanager import retrieve_team, load_ml_agent
-from src.game.PokeGame import PokeGame, TYPES
+from src.agents.PlayerComputer import PlayerComputer
+from src.db.dbmanager import retrieve_team, load_ml_agent, update_ml_agent
+from src.game.PokeGame import PokeGame
+from src.game.constants import TYPES
 from src.agents.PlayerHuman import PlayerHuman
 from src.agents.PlayerRandom import PlayerRandom
 from src.agents.PlayerML import PlayerML
@@ -13,7 +15,7 @@ class GameEngine:
     def __init__(self, ui_input, from_ui=None, to_ui=None):
         """
 
-        :param ui_input: Inputs retrieved from UI, type 'UIparams'
+        :param ui_input: Inputs retrieved from UI, type 'UIParams'
         :param from_ui: Shared object to communicate with UI (set to None if not called from UI)
         :param to_ui: Shared object to communicate with UI
         """
@@ -21,6 +23,7 @@ class GameEngine:
         # retrieve specified teams specs from database to initialize game
         self.game = None
         players = self.init_players(ui_input)
+        self.ml_names = [ui_input.ml1, ui_input.ml2]
 
         if ui_input.mode == "fight":
             self.fight_mode(players, ui_input, from_ui, to_ui)
@@ -53,7 +56,7 @@ class GameEngine:
 
             for _, p_name in zip(range(NB_POKEMONS), names):
                 p_type = random.choice(TYPES)
-                p_stats = [random.randint(80, 200) for _ in range(6)]
+                p_stats = [random.randint(80, 180) for _ in range(6)]
                 poke = [tuple([p_name, p_type] + p_stats)]
 
                 temp_mv = list()
@@ -77,6 +80,7 @@ class GameEngine:
         return out
 
     def init_players(self, ui_input):
+
         players = list()
         # TODO: train mode, both player in ML and same NN -> share object
         for p, n in zip([ui_input.agent1type, ui_input.agent2type], [1, 2]):
@@ -91,10 +95,13 @@ class GameEngine:
                 players.append(PlayerMDM(n))
 
             elif p == "ml":
-                network, ls, lamb, act_f = load_ml_agent(ui_input.ml1 if p == 1 else ui_input.ml2)
+                network, ls, lamb, act_f = load_ml_agent(ui_input.ml1 if n == "p1" else ui_input.ml2)
                 lr = ui_input.lr if ui_input.mode == "train" else None
                 mvsel = ui_input.mvsel if ui_input.mode == "train" else "eps-greedy"
                 players.append(PlayerML(ui_input.mode, n, network, ls, lamb, act_f, ui_input.eps, lr, mvsel))
+
+            elif p == "cpt":
+                players.append(PlayerComputer(n))
 
             else:
                 players.append(None)
@@ -103,6 +110,10 @@ class GameEngine:
     # game loops
 
     def fight_mode(self, players, ui_input, from_ui, to_ui):
+        """
+            Game loop for game in terminal, (human vs computer or computer vs computer)
+        """
+
         self.game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
         turn_nb = 1
 
@@ -130,9 +141,9 @@ class GameEngine:
             player2_move = players[1].make_move(self.game)
 
             # send to game
-            turn_res = self.game.apply_and_swap_states(player1_move, player2_move)
+            turn_res = self.game.play_round(player1_move, player2_move)
             input(turn_res)
-            player1_move  = "None" if player1_move is None else player1_move
+            player1_move = "None" if player1_move is None else player1_move
             player2_move = "None" if player2_move is None else player2_move
             last_moves = [player1_move * turn_res["p1_moved"] + " & " * (turn_res["p1_moved"] and turn_res["p1_fainted"]) + (self.game.game_state.on_field1.name + " fainted") * turn_res["p1_fainted"],
                           player2_move * turn_res["p2_moved"] + " & " * (turn_res["p2_moved"] and turn_res["p2_fainted"]) + (self.game.game_state.on_field2.name + " fainted") * turn_res["p2_fainted"]]
@@ -151,11 +162,11 @@ class GameEngine:
         result = "player 1 victory" if self.game.first_player_won() else "player 2 victory"
         to_ui.put([result])
 
-    def train_mode(self, players, ui_input, ui_communicate):
+    def train_mode(self, players, ui_input, ui_communicate=None):
         """
 
         :param players: 2-tuple with Player objects that will run "make_move" function
-        :param nb_games: number of games to be run
+        :param ui_input: UIParams object for the communication from the menu
         :param ui_communicate: shared object with master thread to communicate progression to UI (unused if not called
             from UI)
         :return: None
@@ -174,7 +185,7 @@ class GameEngine:
                 player1_move = players[0].make_move(self.game)
                 player2_move = players[1].make_move(self.game)
 
-                turn_res = self.game.apply_and_swap_states(player1_move, player2_move)
+                turn_res = self.game.play_round(player1_move, player2_move)
                 game_finished = self.game.is_end_state(None)
 
                 if not game_finished and self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
@@ -186,18 +197,19 @@ class GameEngine:
             if ui_communicate is not None:
                 ui_communicate["prog"] += 1
 
-            # TODO: both (?)
             victory = bool(self.game.first_player_won())
             if isinstance(players[0], PlayerML):
                 players[0].end_game(self.game, victory)
+                update_ml_agent(self.ml_names[0], players[0].network)
             if isinstance(players[1], PlayerML):
                 players[1].end_game(self.game, not victory)
+                update_ml_agent(self.ml_names[1], players[1].network)
 
-    def test_mode(self, players, ui_input, ui_communicate):
+    def test_mode(self, players, ui_input, ui_communicate=None):
         """
 
         :param players: 2-tuple with Player objects that will run "make_move" function
-        :param nb_games: number of games to be run
+        :param ui_input: UIParams object for the communication from the menu
         :param ui_communicate: shared object with master thread to communicate progression to UI
         :return: None
         """
@@ -215,11 +227,11 @@ class GameEngine:
                 player1_move = players[0].make_move(self.game)
                 player2_move = players[1].make_move(self.game)
 
-                self.game.apply_and_swap_states(player1_move, player2_move)
+                self.game.play_round(player1_move, player2_move)
                 game_finished = self.game.is_end_state(None)
 
                 if not game_finished and self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
-                    # turn change once attacks have been applied and fainted pokemons switched
+                    # turn change once attacks have been applied and fainted Pokemon switched
                     turn_nb += 1
 
             p1_victories += game_finished and self.game.first_player_won()

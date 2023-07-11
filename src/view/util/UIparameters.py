@@ -1,7 +1,7 @@
 
 
 class AbstractUIParams:
-    """ Contain the parameters gathered from menus and forwarded to controllers. Bound to behave as a C struct so
+    """ Contain the parameters gathered from menus and forwarded to controllers. Bound to behave as a struct so
     members will be accessed directly. """
 
     def __init__(self):

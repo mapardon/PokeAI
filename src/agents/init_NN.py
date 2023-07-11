@@ -1,6 +1,6 @@
 import numpy as np
 
-N_INPUT = 55
+N_INPUT = 22
 N_OUT = 1
 
 
@@ -23,6 +23,7 @@ def init_he(layer_prev, layer_next):
 def initialize_NN(shape, init_mode, in_out_specified=False):
     """
 ²   :param shape: list of integers indicating size of intermediate layers (input and output excluded) """
+
     if not in_out_specified:
         shape = [N_INPUT] + shape + [N_OUT]
     weights = list()

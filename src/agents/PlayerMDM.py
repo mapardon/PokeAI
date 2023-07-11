@@ -1,5 +1,3 @@
-import random
-
 from src.agents.AbstractPlayer import AbstractPlayer
 
 

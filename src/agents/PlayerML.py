@@ -76,6 +76,7 @@ class PlayerML(AbstractPlayer):
         """ Format game states then call adequate function to choose a move (and eventually learn)
 
         :returns: Selected move """
+        # FIXME: acting weird
 
         options = list()
         moves_name = dict()
@@ -86,12 +87,9 @@ class PlayerML(AbstractPlayer):
                 moves_name[tuple(bin_state)] = (m1, m2)
         cur_state = game.get_cur_state()
 
+        new_s, best_p_out = self.move_selection(options)
         if self.mode == "train":  # Move + update weight matrices
-            new_s, best_p_out = self.move_selection(options)
             self.backpropagation(game, cur_state, new_s, best_p_out)
-
-        else:  # match or test
-            new_s = self.eps_greedy_move(options)[0]
 
         new_s_name = moves_name[tuple(new_s)]
         new_s_name = new_s_name[0] if self.role == "p1" else new_s_name[1]
@@ -111,11 +109,10 @@ class PlayerML(AbstractPlayer):
         :returns tuple containing:
                 * list of the moves evaluated as most promising by the network (in case several moves are equally best)
                 * the probability estimation. """
-        # TODO: player 2 pov
 
         best_moves = list()
         best_value = None
-        c = 1 if self.role else -1  # game is viewed under 2nd player pov
+        c = 1 if self.role == "p1" else -1  # game is viewed under 1st player pov
 
         for m in moves:
             estimation = self.forward_pass(m)
@@ -156,8 +153,8 @@ class PlayerML(AbstractPlayer):
 
         res = state
         for layer in self.network[:-1]:
-            res = sigmoid(np.dot(layer, res))
-        res = sigmoid(self.network[-1].dot(res))
+            res = self.act_f(np.dot(layer, res))
+        res = self.act_f(self.network[-1].dot(res))
         return res
 
     def q_learning_backpropagation(self, game, cur_state, chosen_state, best_next_prob):

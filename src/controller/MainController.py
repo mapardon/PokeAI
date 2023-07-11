@@ -33,3 +33,6 @@ class MainController:
 
             elif ui_input["mode"] == "manage":
                 ManageController()
+
+            elif ui_input["mode"] == "online":
+                OnlineController()

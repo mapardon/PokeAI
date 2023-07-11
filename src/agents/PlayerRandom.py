@@ -8,7 +8,7 @@ class PlayerRandom(AbstractPlayer):
         super(PlayerRandom, self).__init__(role)
 
     def make_move(self, game):
-        """ :returns Random move among playable moves """
+        """ :returns: Random move among playable moves """
 
         options = game.get_moves_from_state(self.role, None)
         return random.choice(options)
