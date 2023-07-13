@@ -1,3 +1,4 @@
+import copy
 import random, unittest
 
 from parameterized import parameterized
@@ -108,13 +109,17 @@ class TestCasePokeGame(unittest.TestCase):
 
     def test_get_player1_view(self):
         game = PokeGame(team_specs_for_game)
-        exp = PokeGame.GameStruct("player1", team_specs_for_game)
+        exp = PokeGame.GameStruct(team_specs_for_game)
+        exp.team2 = gen_team_unknown()
+        exp.on_field2 = exp.team2[0]
         exp.on_field2.name, exp.on_field2.poke_type, exp.on_field2.cur_hp, exp.on_field2.hp = "d1", "WATER", 100, 100
         self.assertEqual(game.get_player1_view(), exp)
 
     def test_get_player2_view(self):
         game = PokeGame(team_specs_for_game)
-        exp = PokeGame.GameStruct("player2", team_specs_for_game)
+        exp = PokeGame.GameStruct(team_specs_for_game)
+        exp.team1 = gen_team_unknown()
+        exp.on_field1 = exp.team1[0]
         exp.on_field1.name, exp.on_field1.poke_type, exp.on_field1.cur_hp, exp.on_field1.hp = "p1", "FIRE", 100, 100
         self.assertEqual(game.get_player2_view(), exp)
 
