@@ -56,7 +56,7 @@ class GameEngine:
 
             for _, p_name in zip(range(NB_POKEMONS), names):
                 p_type = random.choice(TYPES)
-                p_stats = [random.randint(80, 180) for _ in range(6)]
+                p_stats = [random.randint(80, 180) for _ in range(4)]
                 poke = [tuple([p_name, p_type] + p_stats)]
 
                 temp_mv = list()

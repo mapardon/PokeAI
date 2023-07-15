@@ -3,7 +3,6 @@ import random, unittest
 from parameterized import parameterized
 from src.game.PokeGame import PokeGame
 from src.game.Pokemon import Pokemon, Move
-from src.game.constants import MOVES
 
 random.seed(19)
 
@@ -21,6 +20,9 @@ team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100),
                          (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
                         (("d2", "DRAGON", 100, 80, 100, 80, 100, 100),
                          (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]
+
+dummy_poke1 = Pokemon("p1", "GROUND", (100, 100, 100, 100, 100, 100), (Move("heavy_ground", "GROUND", 100), Move("light_flying", "FLYING", 50)))
+dummy_poke2 = Pokemon("p2", "DARK", (90, 110, 90, 110, 90, 110), (Move("heavy_dark", "DARK", 100), Move("light_fairy", "FAIRY", 50)))
 
 """
  *
@@ -124,7 +126,14 @@ class MyTestCase(unittest.TestCase):
            (("d2", "DRAGON", 100, 80, 100, 80, 100, 100), (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
     ])
     def test_directly_available_info_multiple(self, test_player, player1_moves, player2_moves, exp_specs):
-        """ Try to cover as much as possible different case that could occur during a game """
+        """ Try to cover as much as possible different case that could occur during a game
+
+        :param test_player: 'p1' or 'p2', indicating tested player
+        :param player1_moves: list of names of moves performed by first player
+        :param player2_moves: same for second player
+        :param exp_specs: specifications to create GameStruct object corresponding to state that should have been
+            reached by tested function
+        """
 
         game = PokeGame(team_specs_for_game)
         for player1_move, player2_move in zip(player1_moves, player2_moves):
@@ -161,7 +170,12 @@ class MyTestCase(unittest.TestCase):
 
         self.assertEqual(test_view, exp_view)
 
-    def test_reverse_attack_calculator(self):
+    @parameterized.expand([
+        ()
+    ])
+    def test_reverse_attack_calculator(self, p1: Pokemon, p2: Pokemon):
+        hp_loss = PokeGame.damage_formula(p1.moves[0], p1, p2, 0.85)
+        PokeGame.reverse_attack_calculator(p1.moves[0], p1, p2, hp_loss, 0.85, True)
         self.assertEqual(True, True)
 
     def test_reverse_defense_calculator(self):

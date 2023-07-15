@@ -77,7 +77,7 @@ class PokeGame:
                 mvs = list()
                 for m in p.moves:
                     mvs += [TYPES_INDEX[m.move_type], m.base_pow]
-                num_state += [TYPES_INDEX[p.poke_type], p.cur_hp, p.atk, p.des, p.spa, p.spd, p.spe] + mvs
+                num_state += [TYPES_INDEX[p.poke_type], p.cur_hp, p.atk, p.des, p.spe] + mvs
         return num_state
 
     def get_cur_state(self):

@@ -13,22 +13,22 @@ random.seed(19)
  *
 """
 
-team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100),
+team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100),
                          (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
-                        (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100),
+                        (("p2", "ELECTRIC", 100, 80, 100, 100),
                          (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
-                       [(("d1", "WATER", 100, 100, 100, 100, 100, 100),
+                       [(("d1", "WATER", 100, 100, 100, 100),
                          (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
-                        (("d2", "DRAGON", 100, 80, 100, 80, 100, 100),
+                        (("d2", "DRAGON", 100, 80, 100, 100),
                          (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]
 
-team_specs_for_game2 = [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100),
+team_specs_for_game2 = [[(("p1", "FIRE", 100, 100, 100, 100),
                           (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
-                         (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100),
+                         (("p2", "ELECTRIC", 100, 80, 100, 100),
                           (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
-                        [(("d1", "WATER", 100, 100, 100, 100, 100, 99),
+                        [(("d1", "WATER", 100, 100, 100, 99),
                           (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
-                         (("d2", "DRAGON", 100, 80, 100, 80, 100, 100),
+                         (("d2", "DRAGON", 100, 80, 100, 100),
                           (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]
 
 
@@ -53,18 +53,18 @@ def gen_unknown_moves():
 
 
 def gen_dummy_team_1():
-    return [Pokemon("p1", "FIRE", [100, 100, 100, 100, 100, 100], gen_move_list_1()),
-            Pokemon("p2", "ELECTRIC", [100, 80, 100, 80, 100, 100], gen_move_list_2())]
+    return [Pokemon("p1", "FIRE", [100, 100, 100, 100], gen_move_list_1()),
+            Pokemon("p2", "ELECTRIC", [100, 80, 100, 100], gen_move_list_2())]
 
 
 def gen_dummy_team_2():
-    return [Pokemon("d1", "WATER", [100, 100, 100, 100, 100, 100], gen_move_list_3()),
-            Pokemon("d2", "DRAGON", [100, 80, 100, 80, 100, 100], gen_move_list_4())]
+    return [Pokemon("d1", "WATER", [100, 100, 100, 100], gen_move_list_3()),
+            Pokemon("d2", "DRAGON", [100, 80, 100, 100], gen_move_list_4())]
 
 
 def gen_team_unknown():
-    return [Pokemon(None, None, [None] * 6, gen_unknown_moves()),
-            Pokemon(None, None, [None] * 6, gen_unknown_moves())]
+    return [Pokemon(None, None, [None] * 4, gen_unknown_moves()),
+            Pokemon(None, None, [None] * 4, gen_unknown_moves())]
 
 
 """
@@ -153,18 +153,18 @@ class TestCasePokeGame(unittest.TestCase):
         self.assertListEqual(game.get_moves_from_state(player, game.get_cur_state()), expected_output)
 
     @parameterized.expand([
-        (Move("light_fire", "FIRE", 50), Pokemon("p1", "FIRE", [100] * 6, [None]),
-         Pokemon("p2", "NORMAL", [100] * 6, [None]), 56),  # stab, normal efficiency
-        (Move("light_fire", "FIRE", 50), Pokemon("p1", "FIRE", [100] * 6, [None]),
-         Pokemon("p2", "WATER", [100] * 6, [None]), 28),  # stab, resistance
-        (Move("light_fire", "FIRE", 50), Pokemon("p1", "FIRE", [100] * 6, [None]),
-         Pokemon("p2", "GRASS", [100] * 6, [None]), 112),  # stab, weakness
-        (Move("light_fire", "FIRE", 50), Pokemon("p1", "STEEL", [100] * 6, [None]),
-         Pokemon("p2", "NORMAL", [100] * 6, [None]), 37),  # no stab, normal efficiency
-        (Move("light_fire", "FIRE", 50), Pokemon("p1", "STEEL", [100] * 6, [None]),
-         Pokemon("p2", "WATER", [100] * 6, [None]), 18),  # no stab, resistance
-        (Move("light_fire", "FIRE", 50), Pokemon("p1", "STEEL", [100] * 6, [None]),
-         Pokemon("p2", "GRASS", [100] * 6, [None]), 74)  # no stab, weakness
+        (Move("light_fire", "FIRE", 50), Pokemon("p1", "FIRE", [100] * 4, [None]),
+         Pokemon("p2", "NORMAL", [100] * 4, [None]), 56),  # stab, normal efficiency
+        (Move("light_fire", "FIRE", 50), Pokemon("p1", "FIRE", [100] * 4, [None]),
+         Pokemon("p2", "WATER", [100] * 4, [None]), 28),  # stab, resistance
+        (Move("light_fire", "FIRE", 50), Pokemon("p1", "FIRE", [100] * 4, [None]),
+         Pokemon("p2", "GRASS", [100] * 4, [None]), 112),  # stab, weakness
+        (Move("light_fire", "FIRE", 50), Pokemon("p1", "STEEL", [100] * 4, [None]),
+         Pokemon("p2", "NORMAL", [100] * 4, [None]), 37),  # no stab, normal efficiency
+        (Move("light_fire", "FIRE", 50), Pokemon("p1", "STEEL", [100] * 4, [None]),
+         Pokemon("p2", "WATER", [100] * 4, [None]), 18),  # no stab, resistance
+        (Move("light_fire", "FIRE", 50), Pokemon("p1", "STEEL", [100] * 4, [None]),
+         Pokemon("p2", "GRASS", [100] * 4, [None]), 74)  # no stab, weakness
     ])
     def test_damage(self, move, attacker, target, expect_dmg):
         dmg = PokeGame.damage_formula(move, attacker, target, 0.85)
@@ -210,10 +210,10 @@ class TestCasePokeGame(unittest.TestCase):
         self.assertEqual(res, exp_out)
 
     def test_get_numeric_repr(self):
-        exp = [1, 100, 100, 100, 100, 100, 100, 10, 50, 1, 100,
-               3, 100, 80, 100, 80, 100, 100, 4, 50, 3, 100,
-               2, 100, 100, 100, 100, 100, 100, 16, 50, 2, 100,
-               14, 100, 80, 100, 80, 100, 100, 11, 50, 14, 100]
+        exp = [1, 100, 100, 100, 100, 10, 50, 1, 100,
+               3, 100, 80, 100, 100, 4, 50, 3, 100,
+               2, 100, 100, 100, 100, 16, 50, 2, 100,
+               14, 100, 80, 100, 100, 11, 50, 14, 100]
         game = PokeGame(team_specs_for_game)
         self.assertListEqual(game.get_numeric_repr(game.game_state), exp)
 
