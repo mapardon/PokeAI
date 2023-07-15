@@ -5,6 +5,13 @@ from math import floor, ceil
 from src.game.Pokemon import Pokemon, Move
 from src.game.constants import TYPES_INDEX, TYPE_CHART, MOVES
 
+class TeamSpecs:
+    def __init__(self):
+        self.on_field1_idx = int()
+        self.team1 = list()
+        self.on_field2_idx = int()
+        self.team2 = list()
+
 
 class PokeGame:
 
@@ -25,16 +32,19 @@ class PokeGame:
             self.on_field1 = self.team1[0]
             self.on_field2 = self.team2[0]
 
-        def team_from_specs(self, team_specs):
-            pass
-
         def __eq__(self, other):
             """ Consider Pokémon and attacks must be in same order """
 
             test = True
+            # teams
             for ts, to in zip((self.team1, self.team2), (other.team1, other.team2)):
                 for ps, po in zip(ts, to):
                     test &= ps == po and ps.cur_hp == po.cur_hp  # as we are comparing states, cur_hp of Pokémon matter
+
+            # on-field
+            test &= self.on_field1.name == other.on_field1.name
+            test &= self.on_field2.name == other.on_field2.name
+
             return test
 
     def __init__(self, teams_specs):
@@ -74,10 +84,13 @@ class PokeGame:
         return copy.deepcopy(self.game_state)
 
     def get_player1_view(self):
-        """ Returns a representation of the game state from the point of view of the first player """
+        """ Returns a copy of the GameStruct object related to first player point of view """
+
         return copy.deepcopy(self.player1_view)
 
     def get_player2_view(self):
+        """ Returns a copy of the GameStruct object related to second player point of view """
+
         return copy.deepcopy(self.player2_view)
 
     def get_moves_from_state(self, player, state):
@@ -258,20 +271,31 @@ class PokeGame:
         own_team, other_team = (self.player1_view.team1, self.player1_view.team2) if player == "p1" else (self.player2_view.team2, self.player2_view.team1)
 
         # Own on-field
-        own_of = own_team[[i for i, p in enumerate(own_team) if p.name == own_of.name][0]]
+        own_of = own_team[[i for i, p in enumerate(own_team) if p.name == real_own.name][0]]
+        # update player view of reference
+        if player == "p1":
+            self.player1_view.on_field1 = own_of
+        elif player == "p2":
+            self.player2_view.on_field2 = own_of
         own_of.cur_hp = real_own.cur_hp
 
         # Opponent on-field
-        if other_of.name not in [p.name for p in other_team]:  # unknown name, opponent switched on new Pokémon
+        if real_other.name not in [p.name for p in other_team]:  # unknown name, opponent switched on new Pokémon
             unknown_poke_index = [p.name for p in other_team].index(None)
             other_of = other_team[unknown_poke_index]
+
+            # update player view of reference
+            if player == "p1":
+                self.player1_view.on_field2 = other_of
+            elif player == "p2":
+                self.player2_view.on_field1 = other_of
 
         # HP and type changes (visible information)
         other_of.name, other_of.poke_type, other_of.cur_hp, other_of.hp = real_other.name, real_other.poke_type,\
             real_other.cur_hp, real_other.hp
 
         # Attack used
-        if opponent_move not in [m.name for m in other_of.moves]:  # opponent used previously unseen attack
+        if opponent_move not in [m.name for m in other_of.moves] and "switch" not in opponent_move:  # opponent used previously unseen attack
             unknown_move_index = 0 if other_of.moves[0].name is None else 1  # only have 2 attacks
             real_move = Move(opponent_move, *MOVES[opponent_move])
             other_of.moves[unknown_move_index] = Move(real_move.name, real_move.move_type, real_move.base_pow)

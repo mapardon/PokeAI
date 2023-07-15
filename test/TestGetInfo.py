@@ -32,48 +32,134 @@ team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100),
 class MyTestCase(unittest.TestCase):
 
     @parameterized.expand([
-        ("p1", "light_psychic", "light_steel",
-         Pokemon("p1", "FIRE", tuple([100]) * 7, [Move("light_psychic", "PSYCHIC", 50), Move(None, None, None)]),
-         Pokemon("d1", "WATER", tuple([100]) * 7, [Move("light_steel", "STEEL", 50), Move(None, None, None)])),
-        ("p2", "light_psychic", "light_steel",
-         Pokemon("p1", "FIRE", tuple([100]) * 7, [Move("light_psychic", "PSYCHIC", 50), Move(None, None, None)]),
-         Pokemon("d1", "WATER", tuple([100]) * 7, [Move("light_steel", "STEEL", 50), Move(None, None, None)])),
-        ("p1", "heavy_fire", "light_steel",
-         Pokemon("p1", "FIRE", tuple([100]) * 7, [Move("heavy_fire", "FIRE", 100), Move(None, None, None)]),
-         Pokemon("d1", "WATER", tuple([100]) * 7, [Move("light_steel", "STEEL", 50), Move(None, None, None)])),
-        ("p2", "heavy_fire", "light_steel",
-         Pokemon("p1", "FIRE", tuple([100]) * 7, [Move("heavy_fire", "FIRE", 100), Move(None, None, None)]),
-         Pokemon("d1", "WATER", tuple([100]) * 7, [Move("light_steel", "STEEL", 50), Move(None, None, None)]))
+        ("p1", ["light_psychic"], ["light_steel"],
+         [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100), (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+          [(("d1", "WATER", 100, None, None, None, None, None), (("light_steel", "STEEL", 50), (None, None, None))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))]]),
+        ("p2", ["light_psychic"], ["light_steel"],
+         [[(("p1", "FIRE", 100, None, None, None, None, None), (("light_psychic", "PSYCHIC", 50), (None, None, None))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100, 100, 100), (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80, 100, 100), (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+        ("p1", ["heavy_fire"], ["light_steel"],
+         [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100), (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+          [(("d1", "WATER", 100, None, None, None, None, None), (("light_steel", "STEEL", 50), (None, None, None))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))]]),
+        ("p2", ["heavy_fire"], ["light_steel"],
+         [[(("p1", "FIRE", 100, None, None, None, None, None), (("heavy_fire", "FIRE", 100), (None, None, None))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100, 100, 100), (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80, 100, 100), (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+        ("p1", ["light_psychic"], ["switch d2"],
+         [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100), (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+          [(("d1", "WATER", 100, None, None, None, None, None), ((None, None, None), (None, None, None))),
+           (("d2", "DRAGON", 100, None, None, None, None, None), ((None, None, None), (None, None, None)))]]),
+        ("p2", ["light_psychic"], ["switch d2"],
+         [[(("p1", "FIRE", 100, None, None, None, None, None), (("light_psychic", "PSYCHIC", 50), (None, None, None))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100, 100, 100), (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80, 100, 100), (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+        ("p1", ["switch p2"], ["light_steel"],
+         [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100), (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+          [(("d1", "WATER", 100, None, None, None, None, None), (("light_steel", "STEEL", 50), (None, None, None))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))]]),
+        ("p2", ["switch p2"], ["light_steel"],
+         [[(("p1", "FIRE", 100, None, None, None, None, None), ((None, None, None), (None, None, None))),
+           (("p2", "ELECTRIC", 100, None, None, None, None, None), ((None, None, None), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100, 100, 100), (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80, 100, 100), (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+        ("p1", ["switch p2"], ["switch d2"],
+         [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100), (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+          [(("d1", "WATER", 100, None, None, None, None, None), ((None, None, None), (None, None, None))),
+           (("d2", "DRAGON", 100, None, None, None, None, None), ((None, None, None), (None, None, None)))]]),
+        ("p2", ["switch p2"], ["switch d2"],
+         [[(("p1", "FIRE", 100, None, None, None, None, None), ((None, None, None), (None, None, None))),
+           (("p2", "ELECTRIC", 100, None, None, None, None, None), ((None, None, None), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100, 100, 100), (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80, 100, 100), (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+        ("p1", ("light_psychic", "light_psychic"), ("light_steel", "light_steel"),
+         [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100), (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+          [(("d1", "WATER", 100, None, None, None, None, None), (("light_steel", "STEEL", 50), (None, None, None))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))]]),
+        ("p2", ("light_psychic", "light_psychic"), ("light_steel", "light_steel"),
+         [[(("p1", "FIRE", 100, None, None, None, None, None), (("light_psychic", "PSYCHIC", 50), (None, None, None))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100, 100, 100), (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80, 100, 100), (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+        ("p1", ("light_psychic", "switch p2"), ("heavy_water", None),
+         [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100), (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+          [(("d1", "WATER", 100, None, None, None, None, None), (("heavy_water", "WATER", 100), (None, None, None))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))]]),
+        ("p2", ("light_psychic", "switch p2"), ("heavy_water", None),
+         [[(("p1", "FIRE", 100, None, None, None, None, None), (("light_psychic", "PSYCHIC", 50), (None, None, None))),
+           (("p2", "ELECTRIC", 100, None, None, None, None, None), ((None, None, None), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100, 100, 100), (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80, 100, 100), (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+        ("p1", ("light_psychic", "heavy_fire"), ("light_steel", "light_steel"),
+         [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100), (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+          [(("d1", "WATER", 100, None, None, None, None, None), (("light_steel", "STEEL", 50), (None, None, None))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))]]),
+        ("p2", ("light_psychic", "heavy_fire"), ("light_steel", "light_steel"),
+         [[(("p1", "FIRE", 100, None, None, None, None, None), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100, 100, 100), (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80, 100, 100), (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+        ("p1", ("light_psychic", "heavy_fire"), ("switch d2", "light_bug"),
+         [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100), (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+          [(("d1", "WATER", 100, None, None, None, None, None), ((None, None, None), (None, None, None))),
+           (("d2", "DRAGON", 100, None, None, None, None, None), (("light_bug", "BUG", 50), (None, None, None)))]]),
+        ("p2", ("light_psychic", "heavy_fire"), ("light_steel", "light_steel"),
+         [[(("p1", "FIRE", 100, None, None, None, None, None), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           ((None, None, None, None, None, None, None, None), ((None, None, None), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100, 100, 100), (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80, 100, 100), (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
     ])
-    def test_directly_available_info_1(self, player: str, player1_move: Move, player2_move: Move, p1: Pokemon, p2: Pokemon):
-        """ Both attacked """
+    def test_directly_available_info_multiple(self, test_player, player1_moves, player2_moves, exp_specs):
+        """ Try to cover as much as possible different case that could occur during a game """
 
         game = PokeGame(team_specs_for_game)
-        game.apply_player_moves(game.game_state, player1_move, player2_move, 0.85)
-        game.directly_available_info(player, player2_move if player == "p1" else player1_move)
+        for player1_move, player2_move in zip(player1_moves, player2_moves):
+            game.apply_player_moves(game.game_state, player1_move, player2_move, 0.85)
+            game.directly_available_info(test_player, player2_move if test_player == "p1" else player1_move)
 
-        exp = PokeGame(team_specs_for_game)
-        dmg_on_p2 = PokeGame.damage_formula(p1.moves[0], p1, p2, 0.85)
-        dmg_on_p1 = PokeGame.damage_formula(p2.moves[0], p2, p1, 0.85)
-        exp.player1_view.team2[0].cur_hp -= dmg_on_p2
-        exp.player1_view.team1[0].cur_hp -= dmg_on_p1
-        exp.player1_view.team2[0].moves[0] = Move(player2_move, MOVES[player2_move][0], MOVES[player2_move][1])
-        exp.player2_view.team1[0].cur_hp -= dmg_on_p1
-        exp.player2_view.team2[0].cur_hp -= dmg_on_p2
-        exp.player2_view.team1[0].moves[0] = Move(player1_move, MOVES[player1_move][0], MOVES[player1_move][1])
+        exp = PokeGame(exp_specs)
+        if test_player == "p1":
+            exp.player1_view = PokeGame.GameStruct(exp_specs)
+        else:
+            exp.player2_view = PokeGame.GameStruct(exp_specs)
+        exp_view = exp.player1_view if test_player == "p1" else exp.player2_view
 
-        test1 = game.get_player1_view() if player == "p1" else game.get_player2_view()
-        test2 = exp.get_player1_view() if player == "p1" else exp.get_player2_view()
+        p1_last_switch = None
+        for p1_mv in player1_moves:
+            if p1_mv is not None and "switch" in p1_mv:
+                p1_last_switch = p1_mv
+        p2_last_switch = None
+        for p2_mv in player2_moves:
+            if p2_mv is not None and "switch" in p2_mv:
+                p2_last_switch = p2_mv
+        if p1_last_switch is not None:
+            exp_view.on_field1 = exp_view.team1[0] if exp_view.team1[0].name in p1_last_switch else exp_view.team1[1]
+        if p2_last_switch is not None:
+            exp_view.on_field2 = exp_view.team2[0] if exp_view.team2[0].name in p2_last_switch else exp_view.team2[1]
 
-        if test1 != test2:
-            print()
+        # lower hp after attacks (copy from tested game object, damage formula is not the tested item here)
+        for t1, t2 in zip([exp_view.team1, exp_view.team2], [game.game_state.team1, game.game_state.team2]):
+            for p1, p2 in zip(t1, t2):
+                if p1.cur_hp is not None:
+                    p1.cur_hp = p2.cur_hp
 
-        self.assertEqual(test1, test2)
+        test_view = game.get_player1_view() if test_player == "p1" else game.get_player2_view()
 
-    def test_directly_available_info_2(self):
-        """ p1 attacked and p2 switched """
-        game = PokeGame(team_specs_for_game)
-        self.assertEqual(True, True)
+        self.assertEqual(test_view, exp_view)
 
     def test_reverse_attack_calculator(self):
         self.assertEqual(True, True)
