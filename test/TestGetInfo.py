@@ -1,8 +1,10 @@
+import copy
 import random, unittest
 
 from parameterized import parameterized
 from src.game.PokeGame import PokeGame
 from src.game.Pokemon import Pokemon, Move
+from src.game.constants import MIN_STAT, MAX_STAT
 
 random.seed(19)
 
@@ -21,8 +23,10 @@ team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100),
                         (("d2", "DRAGON", 100, 80, 100, 80, 100, 100),
                          (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]
 
-dummy_poke1 = Pokemon("p1", "GROUND", (100, 100, 100, 100, 100, 100), (Move("heavy_ground", "GROUND", 100), Move("light_flying", "FLYING", 50)))
-dummy_poke2 = Pokemon("p2", "DARK", (90, 110, 90, 110, 90, 110), (Move("heavy_dark", "DARK", 100), Move("light_fairy", "FAIRY", 50)))
+dummy_poke1 = Pokemon("p1", "GROUND", (100, 100, 100, 100, 100, 100),
+                      (Move("heavy_ground", "GROUND", 100), Move("light_flying", "FLYING", 50)))
+dummy_poke2 = Pokemon("p2", "DARK", (90, 110, 90, 110, 90, 110),
+                      (Move("heavy_dark", "DARK", 100), Move("light_fairy", "FAIRY", 50)))
 
 """
  *
@@ -171,15 +175,42 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(test_view, exp_view)
 
     @parameterized.expand([
-        ()
+        (Pokemon("p1", "STEEL", (100, 100, 100, 100), (Move("metal-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-normal", "FLYING", (100, 100, 100, 100), (Move("flying-atk", "FLYING", 95), Move(None, None, None)))),
+        (Pokemon("p1", "STEEL", (100, 120, 80, 80), (Move("metal-atk", "STEEL", 55), Move(None, None, None))),
+         Pokemon("test-effective", "ICE", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
+        (Pokemon("pkmn1", "STEEL", (100, 120, 100, 80), (Move("metal-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-KO", "NORMAL", (10, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
+        (Pokemon("pkmn1", "GHOST", (100, 120, 100, 80), (Move("ghost-atk", "GHOST", 95), Move(None, None, None))),
+         Pokemon("test-ineffective", "NORMAL", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
+        (Pokemon("pkmn1", "STEEL", (100, MIN_STAT, 100, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-minatk", "FLYING", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
+        (Pokemon("pkmn1", "STEEL", (100, MAX_STAT, 80, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-maxatk", "FLYING", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None))))
     ])
     def test_reverse_attack_calculator(self, p1: Pokemon, p2: Pokemon):
-        hp_loss = PokeGame.damage_formula(p1.moves[0], p1, p2, 0.85)
-        PokeGame.reverse_attack_calculator(p1.moves[0], p1, p2, hp_loss, 0.85, True)
-        self.assertEqual(True, True)
+        hp_loss = PokeGame.damage_formula(p1.moves[0], p1, p2)
+        lo, hi = PokeGame.reverse_attack_calculator(p1.moves[0], copy.copy(p1), p2, hp_loss)
+        self.assertTrue(lo <= p1.atk <= hi, msg="{} <= {} <= {}".format(lo, p1.atk, hi))
 
-    def test_reverse_defense_calculator(self):
-        self.assertEqual(True, True)
+    @parameterized.expand([
+        (Pokemon("p1", "STEEL", (100, 100, 100, 100), (Move("metal-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-normal", "FLYING", (100, 100, 100, 100), (Move("flying-atk", "FLYING", 95), Move(None, None, None)))),
+        (Pokemon("p1", "STEEL", (100, 120, 80, 80), (Move("metal-atk", "STEEL", 55), Move(None, None, None))),
+         Pokemon("test-effective", "ICE", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
+        (Pokemon("pkmn1", "STEEL", (100, 120, 100, 80), (Move("metal-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-KO", "NORMAL", (10, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
+        (Pokemon("pkmn1", "GHOST", (100, 120, 100, 80), (Move("ghost-atk", "GHOST", 95), Move(None, None, None))),
+         Pokemon("test-ineffective", "NORMAL", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
+        (Pokemon("pkmn1", "STEEL", (100, 100, 100, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-mindef", "FLYING", (100, 120, MIN_STAT, 80), (Move(None, None, None), Move(None, None, None)))),
+        (Pokemon("pkmn1", "STEEL", (100, 100, 80, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-maxdef", "FLYING", (100, 100, MAX_STAT, 80), (Move(None, None, None), Move(None, None, None))))
+    ])
+    def test_reverse_defense_calculator(self, p1: Pokemon, p2: Pokemon):
+        hp_loss = PokeGame.damage_formula(p1.moves[0], p1, p2)
+        lo, hi = PokeGame.reverse_defense_calculator(p1.moves[0], copy.copy(p1), p2, hp_loss)
+        self.assertTrue(lo <= p2.des <= hi, msg="{} <= {} <= {}".format(lo, p2.des, hi))
 
     def test_statistic_estimation(self):
         self.assertEqual(True, True)

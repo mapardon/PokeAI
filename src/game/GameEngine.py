@@ -4,7 +4,7 @@ import random
 from src.agents.PlayerComputer import PlayerComputer
 from src.db.dbmanager import retrieve_team, load_ml_agent, update_ml_agent
 from src.game.PokeGame import PokeGame
-from src.game.constants import TYPES
+from src.game.constants import TYPES, MIN_HP, MAX_HP, MIN_STAT, MAX_STAT, MIN_POW, MAX_POW
 from src.agents.PlayerHuman import PlayerHuman
 from src.agents.PlayerRandom import PlayerRandom
 from src.agents.PlayerML import PlayerML
@@ -56,13 +56,13 @@ class GameEngine:
 
             for _, p_name in zip(range(NB_POKEMONS), names):
                 p_type = random.choice(TYPES)
-                p_stats = [random.randint(80, 180) for _ in range(4)]
+                p_stats = [random.randint(MIN_HP, MAX_HP)] + [random.randint(MIN_STAT, MAX_STAT) for _ in range(3)]
                 poke = [tuple([p_name, p_type] + p_stats)]
 
                 temp_mv = list()
                 # STAB
                 a_type = poke[0][1]
-                a_power = random.choice([50, 100])
+                a_power = random.choice([MIN_POW, MAX_POW])
                 a_name = ("light_" if a_power == 50 else "heavy_") + a_type.lower()
                 temp_mv.append((a_name, a_type, a_power))
 

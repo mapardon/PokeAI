@@ -3,7 +3,8 @@ import random
 from math import floor, ceil
 
 from src.game.Pokemon import Pokemon, Move
-from src.game.constants import TYPES_INDEX, TYPE_CHART, MOVES
+from src.game.constants import TYPES_INDEX, TYPE_CHART, MOVES, MIN_STAT, MAX_STAT
+
 
 class TeamSpecs:
     def __init__(self):
@@ -301,45 +302,96 @@ class PokeGame:
             other_of.moves[unknown_move_index] = Move(real_move.name, real_move.move_type, real_move.base_pow)
 
     @staticmethod
-    def reverse_attack_calculator(move, attacker, target, hp_loss, force_dmg=0.0, upper=True):
+    def reverse_attack_calculator(move, attacker, target, hp_loss):
         """
         From a move, target and hp loss, compute the minimum value that the attack stat must have had.
-        NB: Due to floor divisions in damage formula, inverse calculation is not perfectly computable and a lower and
-        upper bound can be considered (cf. parameters).
+        NB: Some parts of the damage formula make the inverse calculation not perfectly computable:
+         - floor divisions
+         - random factor
+        Therefore, a lower and upper bound are considered.
 
         :param move: Move object corresponding to attack used
         :param attacker: Pokemon object corresponding to the Pokémon using the move
         :param target: Pokemon object corresponding to the Pokémon receiving the move
         :param hp_loss: Amount of health point lost by target
-        :param force_dmg: force value of random parameter (should be in [0.85; 1], set 1 if don't want to deal with it)
-        :param upper: This parameter indicates whether to consider the highest or lowest case.
-        :return: Evaluation of statistic
+        :return: Lowest and highest estimations of statistic
         """
 
-        if upper:
-            hp_loss += 1
+        attacker = copy.copy(attacker)
+        max_atk = None  # hitting min power
+        min_atk = None  # hitting max power
 
-        bonus = force_dmg * (1.5 if move.move_type == attacker.poke_type else 1) * TYPE_CHART[move.move_type][target.poke_type]
-        atk_est = (50 * target.des * (hp_loss / bonus - 2)) / (42 * move.base_pow)
+        # test edge cases
+        attacker.atk = MIN_STAT
+        min_80, max_80 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1.0)
+        attacker.atk = MAX_STAT
+        min_180, max_180 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1.0)
+        if hp_loss < min_80 or hp_loss == 0:  # too few remaining HP or ineffective move
+            min_atk, max_atk = MIN_STAT, MAX_STAT
+        elif min_80 <= hp_loss < max_80:
+            min_atk = MIN_STAT
+        elif min_180 <= hp_loss < max_180:
+            max_atk = MAX_STAT
 
-        if upper:  # strictly lower bound
-            atk_est = atk_est - 1 if atk_est.is_integer() else floor(atk_est)
-        else:  # lower bound, inclusive
-            atk_est = atk_est if atk_est.is_integer() else ceil(atk_est)
+        atk = MIN_STAT
+        while atk <= MAX_STAT and (max_atk is None or min_atk is None):
+            attacker.atk = atk
+            min_dmg = PokeGame.damage_formula(move, attacker, target, 0.85)
+            max_dmg = PokeGame.damage_formula(move, attacker, target, 1)
 
-        return atk_est
+            if hp_loss < max_dmg and min_atk is None:
+                min_atk = atk - 1
 
-    def reverse_defense_calculator(self, move, attacker, hp_loss):
+            if hp_loss < min_dmg and max_atk is None:
+                max_atk = atk - 1
+
+            atk += 1
+
+        return min_atk, max_atk
+
+    @staticmethod
+    def reverse_defense_calculator(move, attacker, target, hp_loss):
         """
         From a move, attacker and hp loss, compute the minimum value that the defense stat must have had.
 
-        :param move: Move object used by the attacker
-        :param attacker:
+        :param move: Move object corresponding to attack used
+        :param attacker: Pokemon object corresponding to the Pokémon using the move
+        :param target: Pokemon object corresponding to the Pokémon receiving the move
         :param hp_loss: Amount of health point lost by target
-        :return: Estimation of target's defense statistic
+        :return: Lowest and highest estimations of statistic
         """
 
-        return
+        target = copy.copy(target)
+        max_des = None  # taking max power
+        min_des = None  # taking min power
+
+        # test edge cases
+        target.des = MIN_STAT
+        min_80, max_80 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1)
+        target.des = MAX_STAT
+        min_180, max_180 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1)
+        if hp_loss < min_80 or hp_loss == 0:  # too few remaining HP or ineffective move
+            max_des, min_des = MAX_STAT, MIN_STAT
+        elif min_80 <= hp_loss < max_80:
+            min_des = MIN_STAT
+        elif min_180 <= hp_loss < max_180:
+            max_des = MAX_STAT
+
+        des = MAX_STAT
+        while des >= MIN_STAT and (max_des is None or min_des is None):
+            target.des = des
+            min_dmg = PokeGame.damage_formula(move, attacker, target, 0.85)
+            max_dmg = PokeGame.damage_formula(move, attacker, target, 1)
+
+            if hp_loss < max_dmg and max_des is None:
+                max_des = des - 1
+
+            if hp_loss < min_dmg and min_des is None:
+                min_des = des - 1
+
+            des -= 1
+
+        return min_des, max_des
 
     def statistic_estimation(self, turn_res, player1_move, player2_move, pre_team1, pre_team2):
         """
@@ -351,24 +403,16 @@ class PokeGame:
         # Opponent attack
         if turn_res["p2_moved"] and "switch" not in player2_move:
             hp_loss = pre_team1[[i for i, p in enumerate(pre_team1) if p[0] == self.player1_view.on_field1.name][0]].cur_hp - self.player1_view.on_field1.cur_hp
-            # due to random factor, hp loss can vary (NB: upper bound is strict)
-            hp_loss_min = floor(hp_loss * 0.85)
-            hp_loss_max = floor(hp_loss * (1 / 0.85))
-
-            move = Move(player1_move, MOVES[player1_move][0], MOVES[player1_move][1])
-            target = self.player1_view.on_field1
-            attacker = copy.copy(self.player1_view.on_field2)
+            move = Move(player2_move, MOVES[player2_move][0], MOVES[player2_move][1])
 
             # evaluate min and max possible value of stat landing the attack
-            min_est = self.reverse_attack_calculator(move, attacker, target, hp_loss_min, 1, False)
-            max_est = self.reverse_attack_calculator(move, attacker, target, hp_loss_max, 1, True)
+            min_est, max_est = self.reverse_attack_calculator(move, self.player1_view.on_field2, self.player1_view.on_field1, hp_loss)
 
             # Further reduce the interval by comparison with the min/max possible value of the stat
             min_est = max(min_est, 80)
             max_est = min(max_est, 180)
 
             self.player1_view.on_field2.atk = max_est  # TODO: keep interval
-
 
         # Opponent defense
         if turn_res["p1_moved"] and not "switch" in player1_move:
