@@ -1,6 +1,6 @@
 import copy
 import random
-from math import floor, ceil
+from math import floor
 
 from src.game.Pokemon import Pokemon, Move
 from src.game.constants import TYPES_INDEX, TYPE_CHART, MOVES, MIN_STAT, MAX_STAT
@@ -62,7 +62,7 @@ class PokeGame:
         self.player1_view: PokeGame.GameStruct = PokeGame.GameStruct([teams_specs[0]] + [unknown_specs])
         self.player2_view: PokeGame.GameStruct = PokeGame.GameStruct([unknown_specs] + [teams_specs[1]])
 
-        # Players witness name, type and hp of first opponent Pokémon
+        # Players witness name, type and hp of first opponent Pokemon
         p2_lead_view, p2_lead_src = self.player1_view.team2[0], self.game_state.on_field2
         p2_lead_view.name, p2_lead_view.poke_type, p2_lead_view.hp, p2_lead_view.cur_hp = p2_lead_src.name, p2_lead_src.poke_type, p2_lead_src.cur_hp, p2_lead_src.hp
         p1_lead_view, p1_lead_src = self.player2_view.team1[0], self.game_state.on_field1
@@ -164,7 +164,14 @@ class PokeGame:
                'p2_moved': p2_moved, 'p2_fainted': not self.game_state.on_field2.is_alive()}
 
         # player get new information
-        #self.get_info_from_state(ret, player1_move, player2_move, pre_team1, pre_team2)
+
+        # directly observed information
+        self.directly_available_info("p1", player1_move)
+        self.directly_available_info("p2", player2_move)
+
+        # statistic estimation
+        self.statistic_estimation("p1", ret, player1_move, player2_move, pre_team1, pre_team2)
+        self.statistic_estimation("p2", ret, player1_move, player2_move, pre_team1, pre_team2)
 
         return ret
 
@@ -242,21 +249,6 @@ class PokeGame:
 
         return game_state
 
-    def get_info_from_state(self, turn_res, player1_move, player2_move, pre_team1, pre_team2):
-        """
-        Update player views with information made available during the round (take information from what happened).
-
-        :param turn_res: dict containing info on past round (which sides moved and fainted)
-        :param player1_move: name of move selected by player 1
-        :param player2_move: name of move selected by player 2
-        :param pre_team1: list of tuples (name, type, cur_hp, hp) of player1 Pokémons at beginning of the round
-        :param pre_team2: same for player2
-        """
-
-        self.directly_available_info("p1", player1_move)
-        self.directly_available_info("p2", player2_move)
-        self.statistic_estimation(turn_res, player1_move, player2_move, pre_team1, pre_team2)
-
     def directly_available_info(self, player, opponent_move):
         """
         Update player view with directly available information, information seen during the round (attack used by
@@ -318,31 +310,31 @@ class PokeGame:
         """
 
         attacker = copy.copy(attacker)
-        max_atk = None  # hitting min power
-        min_atk = None  # hitting max power
+        max_atk = -1  # hitting min power
+        min_atk = -1  # hitting max power
 
         # test edge cases
         attacker.atk = MIN_STAT
-        min_80, max_80 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1.0)
+        min_60, max_60 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1.0)
         attacker.atk = MAX_STAT
-        min_180, max_180 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1.0)
-        if hp_loss < min_80 or hp_loss == 0:  # too few remaining HP or ineffective move
-            min_atk, max_atk = MIN_STAT, MAX_STAT
-        elif min_80 <= hp_loss < max_80:
-            min_atk = MIN_STAT
-        elif min_180 <= hp_loss < max_180:
-            max_atk = MAX_STAT
+        min_140, max_140 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1.0)
+        if hp_loss < min_60 or hp_loss == 0:  # too few remaining HP or ineffective move
+            min_atk, max_atk = None, None
+        elif min_60 <= hp_loss < max_60:
+            min_atk = None
+        elif min_140 < hp_loss <= max_140:
+            max_atk = None
 
         atk = MIN_STAT
-        while atk <= MAX_STAT and (max_atk is None or min_atk is None):
+        while atk <= MAX_STAT and (max_atk == -1 or min_atk == -1):
             attacker.atk = atk
             min_dmg = PokeGame.damage_formula(move, attacker, target, 0.85)
             max_dmg = PokeGame.damage_formula(move, attacker, target, 1)
 
-            if hp_loss < max_dmg and min_atk is None:
+            if hp_loss < max_dmg and min_atk == -1:
                 min_atk = atk - 1
 
-            if hp_loss < min_dmg and max_atk is None:
+            if hp_loss < min_dmg and max_atk == -1:
                 max_atk = atk - 1
 
             atk += 1
@@ -352,7 +344,8 @@ class PokeGame:
     @staticmethod
     def reverse_defense_calculator(move, attacker, target, hp_loss):
         """
-        From a move, attacker and hp loss, compute the minimum value that the defense stat must have had.
+        From a move, attacker and hp loss, compute the minimum value that the defense stat must have had. If estimation
+        cannot be made (too few remaining HP), None value is returned.
 
         :param move: Move object corresponding to attack used
         :param attacker: Pokemon object corresponding to the Pokémon using the move
@@ -362,65 +355,79 @@ class PokeGame:
         """
 
         target = copy.copy(target)
-        max_des = None  # taking max power
-        min_des = None  # taking min power
+        max_des = -1  # taking max power
+        min_des = -1  # taking min power
 
         # test edge cases
         target.des = MIN_STAT
-        min_80, max_80 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1)
+        min_60, max_60 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1)
         target.des = MAX_STAT
-        min_180, max_180 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1)
-        if hp_loss < min_80 or hp_loss == 0:  # too few remaining HP or ineffective move
-            max_des, min_des = MAX_STAT, MIN_STAT
-        elif min_80 <= hp_loss < max_80:
+        min_140, max_140 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1)
+        if hp_loss < min_140 or hp_loss == 0:  # too few remaining HP or ineffective move
+            max_des, min_des = None, None
+        elif min_140 <= hp_loss < max_140:
+            max_des = None
+        elif min_60 < hp_loss <= max_60:
+            min_des = None
+        elif min_60 == hp_loss:
             min_des = MIN_STAT
-        elif min_180 <= hp_loss < max_180:
-            max_des = MAX_STAT
 
         des = MAX_STAT
-        while des >= MIN_STAT and (max_des is None or min_des is None):
+        while des >= MIN_STAT and (max_des == -1 or min_des == -1):
             target.des = des
             min_dmg = PokeGame.damage_formula(move, attacker, target, 0.85)
             max_dmg = PokeGame.damage_formula(move, attacker, target, 1)
 
-            if hp_loss < max_dmg and max_des is None:
+            if hp_loss < max_dmg and max_des == -1:
                 max_des = des - 1
 
-            if hp_loss < min_dmg and min_des is None:
+            if hp_loss < min_dmg and min_des == -1:
                 min_des = des - 1
 
             des -= 1
 
         return min_des, max_des
 
-    def statistic_estimation(self, turn_res, player1_move, player2_move, pre_team1, pre_team2):
+    def statistic_estimation(self, player, turn_res, own_move, opponent_move, pre_own_team, pre_opp_team):
         """
         Estimate attack and defense of opponent based on damage dealt/received. Actual stat can be underestimated in
         case of faint (real amount of damage not shown).
+
+        :param player: "p1" or "p2" indicating which player view is being estimated
+        :param turn_res: "ret" object from "play_move" function
+        :param own_move: name of move performed by player
+        :param opponent_move: name of move performed by opponent
+        :param pre_own_team: copy of the state of the player at the beginning of the round (tuples containing
+            (p.name, p.poke_type, p.cur_hp, p.hp)).
+        :param pre_opp_team: Same for opponent
+        :return: None but update internal state
         """
 
-        # Player 1 pov
-        # Opponent attack
-        if turn_res["p2_moved"] and "switch" not in player2_move:
-            hp_loss = pre_team1[[i for i, p in enumerate(pre_team1) if p[0] == self.player1_view.on_field1.name][0]].cur_hp - self.player1_view.on_field1.cur_hp
-            move = Move(player2_move, MOVES[player2_move][0], MOVES[player2_move][1])
+        view = self.player1_view if player == "p1" else self.player2_view
+        own_of = view.on_field1 if player == "p1" else view.on_field2
+        opp_of = view.on_field2 if player == "p1" else view.on_field1
+        own_moved, own_fainted = ("p1_moved", "p1_fainted") if player == "p1" else ("p2_moved", "p2_fainted")
+        opp_moved, opp_fainted = ("p2_moved", "p2_fainted") if player == "p1" else ("p1_moved", "p1_fainted")
+
+        # opponent attack
+        if turn_res[opp_moved] and "switch" not in opponent_move:
+            hp_loss = pre_own_team[[i for i, p in enumerate(pre_own_team) if p[0] == own_of.name][0]].cur_hp - own_of.cur_hp
+            move = Move(opponent_move, *MOVES[opponent_move][0])
 
             # evaluate min and max possible value of stat landing the attack
-            min_est, max_est = self.reverse_attack_calculator(move, self.player1_view.on_field2, self.player1_view.on_field1, hp_loss)
+            min_est, max_est = self.reverse_attack_calculator(move, opp_of, own_of, hp_loss)
+            est = max_est if max_est is not None else min_est
 
-            # Further reduce the interval by comparison with the min/max possible value of the stat
-            min_est = max(min_est, 80)
-            max_est = min(max_est, 180)
+            if est is not None:  # hp_loss does not represent full opponent power
+                own_of.atk = max(est, own_of.atk) if own_of.atk is not None else est
 
-            self.player1_view.on_field2.atk = max_est  # TODO: keep interval
+        # opponent defense
+        if turn_res[own_moved] and "switch" not in own_move:
+            hp_loss = pre_opp_team[[i for i, p in enumerate(pre_opp_team) if p[0] == opp_of.name][0]].cur_hp - opp_of.cur_hp
+            move = Move(own_move, *MOVES[own_move])
 
-        # Opponent defense
-        if turn_res["p1_moved"] and not "switch" in player1_move:
-            if turn_res["p2_fainted"]:
-                pass
-            else:
-                pass
+            min_est, max_est = self.reverse_defense_calculator(move, own_of, opp_of, hp_loss)
+            est = max_est if max_est is not None else min_est
 
-        # Player 2 pov
-        if turn_res["p2_moved"] and "switch" not in player2_move:
-            pass
+            if est is not None:
+                opp_of.des = max(est, opp_of.des) if opp_of.des is not None else est

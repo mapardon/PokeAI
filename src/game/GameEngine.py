@@ -1,14 +1,13 @@
-import copy
 import random
 
 from src.agents.PlayerComputer import PlayerComputer
+from src.agents.PlayerHuman import PlayerHuman
+from src.agents.PlayerMDM import PlayerMDM
+from src.agents.PlayerML import PlayerML
+from src.agents.PlayerRandom import PlayerRandom
 from src.db.dbmanager import retrieve_team, load_ml_agent, update_ml_agent
 from src.game.PokeGame import PokeGame
 from src.game.constants import TYPES, MIN_HP, MAX_HP, MIN_STAT, MAX_STAT, MIN_POW, MAX_POW
-from src.agents.PlayerHuman import PlayerHuman
-from src.agents.PlayerRandom import PlayerRandom
-from src.agents.PlayerML import PlayerML
-from src.agents.PlayerMDM import PlayerMDM
 
 
 class GameEngine:
@@ -153,7 +152,7 @@ class GameEngine:
             to_ui.put(game_finished)
 
             if not game_finished and self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
-                # turn change once attacks have been applied and fainted pokemons switched
+                # turn change once attacks have been applied and fainted Pokemon switched
                 turn_nb += 1
 
         # send final state
