@@ -46,7 +46,6 @@ dummy_poke2 = Pokemon("p2", "DARK", (90, 110, 90, 110),
 
 
 class MyTestCase(unittest.TestCase):
-
     @parameterized.expand([
         ("p1", ["light_psychic"], ["light_steel"],
          [[(("p1", "FIRE", 100, 100, 100, 100),
@@ -175,6 +174,22 @@ class MyTestCase(unittest.TestCase):
           [(("d1", "WATER", 100, 100, 100, 100),
             (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
            (("d2", "DRAGON", 100, 80, 100, 80),
+            (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+        ("p1", ("light_psychic", "heavy_fire", "switch p2"), ("light_steel", "heavy_water", None),
+         [[(("p1", "FIRE", 100, 100, 100, 100),
+            (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "ELECTRIC", 100, 80, 100, 100),
+            (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+          [(("d1", "WATER", 100, None, None, None),
+            (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           ((None, None, None, None, None, None), ((None, None, None), (None, None, None)))]]),
+        ("p2", ("light_psychic", "heavy_fire", None), ("light_steel", "light_steel", "switch d2"),
+         [[(("p1", "FIRE", 100, None, None, None),
+            (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           ((None, None, None, None, None, None), ((None, None, None), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100),
+            (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80),
             (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
     ])
     def test_directly_available_info(self, test_player, player1_moves, player2_moves, exp_specs):
@@ -216,6 +231,7 @@ class MyTestCase(unittest.TestCase):
         test_view = game.get_player1_view() if test_player == "p1" else game.get_player2_view()
 
         self.assertEqual(test_view, exp_view)
+
 
     @parameterized.expand([
         (False, False,

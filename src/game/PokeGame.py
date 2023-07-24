@@ -15,7 +15,6 @@ class TeamSpecs:
 
 
 class PokeGame:
-
     class GameStruct:
         """  Contains all information needed to represent a game state """
 
@@ -48,6 +47,17 @@ class PokeGame:
 
             return test
 
+        def __str__(self):
+            out = "~team1~\nof1: {}\n\n".format(self.on_field1)
+            for i, p in enumerate(self.team1):
+                out += "{}. {}\n".format(i, p)
+
+            out += "\n~team2~\nof2: {}\n\n".format(self.on_field2)
+            for i, p in enumerate(self.team2):
+                out += "{}. {}\n".format(i, p)
+
+            return out
+
     def __init__(self, teams_specs):
         """
             'team_specs' has the following shape:
@@ -58,15 +68,29 @@ class PokeGame:
 
         self.game_state: PokeGame.GameStruct = PokeGame.GameStruct(teams_specs)
         # For player pov, opponent team unknown
-        unknown_specs = [(tuple([None for _ in range(8)]), tuple([(None, None, None, None) for _ in range(2)])) for _ in range(2)]
+        unknown_specs = [(tuple([None for _ in range(6)]), tuple([(None, None, None, None) for _ in range(2)])) for _ in
+                         range(2)]
         self.player1_view: PokeGame.GameStruct = PokeGame.GameStruct([teams_specs[0]] + [unknown_specs])
         self.player2_view: PokeGame.GameStruct = PokeGame.GameStruct([unknown_specs] + [teams_specs[1]])
 
         # Players witness name, type and hp of first opponent Pokemon
         p2_lead_view, p2_lead_src = self.player1_view.team2[0], self.game_state.on_field2
-        p2_lead_view.name, p2_lead_view.poke_type, p2_lead_view.hp, p2_lead_view.cur_hp = p2_lead_src.name, p2_lead_src.poke_type, p2_lead_src.cur_hp, p2_lead_src.hp
+        p2_lead_view.name, p2_lead_view.poke_type, p2_lead_view.hp, p2_lead_view.cur_hp = (p2_lead_src.name,
+                                                                                           p2_lead_src.poke_type,
+                                                                                           p2_lead_src.cur_hp,
+                                                                                           p2_lead_src.hp)
         p1_lead_view, p1_lead_src = self.player2_view.team1[0], self.game_state.on_field1
-        p1_lead_view.name, p1_lead_view.poke_type, p1_lead_view.hp, p1_lead_view.cur_hp = p1_lead_src.name, p1_lead_src.poke_type, p1_lead_src.cur_hp, p1_lead_src.hp
+        p1_lead_view.name, p1_lead_view.poke_type, p1_lead_view.hp, p1_lead_view.cur_hp = (p1_lead_src.name,
+                                                                                           p1_lead_src.poke_type,
+                                                                                           p1_lead_src.cur_hp,
+                                                                                           p1_lead_src.hp)
+
+    def __eq__(self, other):
+        return self.game_state == other.game_state and self.player1_view == other.player1_view and self.player2_view == other.player2_view
+
+    def __str__(self):
+        return " complete view:\n{}\n player1 view:\n{}\n player2 view\n{}".format(self.game_state, self.player1_view,
+                                                                                   self.player2_view)
 
     def get_numeric_repr(self, state):
         """ Converts the provided state (GameStruct) in binary vector shape """
@@ -99,7 +123,8 @@ class PokeGame:
          for a player from a state that is not self.game_state) """
 
         state = state if state is not None else self.player1_view if player == "p1" else self.player2_view
-        team, on_field, opp_on_field = (state.team1, state.on_field1, state.on_field2) if player == "p1" else (state.team2, state.on_field2, state.on_field1)
+        team, on_field, opp_on_field = (state.team1, state.on_field1, state.on_field2) if player == "p1" else (
+            state.team2, state.on_field2, state.on_field1)
 
         if not opp_on_field.is_alive() and on_field.is_alive():
             # opponent faint but player not: only opponent moves (choosing replacement)
@@ -126,60 +151,64 @@ class PokeGame:
     def swap_states(self, game_state):
         self.game_state = game_state
 
-    def play_round(self, p1_move, p2_move):
+    def play_round(self, p1_move, p2_move, force_dmg=0.0, force_order=None):
         """
         Call functions related to move application (apply_player_moves & get_info_from_state), change inner state and
         return information about what happened (whether any side fainted & who moved).
 
         :param p1_move: name of move selected by player 1
         :param p2_move: name of move selected by player 2
+        :param force_dmg: parameter for apply_player_moves
+        :param force_order: parameter for apply_player_moves
         :return: Python dict indicating which side has played a move and which side has fainted
         """
 
         # save start-of-turn information
-        hp_side1 = self.game_state.on_field1.cur_hp
-        name_side1 = self.game_state.on_field1.name
-        hp_side2 = self.game_state.on_field2.cur_hp
-        name_side2 = self.game_state.on_field2.name
+        pre_of1_name, pre_of1_hp, pre_of1_spe = (self.game_state.on_field1.name, self.game_state.on_field1.cur_hp,
+                                                 self.game_state.on_field1.spe)
+        pre_of2_name, pre_of2_hp, pre_of2_spe = (self.game_state.on_field2.name, self.game_state.on_field2.cur_hp,
+                                                 self.game_state.on_field2.spe)
         pre_team1 = [(p.name, p.poke_type, p.cur_hp, p.hp) for p in self.game_state.team1]
         pre_team2 = [(p.name, p.poke_type, p.cur_hp, p.hp) for p in self.game_state.team2]
 
         # apply moves (move order is determined here to keep track of who moved first)
-        order = random.choice([True, False])
-        self.apply_player_moves(self.game_state, p1_move, p2_move, force_order=order)
+        order = random.choice([True, False]) if force_order is None else force_order
+        self.apply_player_moves(self.game_state, p1_move, p2_move, force_dmg=force_dmg, force_order=force_order)
 
-        # test if any side has fainted / which side moved (opponent lost hp or player switched)
+        # test if any side has fainted & which side moved (opponent lost hp or player switched) & who moved first
         p1_moved = False
         if p1_move is not None:
-            p1_moved |= hp_side2 > self.game_state.on_field2.cur_hp and name_side2 == self.game_state.on_field2.name
-            p1_moved |= name_side2 != self.game_state.on_field2.name  # opponent switched
-            p1_moved |= name_side1 != self.game_state.on_field1.name  # player switched
+            p1_moved |= pre_of2_hp > self.game_state.on_field2.cur_hp and pre_of2_name == self.game_state.on_field2.name
+            p1_moved |= pre_of2_name != self.game_state.on_field2.name  # opponent switched
+            p1_moved |= pre_of1_name != self.game_state.on_field1.name  # player switched
 
         p2_moved = False
         if p2_move is not None:
-            p2_moved |= hp_side1 > self.game_state.on_field1.cur_hp and name_side1 == self.game_state.on_field1.name
-            p2_moved |= name_side1 != self.game_state.on_field1.name
-            p2_moved |= name_side2 != self.game_state.on_field2.name
+            p2_moved |= pre_of1_hp > self.game_state.on_field1.cur_hp and pre_of1_name == self.game_state.on_field1.name
+            p2_moved |= pre_of1_name != self.game_state.on_field1.name
+            p2_moved |= pre_of2_name != self.game_state.on_field2.name
 
         p1_first, p2_first = False, False
-        if "switch" in p1_move and "switch" in p2_move or "switch" not in p1_move and "switch" not in p2_move:
-            p1_first = self.game_state.on_field1.spe > self.game_state.on_field2.spe
-            p1_first |= self.game_state.on_field1.spe == self.game_state.on_field1.spe and order
+        # As switch and moves have different priorities, no first mover will be considered in case of mix choice
+        if None not in (p1_move, p2_move) and (
+                "switch" in p1_move and "switch" in p2_move or "switch" not in p1_move and "switch" not in p2_move):
+            p1_first = pre_of1_spe > pre_of2_spe
+            p1_first |= pre_of1_spe == pre_of2_spe and order
             p2_first = not p1_first
         ret = {'p1_moved': p1_moved, 'p1_fainted': not self.game_state.on_field1.is_alive(), 'p1_first': p1_first,
                'p2_moved': p2_moved, 'p2_fainted': not self.game_state.on_field2.is_alive(), 'p2_first': p2_first}
 
         # player get new information
-        self.directly_available_info("p1", p1_move)
-        self.directly_available_info("p2", p2_move)
+        self.directly_available_info("p1", p2_move)
+        self.directly_available_info("p2", p1_move)
 
         self.statistic_estimation("p1", ret, p1_move, p2_move, pre_team1, pre_team2)
-        self.statistic_estimation("p2", ret, p1_move, p2_move, pre_team1, pre_team2)
+        self.statistic_estimation("p2", ret, p2_move, p1_move, pre_team2, pre_team1)
 
         return ret
 
     @staticmethod
-    def damage_formula(move, attacker, target, force_dmg=0.0):
+    def damage_formula(move: Move, attacker: Pokemon, target: Pokemon, force_dmg: float = 0.0):
         """
         Compute the amount of damage caused by the move used in specified conditions.
 
@@ -200,24 +229,27 @@ class PokeGame:
         # modifiers
         rd = force_dmg if 0.85 <= force_dmg <= 1 else random.randint(85, 100) / 100
         stab = 1.5 if move.move_type == attacker.poke_type else 1
-        type_aff = 1 if target.poke_type not in TYPE_CHART[move.move_type] else TYPE_CHART[move.move_type][target.poke_type]
+        type_aff = 1 if target.poke_type not in TYPE_CHART[move.move_type] else TYPE_CHART[move.move_type][
+            target.poke_type]
         dmg *= rd * stab * type_aff
 
         return floor(dmg)
 
-    def apply_player_moves(self, game_state, p1_move, p2_move, force_dmg=0.0, force_order=None):
+    def apply_player_moves(self, game_state: GameStruct, p1_move: str, p2_move: str, force_dmg: float = 0.0,
+                           force_order: bool = None):
         """
         Execute player choices with regard to game rules to the game_state passed as parameter. This function applies
         changes on a parameter game_state and not on the attribute because some strategies require to test potential
         result on several game states.
 
-        :param game_state: PokeGame object on which to apply the moves
+        :param game_state: GameState object on which to apply the moves (NB: in general, used with the "complete"
+            game_state, not a player view)
         :param p1_move: name of attack or 'switch {name}'
         :param p2_move: same
         :param force_dmg: if float between 0.85 and 1, will be used to force damage random factor
         :param force_order: if both players attack and have same speed, force_order=True will make p1 move first, False
             will make p2 move first, None will leave the order be determined randomly
-        :return: state with applied players actions
+        :return: provided game_state with players action applied
         """
 
         # both switch
@@ -229,13 +261,17 @@ class PokeGame:
         elif p1_move is not None and "switch" in p1_move:
             game_state.on_field1 = game_state.team1[[n.name for n in game_state.team1].index(p1_move.split(" ")[1])]
             if p2_move is not None:
-                game_state.on_field1.cur_hp = max(0, game_state.on_field1.cur_hp - self.damage_formula(game_state.on_field2.move_from_name(p2_move), game_state.on_field2, game_state.on_field1, force_dmg))
+                game_state.on_field1.cur_hp = max(0, game_state.on_field1.cur_hp - self.damage_formula(
+                    game_state.on_field2.move_from_name(p2_move), game_state.on_field2, game_state.on_field1,
+                    force_dmg))
 
         # p2 switch
         elif p2_move is not None and "switch" in p2_move:
             game_state.on_field2 = game_state.team2[[n.name for n in game_state.team2].index(p2_move.split(" ")[1])]
             if p1_move is not None:
-                game_state.on_field2.cur_hp = max(0, game_state.on_field2.cur_hp - self.damage_formula(game_state.on_field1.move_from_name(p1_move), game_state.on_field1, game_state.on_field2, force_dmg))
+                game_state.on_field2.cur_hp = max(0, game_state.on_field2.cur_hp - self.damage_formula(
+                    game_state.on_field1.move_from_name(p1_move), game_state.on_field1, game_state.on_field2,
+                    force_dmg))
 
         # both attack (nb: cannot be both None at same time)
         else:
@@ -251,14 +287,18 @@ class PokeGame:
                 elif not force_order:
                     attack_order.reverse()
 
-            attack_order[1][0].cur_hp = max(0, attack_order[1][0].cur_hp - self.damage_formula(attack_order[0][0].move_from_name(attack_order[0][1]), attack_order[0][0], attack_order[1][0], force_dmg))
+            attack_order[1][0].cur_hp = max(0, attack_order[1][0].cur_hp - self.damage_formula(
+                attack_order[0][0].move_from_name(attack_order[0][1]), attack_order[0][0], attack_order[1][0],
+                force_dmg))
             # second attacker must be alive to attack
             if attack_order[1][0].is_alive():
-                attack_order[0][0].cur_hp = max(0, attack_order[0][0].cur_hp - self.damage_formula(attack_order[1][0].move_from_name(attack_order[1][1]), attack_order[1][0], attack_order[0][0], force_dmg))
+                attack_order[0][0].cur_hp = max(0, attack_order[0][0].cur_hp - self.damage_formula(
+                    attack_order[1][0].move_from_name(attack_order[1][1]), attack_order[1][0], attack_order[0][0],
+                    force_dmg))
 
         return game_state
 
-    def directly_available_info(self, player, opponent_move):
+    def directly_available_info(self, player: str, opponent_move: str):
         """
         Update player view with directly available information, information seen during the round (attack used by
         opponent, type and hp of Pokémon switched).
@@ -268,13 +308,16 @@ class PokeGame:
         :return: None but update internal state
         """
 
-        real_own, real_other = (self.game_state.on_field1, self.game_state.on_field2) if player == "p1" else (self.game_state.on_field2, self.game_state.on_field1)
-        own_of, other_of = (self.player1_view.on_field1, self.player1_view.on_field2) if player == "p1" else (self.player2_view.on_field2, self.player2_view.on_field1)
-        own_team, other_team = (self.player1_view.team1, self.player1_view.team2) if player == "p1" else (self.player2_view.team2, self.player2_view.team1)
+        real_own, real_other = (self.game_state.on_field1, self.game_state.on_field2) if player == "p1" else (
+            self.game_state.on_field2, self.game_state.on_field1)
+        own_of, other_of = (self.player1_view.on_field1, self.player1_view.on_field2) if player == "p1" else (
+            self.player2_view.on_field2, self.player2_view.on_field1)
+        own_team, other_team = (self.player1_view.team1, self.player1_view.team2) if player == "p1" else (
+            self.player2_view.team2, self.player2_view.team1)
 
         # Own on-field
         own_of = own_team[[i for i, p in enumerate(own_team) if p.name == real_own.name][0]]
-        # update player view of reference
+        # update player view reference to on-field
         if player == "p1":
             self.player1_view.on_field1 = own_of
         elif player == "p2":
@@ -293,17 +336,21 @@ class PokeGame:
                 self.player2_view.on_field1 = other_of
 
         # HP and type changes (visible information)
-        other_of.name, other_of.poke_type, other_of.cur_hp, other_of.hp = real_other.name, real_other.poke_type,\
-            real_other.cur_hp, real_other.hp
+        other_of.name, other_of.poke_type, other_of.cur_hp, other_of.hp = (real_other.name, real_other.poke_type,
+                                                                           real_other.cur_hp, real_other.hp)
 
         # Attack used
-        if opponent_move not in [m.name for m in other_of.moves] and "switch" not in opponent_move:  # opponent used previously unseen attack
+        tmp = [m.name for m in other_of.moves]
+        if opponent_move is None:
+            print()
+        if opponent_move is not None and opponent_move not in [m.name for m in
+                                                               other_of.moves] and "switch" not in opponent_move:  # opponent used previously unseen attack
             unknown_move_index = 0 if other_of.moves[0].name is None else 1  # only have 2 attacks
             real_move = Move(opponent_move, *MOVES[opponent_move])
             other_of.moves[unknown_move_index] = Move(real_move.name, real_move.move_type, real_move.base_pow)
 
     @staticmethod
-    def reverse_attack_calculator(move, attacker, target, hp_loss):
+    def reverse_attack_calculator(move: Move, attacker: Pokemon, target: Pokemon, hp_loss: int):
         """
         From a move, target and hp loss, compute the minimum value that the attack stat must have had.
         NB: Some parts of the damage formula make the inverse calculation not perfectly computable:
@@ -324,9 +371,12 @@ class PokeGame:
 
         # test edge cases
         attacker.atk = MIN_STAT
-        min_60, max_60 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1.0)
+        min_60, max_60 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker,
+                                                                                                        target, 1.0)
         attacker.atk = MAX_STAT
-        min_140, max_140 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1.0)
+        min_140, max_140 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move,
+                                                                                                          attacker,
+                                                                                                          target, 1.0)
         if hp_loss < min_60 or hp_loss == 0:  # too few remaining HP or ineffective move
             min_atk, max_atk = None, None
         elif min_60 <= hp_loss < max_60:
@@ -351,7 +401,7 @@ class PokeGame:
         return min_atk, max_atk
 
     @staticmethod
-    def reverse_defense_calculator(move, attacker, target, hp_loss):
+    def reverse_defense_calculator(move: Move, attacker: Pokemon, target: Pokemon, hp_loss: int):
         """
         From a move, attacker and hp loss, compute the minimum value that the defense stat must have had. If estimation
         cannot be made (too few remaining HP), None value is returned.
@@ -369,9 +419,12 @@ class PokeGame:
 
         # test edge cases
         target.des = MIN_STAT
-        min_60, max_60 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1)
+        min_60, max_60 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker,
+                                                                                                        target, 1)
         target.des = MAX_STAT
-        min_140, max_140 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker, target, 1)
+        min_140, max_140 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move,
+                                                                                                          attacker,
+                                                                                                          target, 1)
         if hp_loss < min_140 or hp_loss == 0:  # too few remaining HP or ineffective move
             max_des, min_des = None, None
         elif min_140 <= hp_loss < max_140:
@@ -398,7 +451,7 @@ class PokeGame:
         return min_des, max_des
 
     @staticmethod
-    def estimate_speed(player_first, own_move, opp_move, own_of, opp_of):
+    def estimate_speed(player_first: bool, own_move: str, opp_move: str, own_of: Pokemon, opp_of: Pokemon):
         """
         From the observation of the order of action, make an estimation of the speed that the opponent should have.
         The estimation is an upper estimation ("worst-case", highest possible).
@@ -412,7 +465,8 @@ class PokeGame:
         """
 
         est = opp_of.spe
-        if "switch" in own_move and "switch" in opp_move or "switch" not in own_move and "switch" not in opp_move:
+        if None not in (own_move, opp_move) and (
+                "switch" in own_move and "switch" in opp_move or "switch" not in own_move and "switch" not in opp_move):
             # switches and normal attacks have different level of priority and cannot be compared
             if player_first:
                 est = own_of.spe - 1 if opp_of.spe is None else min(opp_of.spe, own_of.spe - 1)
@@ -421,7 +475,9 @@ class PokeGame:
 
         return est
 
-    def statistic_estimation(self, player, turn_res, own_move, opp_move, pre_own_team, pre_opp_team):
+    def statistic_estimation(self, player: str, turn_res: dict, own_move: str, opp_move: str,
+                             pre_own_team: list[tuple[int, int, int, int]],
+                             pre_opp_team: list[tuple[int, int, int, int]]):
         """
         Call reverse defense and attack calculator and set an estimation of the opponent statistic in player view,
         based on damage dealt/received. Actual stat can be underestimated in case of faint (real amount of damage
@@ -439,9 +495,11 @@ class PokeGame:
 
         view = self.player1_view if player == "p1" else self.player2_view
         own_of, opp_of = (view.on_field1, view.on_field2) if player == "p1" else (view.on_field2, view.on_field1)
-        own_moved, own_fainted, own_first = ("p1_moved", "p1_fainted", "p1_first") if player == "p1" else ("p2_moved", "p2_fainted", "p2_first")
+        own_moved, own_fainted, own_first = ("p1_moved", "p1_fainted", "p1_first") if player == "p1" else (
+            "p2_moved", "p2_fainted", "p2_first")
         own_moved, own_fainted, own_first = turn_res[own_moved], turn_res[own_fainted], turn_res[own_first]
-        opp_moved, opp_fainted, opp_first = ("p2_moved", "p2_fainted", "p2_first") if player == "p1" else ("p1_moved", "p1_fainted", "p2_first")
+        opp_moved, opp_fainted, opp_first = ("p2_moved", "p2_fainted", "p2_first") if player == "p1" else (
+            "p1_moved", "p1_fainted", "p2_first")
         opp_moved, opp_fainted, opp_first = turn_res[opp_moved], turn_res[opp_fainted], turn_res[opp_first]
 
         # opponent attack

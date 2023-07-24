@@ -1,5 +1,5 @@
-import copy
-import random, unittest
+import random
+import unittest
 
 from parameterized import parameterized
 from src.game.PokeGame import PokeGame
@@ -28,7 +28,7 @@ team_specs_for_game2 = [[(("p1", "FIRE", 100, 100, 100, 100),
                           (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
                         [(("d1", "WATER", 100, 100, 100, 99),
                           (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
-                         (("d2", "DRAGON", 100, 80, 100, 100),
+                         (("d2", "DRAGON", 100, 80, 100, 101),
                           (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]
 
 
@@ -123,9 +123,6 @@ class TestCasePokeGame(unittest.TestCase):
         exp.on_field1.name, exp.on_field1.poke_type, exp.on_field1.cur_hp, exp.on_field1.hp = "p1", "FIRE", 100, 100
         self.assertEqual(game.get_player2_view(), exp)
 
-    def test_player_view_update(self):
-        pass
-
     @parameterized.expand([
         (False, False, ["light_steel", "heavy_water", "switch d2"], "p2"),
         (True, False, ["switch d2"], "p2"),
@@ -181,33 +178,124 @@ class TestCasePokeGame(unittest.TestCase):
     def test_apply_player_moves(self, player1_move, player2_move, exp_field1_name, exp_field2_name):
         game = PokeGame(team_specs_for_game)
         gs = game.game_state
-        gs.on_field2.spe -= 1  # ensure attack order
+        game.apply_player_moves(gs, player1_move, player2_move, force_dmg=0.0, force_order=True)
 
-        game.play_round(player1_move, player2_move)
-        succeeded = True
+        test_p1 = True
         if player1_move is not None and "switch" not in player1_move:  # p1 attacked
-            succeeded &= gs.on_field2.name == exp_field2_name and gs.on_field2.cur_hp < gs.on_field2.hp
-            pass
-        else:
-            succeeded &= gs.on_field1.name == exp_field1_name
+            test_p1 &= gs.on_field2.name == exp_field2_name and gs.on_field2.cur_hp < gs.on_field2.hp
+        else:  # p1 switched
+            test_p1 &= gs.on_field1.name == exp_field1_name
 
+        test_p2 = True
         if player2_move is not None and "switch" not in player2_move:  # p2 attacked
-            succeeded &= gs.on_field1.name == exp_field1_name and gs.on_field1.cur_hp < gs.on_field1.hp
-        else:
-            succeeded &= gs.on_field2.name == exp_field2_name
+            test_p2 &= gs.on_field1.name == exp_field1_name and gs.on_field1.cur_hp < gs.on_field1.hp
+        else:  # p2 switched
+            test_p2 &= gs.on_field2.name == exp_field2_name
 
-        self.assertTrue(succeeded)
+        self.assertTrue(test_p1 and test_p2)
 
     @parameterized.expand([
-        ("switch p2", "switch d2", {'p1_moved': True, 'p1_fainted': False, 'p2_moved': True, 'p2_fainted': False}),
-        ("light_psychic", "light_steel", {'p1_moved': True, 'p1_fainted': False, 'p2_moved': True, 'p2_fainted': False}),
-        ("light_psychic", "heavy_water", {'p1_moved': True, 'p1_fainted': True, 'p2_moved': True, 'p2_fainted': False}),
-        ("light_psychic", "switch d2", {'p1_moved': True, 'p1_fainted': False, 'p2_moved': True, 'p2_fainted': False})
+        (["switch p2"], ["switch d2"], {'p1_moved': True, 'p1_fainted': False, 'p1_first': True,
+                                        'p2_moved': True, "p2_fainted": False, "p2_first": False}),
+        (["light_psychic"], ["light_steel"], {'p1_moved': True, 'p1_fainted': False, "p1_first": True,
+                                              'p2_moved': True, 'p2_fainted': False, "p2_first": False}),
+        (["light_psychic"], ["heavy_water"], {'p1_moved': True, 'p1_fainted': True, "p1_first": True,
+                                              'p2_moved': True, 'p2_fainted': False, "p2_first": False}),
+        (["light_psychic"], ["switch d2"], {'p1_moved': True, 'p1_fainted': False, "p1_first": False,
+                                            'p2_moved': True, 'p2_fainted': False, "p2_first": False}),
+        (["light_psychic", "switch p2", "light_grass"], ["switch d2", "light_bug", "light_bug"],
+         {'p1_moved': True, 'p1_fainted': False, "p1_first": False,
+          'p2_moved': True, 'p2_fainted': False, "p2_first": True}),
+        ([None], ["switch d2"],
+         {'p1_moved': False, 'p1_fainted': False, "p1_first": False,
+          'p2_moved': True, 'p2_fainted': False, "p2_first": False})
     ])
-    def test_apply_player_moves_2(self, p1_move, p2_move, exp_out):
+    def test_play_round_return(self, p1_moves, p2_moves, exp_out):
         game = PokeGame(team_specs_for_game2)
-        res = game.play_round(p1_move, p2_move)
+        res = None
+        for p1_move, p2_move in zip(p1_moves, p2_moves):
+            res = game.play_round(p1_move, p2_move)
+
         self.assertEqual(res, exp_out)
+
+    @parameterized.expand([
+        (["light_psychic"], ["light_steel"]),
+        (["light_psychic", "switch p2"], ["switch d2", "light_bug"]),
+        (["switch p2"], ["switch d2"]),
+        (["light_psychic"], ["heavy_water"]),
+        (["light_psychic"], ["switch d2"]),
+        (["light_psychic", "switch p2", "light_grass"], ["switch d2", "light_bug", "light_bug"]),
+        ([None], ["switch d2"])
+    ])
+    def test_play_round_effects(self, p1_moves, p2_moves):
+        game = PokeGame(team_specs_for_game2)
+        rets = list()
+
+        for p1_move, p2_move in zip(p1_moves, p2_moves):
+            rets.append(game.play_round(p1_move, p2_move, 0.85, True))
+            # NB: feedback of round was tested in other test and can thus be used safely in this test
+
+        exp = PokeGame(team_specs_for_game2)
+        for p1_move, p2_move, ret in zip(p1_moves, p2_moves, rets):
+            pre_team1 = [(p.name, p.poke_type, p.cur_hp, p.hp) for p in exp.game_state.team1]
+            pre_team2 = [(p.name, p.poke_type, p.cur_hp, p.hp) for p in exp.game_state.team2]
+
+            exp.apply_player_moves(exp.game_state, p1_move, p2_move, 0.85, True)
+
+            exp.directly_available_info("p1", p2_move)
+            exp.directly_available_info("p2", p1_move)
+
+            exp.statistic_estimation("p1", ret, p1_move, p2_move, pre_team1, pre_team2)
+            exp.statistic_estimation("p2", ret, p2_move, p1_move, pre_team2, pre_team1)
+
+        self.assertEqual(game, exp)
+
+    def test_play_round_full_game(self):
+        game = PokeGame(team_specs_for_game2)
+        p1_moves = ["light_psychic", "heavy_fire", "switch p2", "heavy_electric", None, "heavy_electric",
+                    "heavy_electric", "heavy_electric"]
+        p2_moves = ["light_steel", "heavy_water", None, "light_steel", "switch d2", "light_bug", "light_bug",
+                    "heavy_dragon"]
+
+        for p1_move, p2_move in zip(p1_moves, p2_moves):
+            game.play_round(p1_move, p2_move, 0.85, True)
+
+        # expected values
+
+        exp = PokeGame([[(("p1", "FIRE", 100, 100, 100, 100),
+                          (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+                         (("p2", "ELECTRIC", 100, 80, 100, 100),
+                          (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+                        [(("d1", "WATER", 100, 100, 100, 99),
+                          (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+                         (("d2", "DRAGON", 100, 80, 100, 101),
+                          (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
+
+        exp.player1_view = PokeGame.GameStruct([[(("p1", "FIRE", 100, 100, 100, 100),
+                                                  (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+                                                 (("p2", "ELECTRIC", 100, 80, 100, 100),
+                                                  (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+                                                [(("d1", "WATER", 100, 102, 115, 99),
+                                                  (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+                                                 (("d2", "DRAGON", 100, 80, 116, 140),
+                                                  (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
+        exp.player2_view = PokeGame.GameStruct([[(("p1", "FIRE", 100, 102, 115, 140),
+                                                 (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+                                                (("p2", "ELECTRIC", 100, 80, 119, 100),
+                                                 (("heavy_electric", "ELECTRIC", 100), (None, None, None)))],
+                                               [(("d1", "WATER", 100, 100, 100, 99),
+                                                 (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+                                                (("d2", "DRAGON", 100, 80, 100, 101),
+                                                 (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
+
+        exp.game_state.on_field1, exp.game_state.on_field2 = exp.game_state.team1[1], exp.game_state.team2[1]
+        exp.player1_view.on_field1, exp.player1_view.on_field2 = exp.player1_view.team1[1], exp.player1_view.team2[1]
+        exp.player2_view.on_field1, exp.player2_view.on_field2 = exp.player2_view.team1[1], exp.player2_view.team2[1]
+        exp.game_state.team1[0].cur_hp, exp.game_state.team1[1].cur_hp, exp.game_state.team2[0].cur_hp, exp.game_state.team2[1].cur_hp = 0, 0, 0, 14
+        exp.player1_view.team1[0].cur_hp, exp.player1_view.team1[1].cur_hp, exp.player1_view.team2[0].cur_hp, exp.player1_view.team2[1].cur_hp = 0, 0, 0, 14
+        exp.player2_view.team1[0].cur_hp, exp.player2_view.team1[1].cur_hp, exp.player2_view.team2[0].cur_hp, exp.player2_view.team2[1].cur_hp = 0, 0, 0, 14
+
+        self.assertEqual(game, exp, msg="{}\n{}".format(game, exp))
 
     def test_get_numeric_repr(self):
         exp = [1, 100, 100, 100, 100, 10, 50, 1, 100,
