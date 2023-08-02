@@ -5,16 +5,23 @@ import time
 class FightView:
 
     @staticmethod
-    def display_game(game_config, player1_human, playable_moves, played_moves, turn_nb, game_finished):
-        """ Display game state from first player point of view and wait for user choice.
-
-            :param game_config: 'GameStruct' type (under view of player 1)
-            :param player1_human: boolean indicating if player 1 is played by user
-            :param playable_moves: possible choices for player 1
-            :param played_moves: last turn players choice
-            turn_nb and game_finished speak for themselves
-            :return: move selected by user if applicable
+    def display_game(game_config, player1_human, playable_moves, played_moves, turn_res, turn_nb, game_finished):
         """
+        Display game state from first player point of view and wait for user choice.
+
+        :param game_config: 'GameStruct' object, view of player 1
+        :param player1_human: boolean indicating if player 1 is played by user
+        :param playable_moves: possible choices for player 1
+        :param played_moves: last turn players choice
+        :param turn_res: dict returned by "play_round" of PokeGame class, containing feedback on last round
+        :param turn_nb: integer representing the number of the turn
+        :param game_finished: bool values indicating whether the provided state is an end state
+        :return: move selected by user if applicable
+
+        [player1_move * turn_res["p1_moved"] + " & " * (turn_res["p1_moved"] and turn_res["p1_fainted"]) + (self.game.game_state.on_field1.name + " fainted") * turn_res["p1_fainted"],
+         player2_move * turn_res["p2_moved"] + " & " * (turn_res["p2_moved"] and turn_res["p2_fainted"]) + (self.game.game_state.on_field2.name + " fainted") * turn_res["p2_fainted"]
+        """
+
         user_move = None
 
         os.system("clear" if os.name == "posix" else "cls")
@@ -32,7 +39,7 @@ class FightView:
                 while str(user_move) not in playable_moves:
                     user_move = input("move choice > ")
             else:
-                # no human player (or must not choose), just display a little before continuing
+                # no human player or must not choose, just display a little before continuing
                 input("continue > ")
                 user_move = None
                 #time.sleep(0)

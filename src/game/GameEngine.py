@@ -1,5 +1,8 @@
 import random
+from queue import Queue
+from typing import Union
 
+from src.agents import AbstractPlayer
 from src.agents.PlayerComputer import PlayerComputer
 from src.agents.PlayerHuman import PlayerHuman
 from src.agents.PlayerMDM import PlayerMDM
@@ -8,13 +11,15 @@ from src.agents.PlayerRandom import PlayerRandom
 from src.db.dbmanager import retrieve_team, load_ml_agent, update_ml_agent
 from src.game.PokeGame import PokeGame
 from src.game.constants import TYPES, MIN_HP, MAX_HP, MIN_STAT, MAX_STAT, MIN_POW, MAX_POW
+from src.view.util.UIparameters import FightUIParams, TestUIParams, TrainUIParams
 
 
 class GameEngine:
-    def __init__(self, ui_input, from_ui=None, to_ui=None):
+    def __init__(self, ui_input: Union[FightUIParams, TestUIParams, TrainUIParams], from_ui: Queue = None,
+                 to_ui: Queue = None):
         """
 
-        :param ui_input: Inputs retrieved from UI, type 'UIParams'
+        :param ui_input: UIParams object containing inputs retrieved from UI
         :param from_ui: Shared object to communicate with UI (set to None if not called from UI)
         :param to_ui: Shared object to communicate with UI
         """
@@ -35,9 +40,10 @@ class GameEngine:
 
     # init team and players
 
-    def get_team_specs(self, team_src):
+    @staticmethod
+    def get_team_specs(team_src):
         """
-        Retrieves specifications to build a team. Team is either taken from database or generated randomly.
+        Retrieves specifications to build Pokémon team. Team is either taken from database or generated randomly.
 
         :param team_src: name of the team in database or 'random' to generate a team
         :return: specifications of the team (cf. PokeGame to see the shape)
@@ -46,7 +52,7 @@ class GameEngine:
         out = list()
         NB_POKEMONS = 2  # TODO: update
         if team_src == "random":
-            # names (can't have duplicates)
+            # NB: names can't have duplicates
             names = list()
             while len(names) < NB_POKEMONS:
                 p_name = ''.join([chr(random.randint(ord('a'), ord('z'))) for _ in range(3)])
@@ -62,12 +68,12 @@ class GameEngine:
                 # STAB
                 a_type = poke[0][1]
                 a_power = random.choice([MIN_POW, MAX_POW])
-                a_name = ("light_" if a_power == 50 else "heavy_") + a_type.lower()
+                a_name = ("light_" if a_power == MIN_POW else "heavy_") + a_type.lower()
                 temp_mv.append((a_name, a_type, a_power))
 
                 for _ in range(1):
                     a_type = random.choice(TYPES)
-                    a_power = random.choice([50, 100])
+                    a_power = random.choice([MIN_POW, MAX_POW])
                     a_name = ("light_" if a_power == 50 else "heavy_") + a_type.lower()
                     temp_mv.append((a_name, a_type, a_power))
                 poke.append(tuple(temp_mv))
@@ -78,7 +84,14 @@ class GameEngine:
 
         return out
 
-    def init_players(self, ui_input):
+    @staticmethod
+    def init_players(ui_input):
+        """
+        Initialize Player objects that will be used as agents to play the game.
+
+        :param ui_input: UIParams object containing information to initialize game
+        :return: List of two Player objects
+        """
 
         players = list()
         # TODO: train mode, both player in ML and same NN -> share object
@@ -108,9 +121,15 @@ class GameEngine:
 
     # game loops
 
-    def fight_mode(self, players, ui_input, from_ui, to_ui):
+    def fight_mode(self, players: list[AbstractPlayer, AbstractPlayer],
+                   ui_input: Union[FightUIParams, TestUIParams, TrainUIParams], from_ui: Queue, to_ui: Queue):
         """
-            Game loop for game in terminal, (human vs computer or computer vs computer)
+        Game loop for game in terminal, (human vs computer or computer vs computer)
+
+        :param players: List of two initialized Player objects
+        :param ui_input: FightUIParams object containing inputs retrieved from UI
+        :param from_ui: Queue object used to receive messages sent by the controller
+        :param to_ui: Queue object used to send messages to the controller
         """
 
         self.game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
@@ -124,9 +143,10 @@ class GameEngine:
 
         while not game_finished:
             # send game to ui for display
-            game_state = self.game.get_player1_view()
-            to_ui.put(game_state)
+            game_state = self.game.get_player_view("p1")
             playable_moves = self.game.get_moves_from_state("p1", None)
+
+            to_ui.put(game_state)
             to_ui.put(playable_moves)
             to_ui.put(turn_nb)
 
@@ -144,9 +164,9 @@ class GameEngine:
             input(turn_res)
             player1_move = "None" if player1_move is None else player1_move
             player2_move = "None" if player2_move is None else player2_move
-            last_moves = [player1_move * turn_res["p1_moved"] + " & " * (turn_res["p1_moved"] and turn_res["p1_fainted"]) + (self.game.game_state.on_field1.name + " fainted") * turn_res["p1_fainted"],
-                          player2_move * turn_res["p2_moved"] + " & " * (turn_res["p2_moved"] and turn_res["p2_fainted"]) + (self.game.game_state.on_field2.name + " fainted") * turn_res["p2_fainted"]]
+            last_moves = [player1_move, player2_move]
             to_ui.put(last_moves)
+            to_ui.put(turn_res)
 
             game_finished = self.game.is_end_state(None)
             to_ui.put(game_finished)
@@ -156,7 +176,7 @@ class GameEngine:
                 turn_nb += 1
 
         # send final state
-        game_state = self.game.get_player1_view()
+        game_state = self.game.get_player_view("p1")
         to_ui.put(game_state)
         result = "player 1 victory" if self.game.first_player_won() else "player 2 victory"
         to_ui.put([result])
@@ -236,7 +256,8 @@ class GameEngine:
             p1_victories += game_finished and self.game.first_player_won()
 
             # UI communication
-            if ui_communicate is not None:
-                ui_communicate["prog"] += 1
+            if ui_communicate is not None and not i % 10:
+                ui_communicate.put(i)
 
-        ui_communicate["res"] = p1_victories / ui_input.nb
+        ui_communicate.put("testing ended")
+        ui_communicate.put(p1_victories / ui_input.nb)

@@ -113,7 +113,7 @@ class TestCasePokeGame(unittest.TestCase):
         exp.team2 = gen_team_unknown()
         exp.on_field2 = exp.team2[0]
         exp.on_field2.name, exp.on_field2.poke_type, exp.on_field2.cur_hp, exp.on_field2.hp = "d1", "WATER", 100, 100
-        self.assertEqual(game.get_player1_view(), exp)
+        self.assertEqual(game.get_player_view("p1"), exp)
 
     def test_get_player2_view(self):
         game = PokeGame(team_specs_for_game)
@@ -121,7 +121,7 @@ class TestCasePokeGame(unittest.TestCase):
         exp.team1 = gen_team_unknown()
         exp.on_field1 = exp.team1[0]
         exp.on_field1.name, exp.on_field1.poke_type, exp.on_field1.cur_hp, exp.on_field1.hp = "p1", "FIRE", 100, 100
-        self.assertEqual(game.get_player2_view(), exp)
+        self.assertEqual(game.get_player_view("p2"), exp)
 
     @parameterized.expand([
         (False, False, ["light_steel", "heavy_water", "switch d2"], "p2"),
@@ -237,8 +237,8 @@ class TestCasePokeGame(unittest.TestCase):
 
         exp = PokeGame(team_specs_for_game2)
         for p1_move, p2_move, ret in zip(p1_moves, p2_moves, rets):
-            pre_team1 = [(p.name, p.poke_type, p.cur_hp, p.hp) for p in exp.game_state.team1]
-            pre_team2 = [(p.name, p.poke_type, p.cur_hp, p.hp) for p in exp.game_state.team2]
+            pre_team1 = (exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp)
+            pre_team2 = (exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp)
 
             exp.apply_player_moves(exp.game_state, p1_move, p2_move, 0.85, True)
 
@@ -280,30 +280,51 @@ class TestCasePokeGame(unittest.TestCase):
                                                  (("d2", "DRAGON", 100, 80, 116, 140),
                                                   (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
         exp.player2_view = PokeGame.GameStruct([[(("p1", "FIRE", 100, 102, 115, 140),
-                                                 (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
-                                                (("p2", "ELECTRIC", 100, 80, 119, 100),
-                                                 (("heavy_electric", "ELECTRIC", 100), (None, None, None)))],
-                                               [(("d1", "WATER", 100, 100, 100, 99),
-                                                 (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
-                                                (("d2", "DRAGON", 100, 80, 100, 101),
-                                                 (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
+                                                  (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+                                                 (("p2", "ELECTRIC", 100, 80, 119, 100),
+                                                  (("heavy_electric", "ELECTRIC", 100), (None, None, None)))],
+                                                [(("d1", "WATER", 100, 100, 100, 99),
+                                                  (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+                                                 (("d2", "DRAGON", 100, 80, 100, 101),
+                                                  (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
 
         exp.game_state.on_field1, exp.game_state.on_field2 = exp.game_state.team1[1], exp.game_state.team2[1]
         exp.player1_view.on_field1, exp.player1_view.on_field2 = exp.player1_view.team1[1], exp.player1_view.team2[1]
         exp.player2_view.on_field1, exp.player2_view.on_field2 = exp.player2_view.team1[1], exp.player2_view.team2[1]
-        exp.game_state.team1[0].cur_hp, exp.game_state.team1[1].cur_hp, exp.game_state.team2[0].cur_hp, exp.game_state.team2[1].cur_hp = 0, 0, 0, 14
-        exp.player1_view.team1[0].cur_hp, exp.player1_view.team1[1].cur_hp, exp.player1_view.team2[0].cur_hp, exp.player1_view.team2[1].cur_hp = 0, 0, 0, 14
-        exp.player2_view.team1[0].cur_hp, exp.player2_view.team1[1].cur_hp, exp.player2_view.team2[0].cur_hp, exp.player2_view.team2[1].cur_hp = 0, 0, 0, 14
+        exp.game_state.team1[0].cur_hp, exp.game_state.team1[1].cur_hp, exp.game_state.team2[0].cur_hp, \
+            exp.game_state.team2[1].cur_hp = 0, 0, 0, 14
+        exp.player1_view.team1[0].cur_hp, exp.player1_view.team1[1].cur_hp, exp.player1_view.team2[0].cur_hp, \
+            exp.player1_view.team2[1].cur_hp = 0, 0, 0, 14
+        exp.player2_view.team1[0].cur_hp, exp.player2_view.team1[1].cur_hp, exp.player2_view.team2[0].cur_hp, \
+            exp.player2_view.team2[1].cur_hp = 0, 0, 0, 14
 
         self.assertEqual(game, exp, msg="{}\n{}".format(game, exp))
 
-    def test_get_numeric_repr(self):
-        exp = [1, 100, 100, 100, 100, 10, 50, 1, 100,
-               3, 100, 80, 100, 100, 4, 50, 3, 100,
-               2, 100, 100, 100, 100, 16, 50, 2, 100,
-               14, 100, 80, 100, 100, 11, 50, 14, 100]
+    @parameterized.expand([
+        (None, [1, 100, 100, 100, 100, 100, 10, 50, 1, 100,
+                3, 100, 100, 80, 100, 100, 4, 50, 3, 100,
+                2, 100, 100, 100, 100, 100, 16, 50, 2, 100,
+                14, 100, 100, 80, 100, 100, 11, 50, 14, 100]),
+        ("p1", [1, 100, 100, 100, 100, 100, 10, 50, 1, 100,
+                3, 100, 100, 80, 100, 100, 4, 50, 3, 100,
+                2, 100, 100, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]),
+        ("p2", [1, 100, 100, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                2, 100, 100, 100, 100, 100, 16, 50, 2, 100,
+                14, 100, 100, 80, 100, 100, 11, 50, 14, 100])
+    ])
+    def test_get_numeric_repr(self, player, exp):
         game = PokeGame(team_specs_for_game)
-        self.assertListEqual(game.get_numeric_repr(game.game_state), exp)
+
+        if player is None:
+            out = game.get_numeric_repr(game.game_state)
+        elif player == "p1":
+            out = game.get_numeric_repr(game.player1_view)
+        else:
+            out = game.get_numeric_repr(game.player2_view)
+
+        self.assertListEqual(out, exp)
 
 
 if __name__ == '__main__':

@@ -58,6 +58,8 @@ class FightController:
         player1_human = from_backend.get()
         game_finished = from_backend.get()
         last_moves = [None, None]
+        turn_nb = None
+        turn_res = None
 
         while not game_finished:
 
@@ -68,20 +70,23 @@ class FightController:
 
             # send to view and wait for answer (user move)
             if player1_human:
-                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, turn_nb, False)
+                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves,
+                                                         turn_res, turn_nb, False)
                 to_backend.put(user_move)
             else:  # no input required, only send for display purposes
-                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, turn_nb, False)
+                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves,
+                                                         turn_res, turn_nb, False)
 
             # outcome of turn
             last_moves = from_backend.get()
+            turn_res = from_backend.get()
             game_finished = from_backend.get()
 
         # wait final results
         game_state = from_backend.get()
         result = from_backend.get()
 
-        self.fight_view.display_game(game_state, player1_human, result, last_moves, turn_nb, True)
+        self.fight_view.display_game(game_state, player1_human, result, last_moves, turn_res, turn_nb, True)
 
 
 if __name__ == "__main__":

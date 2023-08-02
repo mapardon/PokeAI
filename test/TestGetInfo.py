@@ -228,10 +228,9 @@ class MyTestCase(unittest.TestCase):
                 if p1.cur_hp is not None:
                     p1.cur_hp = p2.cur_hp
 
-        test_view = game.get_player1_view() if test_player == "p1" else game.get_player2_view()
+        test_view = game.get_player_view(test_player)
 
         self.assertEqual(test_view, exp_view)
-
 
     @parameterized.expand([
         (False, False,
@@ -257,6 +256,8 @@ class MyTestCase(unittest.TestCase):
     def test_reverse_attack_calculator(self, lo_is_none: bool, hi_is_none: bool, p1: Pokemon, p2: Pokemon):
         hp_loss = PokeGame.damage_formula(p1.moves[0], p1, p2)
         lo, hi = PokeGame.reverse_attack_calculator(p1.moves[0], p1, p2, hp_loss)
+        if not lo_is_none and lo is None or not hi_is_none and hi is None:
+            print()
         self.assertTrue((lo_is_none and lo is None or lo <= p1.atk) and (hi_is_none and hi is None or p1.atk <= hi),
                         msg="{} <= {} <= {}".format(lo, p1.atk, hi))
 
@@ -313,31 +314,48 @@ class MyTestCase(unittest.TestCase):
           [(("d1", "ELECTRIC", 100, 80, 100, 95),
             (("light_steel", "STEEL", 50), ("heavy_electric", "ELECTRIC", 100))),
            (("d2", "STEEL", 100, 140, 100, 105),
+            (("light_grass", "GRASS", 50), (None, None, None)))]]),
+        (["switch p2"], ["switch d2"], 140, 99,
+         [[(("p1", "FIRE", 100, 100, 100, 100),
+            (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "FIRE", 100, 100, 100, 100),
+            (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100)))],
+          [(("d1", "ELECTRIC", 100, 80, 100, 95),
+            (("light_steel", "STEEL", 50), ("heavy_electric", "ELECTRIC", 100))),
+           (("d2", "STEEL", 100, 140, 100, 105),
             (("light_grass", "GRASS", 50), (None, None, None)))]])
     ])
     def test_speed_estimation(self, player1_moves, player2_moves, p1_spe_exp, p2_spe_exp, team_specs):
 
         game = PokeGame(team_specs)
+        p1view_pkmn2, p2view_pkmn1 = None, None
 
         for player1_move, player2_move in zip(player1_moves, player2_moves):
+            p1_first = game.game_state.on_field1.spe > game.game_state.on_field2.spe
+            p2_first = not p1_first
+
             game.apply_player_moves(game.game_state, player1_move, player2_move, 0.85)
             game.directly_available_info("p1", player1_move)
             game.directly_available_info("p2", player2_move)
 
-            p1_first = game.game_state.on_field1.spe > game.game_state.on_field2.spe
-            p2_first = not p1_first
+            if "switch" in player1_move and "switch" in player2_move:
+                p1view_pkmn1 = game.player1_view.team1[0]
+                p1view_pkmn2 = game.player1_view.team2[0]
+                p2view_pkmn1 = game.player2_view.team1[0]
+                p2view_pkmn2 = game.player2_view.team2[0]
+            else:
+                p1view_pkmn1, p1view_pkmn2 = game.player1_view.on_field1, game.player1_view.on_field2
+                p2view_pkmn1, p2view_pkmn2 = game.player2_view.on_field1, game.player2_view.on_field2
 
-            p2_spe_est = PokeGame.estimate_speed(p1_first, player1_move, player2_move, game.player1_view.on_field1,
-                                                 game.player1_view.on_field2)
-            p1_spe_est = PokeGame.estimate_speed(p2_first, player2_move, player1_move, game.player2_view.on_field2,
-                                                 game.player2_view.on_field1)
-            game.player1_view.on_field2.spe = p2_spe_est
-            game.player2_view.on_field1.spe = p1_spe_est
+            p1view_pkmn2.spe = PokeGame.estimate_speed(p1_first, player1_move, player2_move, p1view_pkmn1.spe,
+                                                       p1view_pkmn2.spe)
+            p2view_pkmn1.spe = PokeGame.estimate_speed(p2_first, player2_move, player1_move, p2view_pkmn2.spe,
+                                                       p2view_pkmn1.spe)
 
-        self.assertTrue((game.player1_view.on_field2.spe is None and p2_spe_exp is None or
-                        game.player1_view.on_field2.spe == p2_spe_exp) and
-                        (game.player2_view.on_field1.spe is None and p1_spe_exp is None or
-                         game.player2_view.on_field1.spe == p1_spe_exp))
+        self.assertTrue((p1view_pkmn2.spe is None and p2_spe_exp is None or
+                         p1view_pkmn2.spe == p2_spe_exp) and
+                        (p2view_pkmn1.spe is None and p1_spe_exp is None or
+                         p2view_pkmn1.spe == p1_spe_exp))
 
     @parameterized.expand([
         (False, False, "p1", ["light_psychic"], ["light_steel"],
@@ -369,36 +387,58 @@ class MyTestCase(unittest.TestCase):
                                   team_specs):
 
         game = PokeGame(team_specs)
+        pre_of1_pl, pre_of2_pl, pre_of1_re, pre_of2_re = None, None, None, None
+
         for player1_move, player2_move in zip(player1_moves, player2_moves):
-            pre_team1 = [(p.name, p.poke_type, p.cur_hp, p.hp) for p in game.game_state.team1]
-            pre_team2 = [(p.name, p.poke_type, p.cur_hp, p.hp) for p in game.game_state.team2]
+            pre_of1_pl = game.player1_view.on_field1 if test_player == "p1" else game.player2_view.on_field1
+            pre_of2_pl = game.player1_view.on_field2 if test_player == "p1" else game.player2_view.on_field2
+            pre_of1_re, pre_of2_re = game.game_state.on_field1, game.game_state.on_field2
 
             game.apply_player_moves(game.game_state, player1_move, player2_move, 0.85)
             game.directly_available_info("p1", player1_move)
             game.directly_available_info("p2", player2_move)
 
             ret = {'p1_moved': "switch" in player1_move or "switch" in player2_move or
-                               [p[2] for p in pre_team2 if p[0] == game.game_state.on_field2.name][
-                                   0] != game.game_state.on_field2.cur_hp,
+                               pre_of2_re.cur_hp != game.game_state.on_field2.cur_hp,
                    'p1_fainted': not game.game_state.on_field1.is_alive(),
-                   'p1_first': game.game_state.on_field1.spe > game.game_state.on_field2.spe,
+                   'p1_first': pre_of1_re.spe > pre_of2_re.spe,  # normally not sufficient but no atk/switch here
                    'p2_moved': "switch" in player2_move or "switch" in player1_move or
-                               [p[2] for p in pre_team1 if p[0] == game.game_state.on_field1.name][
-                                   0] != game.game_state.on_field1.cur_hp,
+                               pre_of1_re.cur_hp != game.game_state.on_field1.cur_hp,
                    'p2_fainted': not game.game_state.on_field2.is_alive(),
-                   'p2_first': game.game_state.on_field1.spe < game.game_state.on_field2.spe}
+                   'p2_first': pre_of1_re.spe < pre_of2_re.spe}
 
+            pre_stats = [(pre_of1_pl.name, pre_of1_pl.cur_hp, pre_of1_pl.spe),
+                         (pre_of2_pl.name, pre_of2_pl.cur_hp, pre_of2_pl.spe)]
+            if test_player == "p2":
+                pre_stats.reverse()
             game.statistic_estimation(test_player, ret, player1_move if test_player == "p1" else player2_move,
-                                      player2_move if test_player == "p1" else player1_move,
-                                      pre_team1 if test_player == "p1" else pre_team2,
-                                      pre_team2 if test_player == "p1" else pre_team1)
+                                      player2_move if test_player == "p1" else player1_move, pre_stats[0], pre_stats[1])
 
-        test_of = game.get_player1_view().on_field2 if test_player == "p1" else game.get_player2_view().on_field1
-        real_of = game.game_state.on_field2 if test_player == "p1" else game.game_state.on_field1
+        if "switch" in player1_moves[-1] and "switch" in player2_moves[-1]:
+            test_pkmn = pre_of2_pl if test_player == "p1" else pre_of1_pl
+            real_pkmn = pre_of2_re if test_player == "p1" else pre_of1_re
+        else:
+            test_pkmn = game.get_player_view("p1").on_field2 if test_player == "p1" else game.get_player_view("p2").on_field1
+            real_pkmn = game.game_state.on_field2 if test_player == "p1" else game.game_state.on_field1
 
-        self.assertTrue((atk_is_none and test_of.atk is None or real_of.atk <= test_of.atk) and
-                        (des_is_none and test_of.des is None or real_of.des <= test_of.des) and
-                        real_of.spe < test_of.spe)
+        try:
+            atk_is_none and test_pkmn.atk is None or real_pkmn.atk <= test_pkmn.atk
+        except Exception as e:
+            print()
+
+        try:
+            des_is_none and test_pkmn.des is None or real_pkmn.des <= test_pkmn.des
+        except Exception as e:
+            print()
+
+        try:
+            real_pkmn.spe < test_pkmn.spe
+        except Exception as e:
+            print()
+
+        self.assertTrue((atk_is_none and test_pkmn.atk is None or real_pkmn.atk <= test_pkmn.atk) and
+                        (des_is_none and test_pkmn.des is None or real_pkmn.des <= test_pkmn.des) and
+                        real_pkmn.spe < test_pkmn.spe)
 
 
 if __name__ == '__main__':
