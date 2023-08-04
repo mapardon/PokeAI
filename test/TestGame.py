@@ -237,16 +237,19 @@ class TestCasePokeGame(unittest.TestCase):
 
         exp = PokeGame(team_specs_for_game2)
         for p1_move, p2_move, ret in zip(p1_moves, p2_moves, rets):
-            pre_team1 = (exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp)
-            pre_team2 = (exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp)
+            pre_team1_vp1 = (exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player1_view.on_field1.spe)
+            pre_team2_vp1 = (exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player1_view.on_field2.spe)
+            pre_team1_vp2 = (exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player2_view.on_field1.spe)
+            pre_team2_vp2 = (exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player2_view.on_field2.spe)
 
             exp.apply_player_moves(exp.game_state, p1_move, p2_move, 0.85, True)
 
             exp.directly_available_info("p1", p2_move)
             exp.directly_available_info("p2", p1_move)
 
-            exp.statistic_estimation("p1", ret, p1_move, p2_move, pre_team1, pre_team2)
-            exp.statistic_estimation("p2", ret, p2_move, p1_move, pre_team2, pre_team1)
+            if p1_move is not None and p2_move is not None:
+                exp.statistic_estimation("p1", ret, p1_move, p2_move, pre_team1_vp1, pre_team2_vp1)
+                exp.statistic_estimation("p2", ret, p2_move, p1_move, pre_team2_vp2, pre_team1_vp2)
 
         self.assertEqual(game, exp)
 

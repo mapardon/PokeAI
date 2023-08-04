@@ -259,5 +259,6 @@ class GameEngine:
             if ui_communicate is not None and not i % 10:
                 ui_communicate.put(i)
 
-        ui_communicate.put("testing ended")
-        ui_communicate.put(p1_victories / ui_input.nb)
+        if ui_communicate is not None:
+            ui_communicate.put("testing ended")
+            ui_communicate.put(p1_victories / ui_input.nb)

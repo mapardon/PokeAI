@@ -33,6 +33,15 @@ team_specs2 = [[(("p1", "FIRE", 100, 100, 100, 100),
                 (("d2", "BUG", 100, 80, 100, 100),
                  (("light_ghost", "GHOST", 50), ("heavy_bug", "BUG", 100)))]]
 
+team_specs3 = [[(("p1z", "FIRE", 100, 100, 100, 100),
+                 (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+                (("p2", "ROCK", 100, 100, 100, 95),
+                 (("light_fairy", "FAIRY", 50), ("heavy_rock", "ROCK", 100)))],
+               [(("d1", "ELECTRIC", 100, 80, 100, 95),
+                 (("light_steel", "STEEL", 50), ("heavy_electric", "ELECTRIC", 100))),
+                (("d2", "BUG", 100, 80, 100, 100),
+                 (("light_ghost", "GHOST", 50), ("heavy_bug", "BUG", 100)))]]
+
 dummy_poke1 = Pokemon("p1", "GROUND", (100, 100, 100, 100),
                       (Move("heavy_ground", "GROUND", 100), Move("light_flying", "FLYING", 50)))
 dummy_poke2 = Pokemon("p2", "DARK", (90, 110, 90, 110),
@@ -190,6 +199,23 @@ class MyTestCase(unittest.TestCase):
           [(("d1", "WATER", 100, 100, 100, 100),
             (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
            (("d2", "DRAGON", 100, 80, 100, 80),
+            (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+        ("p1", ("switch p2", "switch p1"), ("light_steel", "light_steel"),
+         [[(("p1", "FIRE", 100, 100, 100, 100),
+            (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
+           (("p2", "ELECTRIC", 100, 80, 100, 100),
+            (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
+          [(("d1", "WATER", 100, None, None, None),
+            (("light_steel", "STEEL", 50), (None, None, None))),
+           ((None, None, None, None, None, None), ((None, None, None), (None, None, None)))]]),
+        ("p2", ("switch p2", "switch p1"), ("light_steel", "light_steel"),
+         [[(("p1", "FIRE", 100, None, None, None),
+            ((None, None, None), (None, None, None))),
+           (("p2", "ELECTRIC", 100, None, None, None),
+            ((None, None, None), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100),
+            (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80),
             (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
     ])
     def test_directly_available_info(self, test_player, player1_moves, player2_moves, exp_specs):
@@ -230,61 +256,77 @@ class MyTestCase(unittest.TestCase):
 
         test_view = game.get_player_view(test_player)
 
+        if test_view != exp_view:
+            print(exp_view)
+            print(test_view)
+
         self.assertEqual(test_view, exp_view)
 
     @parameterized.expand([
-        (False, False,
+        (False, False, 0.9,
          Pokemon("p1", "STEEL", (100, 100, 100, 100), (Move("metal-atk", "STEEL", 95), Move(None, None, None))),
          Pokemon("test-normal", "FLYING", (100, 100, 100, 100),
                  (Move("flying-atk", "FLYING", 95), Move(None, None, None)))),
-        (False, False,
+        (False, False, 0.9,
          Pokemon("p1", "STEEL", (100, 120, 80, 80), (Move("metal-atk", "STEEL", 55), Move(None, None, None))),
          Pokemon("test-effective", "ICE", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
-        (False, False,
+        (False, False, 0.9,
          Pokemon("pkmn1", "STEEL", (100, 120, 100, 80), (Move("metal-atk", "STEEL", 95), Move(None, None, None))),
          Pokemon("test-KO", "NORMAL", (10, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
-        (True, True,
+        (True, True, 0.9,
          Pokemon("pkmn1", "GHOST", (100, 120, 100, 80), (Move("ghost-atk", "GHOST", 95), Move(None, None, None))),
          Pokemon("test-ineffective", "NORMAL", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
-        (True, False,
+        (True, False, 0.9,
          Pokemon("pkmn1", "STEEL", (100, MIN_STAT, 100, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
          Pokemon("test-minatk", "FLYING", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
-        (False, True,
+        (False, True, 0.9,
          Pokemon("pkmn1", "STEEL", (100, MAX_STAT, 80, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
-         Pokemon("test-maxatk", "FLYING", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None))))
+         Pokemon("test-maxatk", "FLYING", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
+        (True, False, 0.85,
+         Pokemon("pkmn1", "STEEL", (100, MIN_STAT, 80, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-mindmg", "FLYING", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
+        (True, False, 1.0,
+         Pokemon("pkmn1", "STEEL", (100, MAX_STAT, 80, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-maxdmg", "FLYING", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None))))
     ])
-    def test_reverse_attack_calculator(self, lo_is_none: bool, hi_is_none: bool, p1: Pokemon, p2: Pokemon):
-        hp_loss = PokeGame.damage_formula(p1.moves[0], p1, p2)
+    def test_reverse_attack_calculator(self, lo_is_none: bool, hi_is_none: bool, roll: float, p1: Pokemon, p2: Pokemon):
+        hp_loss = PokeGame.damage_formula(p1.moves[0], p1, p2, roll)
         lo, hi = PokeGame.reverse_attack_calculator(p1.moves[0], p1, p2, hp_loss)
-        if not lo_is_none and lo is None or not hi_is_none and hi is None:
-            print()
+
         self.assertTrue((lo_is_none and lo is None or lo <= p1.atk) and (hi_is_none and hi is None or p1.atk <= hi),
                         msg="{} <= {} <= {}".format(lo, p1.atk, hi))
 
     @parameterized.expand([
-        (False, False,
+        (False, False, 0.9,
          Pokemon("p1", "STEEL", (100, 100, 100, 100), (Move("metal-atk", "STEEL", 95), Move(None, None, None))),
          Pokemon("test-normal", "FLYING", (100, 100, 100, 100),
                  (Move("flying-atk", "FLYING", 95), Move(None, None, None)))),
-        (False, False,
+        (False, False, 0.9,
          Pokemon("p1", "STEEL", (100, 120, 80, 80), (Move("metal-atk", "STEEL", 55), Move(None, None, None))),
          Pokemon("test-effective", "ICE", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
-        (False, False,
+        (False, False, 0.9,
          Pokemon("pkmn1", "STEEL", (100, 120, 100, 80), (Move("metal-atk", "STEEL", 95), Move(None, None, None))),
          Pokemon("test-KO", "NORMAL", (10, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
-        (True, True,
+        (True, True, 0.9,
          Pokemon("pkmn1", "GHOST", (100, 120, 100, 80), (Move("ghost-atk", "GHOST", 95), Move(None, None, None))),
          Pokemon("test-ineffective", "NORMAL", (100, 120, 100, 80), (Move(None, None, None), Move(None, None, None)))),
-        (True, False,
+        (True, False, 0.9,
          Pokemon("pkmn1", "STEEL", (100, 100, 100, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
          Pokemon("test-mindef", "FLYING", (100, 120, MIN_STAT, 80), (Move(None, None, None), Move(None, None, None)))),
-        (False, True,
+        (False, True, 0.9,
          Pokemon("pkmn1", "STEEL", (100, 100, 80, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
-         Pokemon("test-maxdef", "FLYING", (100, 100, MAX_STAT, 80), (Move(None, None, None), Move(None, None, None))))
+         Pokemon("test-maxdef", "FLYING", (100, 100, MAX_STAT, 80), (Move(None, None, None), Move(None, None, None)))),
+        (False, True, 0.85,
+         Pokemon("pkmn1", "STEEL", (100, 100, 100, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-mindmg", "FLYING", (100, 120, MAX_STAT, 80), (Move(None, None, None), Move(None, None, None)))),
+        (True, False, 1.0,
+         Pokemon("pkmn1", "STEEL", (100, 100, 80, 80), (Move("steel-atk", "STEEL", 95), Move(None, None, None))),
+         Pokemon("test-maxdmg", "FLYING", (100, 100, MIN_STAT, 80), (Move(None, None, None), Move(None, None, None))))
     ])
-    def test_reverse_defense_calculator(self, lo_is_none: bool, hi_is_none: bool, p1: Pokemon, p2: Pokemon):
-        hp_loss = PokeGame.damage_formula(p1.moves[0], p1, p2)
+    def test_reverse_defense_calculator(self, lo_is_none: bool, hi_is_none: bool, roll: float, p1: Pokemon, p2: Pokemon):
+        hp_loss = PokeGame.damage_formula(p1.moves[0], p1, p2, roll)
         lo, hi = PokeGame.reverse_defense_calculator(p1.moves[0], p1, p2, hp_loss)
+
         self.assertTrue((lo_is_none and lo is None or lo <= p2.des) and (hi_is_none and hi is None or p2.des <= hi),
                         msg="{} <= {} <= {}".format(lo, p2.des, hi))
 
@@ -352,10 +394,8 @@ class MyTestCase(unittest.TestCase):
             p2view_pkmn1.spe = PokeGame.estimate_speed(p2_first, player2_move, player1_move, p2view_pkmn2.spe,
                                                        p2view_pkmn1.spe)
 
-        self.assertTrue((p1view_pkmn2.spe is None and p2_spe_exp is None or
-                         p1view_pkmn2.spe == p2_spe_exp) and
-                        (p2view_pkmn1.spe is None and p1_spe_exp is None or
-                         p2view_pkmn1.spe == p1_spe_exp))
+        self.assertTrue((p1view_pkmn2.spe is None and p2_spe_exp is None or p1view_pkmn2.spe == p2_spe_exp) and
+                        (p2view_pkmn1.spe is None and p1_spe_exp is None or p2view_pkmn1.spe == p1_spe_exp))
 
     @parameterized.expand([
         (False, False, "p1", ["light_psychic"], ["light_steel"],
@@ -387,58 +427,46 @@ class MyTestCase(unittest.TestCase):
                                   team_specs):
 
         game = PokeGame(team_specs)
-        pre_of1_pl, pre_of2_pl, pre_of1_re, pre_of2_re = None, None, None, None
+        pre_of1_pl_ref, pre_of2_pl_ref, pre_of1_re_ref, pre_of2_re_ref = None, None, None, None
 
         for player1_move, player2_move in zip(player1_moves, player2_moves):
-            pre_of1_pl = game.player1_view.on_field1 if test_player == "p1" else game.player2_view.on_field1
-            pre_of2_pl = game.player1_view.on_field2 if test_player == "p1" else game.player2_view.on_field2
-            pre_of1_re, pre_of2_re = game.game_state.on_field1, game.game_state.on_field2
+            # need to keep a dynamic reference in case of double switch
+            pre_of1_pl_ref = game.player1_view.on_field1 if test_player == "p1" else game.player2_view.on_field1
+            pre_of2_pl_ref = game.player1_view.on_field2 if test_player == "p1" else game.player2_view.on_field2
+            pre_of1_re_ref, pre_of2_re_ref = game.game_state.on_field1, game.game_state.on_field2
 
-            game.apply_player_moves(game.game_state, player1_move, player2_move, 0.85)
+            pre_of1_stats = (pre_of1_re_ref.name, pre_of1_re_ref.cur_hp, pre_of1_re_ref.spe)
+            pre_of2_stats = (pre_of2_re_ref.name, pre_of2_re_ref.cur_hp, pre_of2_re_ref.spe)
+
+            game.apply_player_moves(game.game_state, player1_move, player2_move, 0.9, True)
             game.directly_available_info("p1", player1_move)
             game.directly_available_info("p2", player2_move)
 
             ret = {'p1_moved': "switch" in player1_move or "switch" in player2_move or
-                               pre_of2_re.cur_hp != game.game_state.on_field2.cur_hp,
+                               pre_of2_stats[1] != game.game_state.on_field2.cur_hp,
                    'p1_fainted': not game.game_state.on_field1.is_alive(),
-                   'p1_first': pre_of1_re.spe > pre_of2_re.spe,  # normally not sufficient but no atk/switch here
+                   'p1_first': pre_of1_re_ref.spe >= pre_of2_re_ref.spe,  # normally not sufficient but no atk/switch here
                    'p2_moved': "switch" in player2_move or "switch" in player1_move or
-                               pre_of1_re.cur_hp != game.game_state.on_field1.cur_hp,
+                               pre_of1_stats[1] != game.game_state.on_field1.cur_hp,
                    'p2_fainted': not game.game_state.on_field2.is_alive(),
-                   'p2_first': pre_of1_re.spe < pre_of2_re.spe}
+                   'p2_first': pre_of1_re_ref.spe < pre_of2_re_ref.spe}
 
-            pre_stats = [(pre_of1_pl.name, pre_of1_pl.cur_hp, pre_of1_pl.spe),
-                         (pre_of2_pl.name, pre_of2_pl.cur_hp, pre_of2_pl.spe)]
-            if test_player == "p2":
-                pre_stats.reverse()
+            pre_stats = [pre_of1_stats, pre_of2_stats][::(-1) ** (test_player == "p2")]
+
+            print()
+
             game.statistic_estimation(test_player, ret, player1_move if test_player == "p1" else player2_move,
                                       player2_move if test_player == "p1" else player1_move, pre_stats[0], pre_stats[1])
 
-        if "switch" in player1_moves[-1] and "switch" in player2_moves[-1]:
-            test_pkmn = pre_of2_pl if test_player == "p1" else pre_of1_pl
-            real_pkmn = pre_of2_re if test_player == "p1" else pre_of1_re
-        else:
-            test_pkmn = game.get_player_view("p1").on_field2 if test_player == "p1" else game.get_player_view("p2").on_field1
-            real_pkmn = game.game_state.on_field2 if test_player == "p1" else game.game_state.on_field1
-
-        try:
-            atk_is_none and test_pkmn.atk is None or real_pkmn.atk <= test_pkmn.atk
-        except Exception as e:
             print()
 
-        try:
-            des_is_none and test_pkmn.des is None or real_pkmn.des <= test_pkmn.des
-        except Exception as e:
-            print()
-
-        try:
-            real_pkmn.spe < test_pkmn.spe
-        except Exception as e:
-            print()
+        test_pkmn = pre_of2_pl_ref if test_player == "p1" else pre_of1_pl_ref
+        real_pkmn = pre_of2_re_ref if test_player == "p1" else pre_of1_re_ref
 
         self.assertTrue((atk_is_none and test_pkmn.atk is None or real_pkmn.atk <= test_pkmn.atk) and
                         (des_is_none and test_pkmn.des is None or real_pkmn.des <= test_pkmn.des) and
-                        real_pkmn.spe < test_pkmn.spe)
+                        (real_pkmn.spe <= test_pkmn.spe or pre_of1_re_ref.spe == pre_of2_re_ref.spe
+                         and test_player == "p1"))
 
 
 if __name__ == '__main__':

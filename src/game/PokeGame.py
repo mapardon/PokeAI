@@ -179,7 +179,7 @@ class PokeGame:
     def swap_states(self, game_state: GameStruct):
         self.game_state = game_state
 
-    def play_round(self, p1_move, p2_move, force_dmg=0.0, force_order=None):
+    def play_round(self, p1_move: str, p2_move: str, force_dmg: float = 0.0, force_order: bool = None):
         """
         Call functions related to move application (apply_player_moves & get_info_from_state), change inner and return
         information about what happened (whether any side fainted & who moved).
@@ -192,6 +192,8 @@ class PokeGame:
         """
 
         # save start-of-turn information
+        p1v_pre_of1, p1v_pre_of2 = self.player1_view.on_field1, self.player1_view.on_field2
+        p2v_pre_of1, p2v_pre_of2 = self.player2_view.on_field1, self.player2_view.on_field2
         pre_of1_name, pre_of1_cur_hp, pre_of1_spe = (self.game_state.on_field1.name, self.game_state.on_field1.cur_hp,
                                                      self.game_state.on_field1.spe)
         pre_of2_name, pre_of2_cur_hp, pre_of2_spe = (self.game_state.on_field2.name, self.game_state.on_field2.cur_hp,
@@ -204,9 +206,9 @@ class PokeGame:
         # test if any side has fainted & which side moved (opponent lost hp or player switched) & who moved first
         p1_moved = False
         if p1_move is not None:
-            p1_moved |= pre_of2_cur_hp > self.game_state.on_field2.cur_hp and pre_of2_name == self.game_state.on_field2.name
-            p1_moved |= pre_of2_name != self.game_state.on_field2.name  # opponent switched
+            p1_moved |= pre_of2_name == self.game_state.on_field2.name and pre_of2_cur_hp > self.game_state.on_field2.cur_hp
             p1_moved |= pre_of1_name != self.game_state.on_field1.name  # player switched
+            p1_moved |= pre_of2_name != self.game_state.on_field2.name  # opponent switched
 
         p2_moved = False
         if p2_move is not None:
@@ -225,16 +227,15 @@ class PokeGame:
         ret = {'p1_moved': p1_moved, 'p1_fainted': not self.game_state.on_field1.is_alive(), 'p1_first': p1_first,
                'p2_moved': p2_moved, 'p2_fainted': not self.game_state.on_field2.is_alive(), 'p2_first': p2_first}
 
-        print()
         # player get new information
         self.directly_available_info("p1", p2_move)
         self.directly_available_info("p2", p1_move)
 
         if p1_move is not None and p2_move is not None:  # no information to take if only 1 side moved (post KO switch)
-            self.statistic_estimation("p1", ret, p1_move, p2_move, (pre_of1_name, pre_of1_cur_hp, pre_of1_spe),
-                                      (pre_of2_name, pre_of2_cur_hp, pre_of2_spe))
-            self.statistic_estimation("p2", ret, p2_move, p1_move, (pre_of2_name, pre_of2_cur_hp, pre_of2_spe),
-                                      (pre_of1_name, pre_of1_cur_hp, pre_of1_spe))
+            self.statistic_estimation("p1", ret, p1_move, p2_move, (pre_of1_name, pre_of1_cur_hp, p1v_pre_of1.spe),
+                                      (pre_of2_name, pre_of2_cur_hp, p1v_pre_of2.spe))
+            self.statistic_estimation("p2", ret, p2_move, p1_move, (pre_of2_name, pre_of2_cur_hp, p2v_pre_of2.spe),
+                                      (pre_of1_name, pre_of1_cur_hp, p2v_pre_of1.spe))
 
         return ret
 
@@ -341,8 +342,6 @@ class PokeGame:
 
         real_own, real_other = (self.game_state.on_field1, self.game_state.on_field2) if player == "p1" else (
             self.game_state.on_field2, self.game_state.on_field1)
-        own_of, other_of = (self.player1_view.on_field1, self.player1_view.on_field2) if player == "p1" else (
-            self.player2_view.on_field2, self.player2_view.on_field1)
         own_team, other_team = (self.player1_view.team1, self.player1_view.team2) if player == "p1" else (
             self.player2_view.team2, self.player2_view.team1)
 
@@ -355,19 +354,15 @@ class PokeGame:
             self.player2_view.on_field2 = own_of
         own_of.cur_hp = real_own.cur_hp
 
-        # Opponent on-field
-        if real_other.name not in [p.name for p in other_team]:  # unknown name, opponent switched on new Pokémon
-            try:
-                unknown_poke_index = [p.name for p in other_team].index(None)
-            except Exception as e:
-                print()
-            other_of = other_team[unknown_poke_index]
+        # Opponent on-field (test if opponent switched, potentially on previously unseen Pokémon)
+        already_seen = real_other.name in [p.name for p in other_team]
+        other_of = other_team[[p.name for p in other_team].index(real_other.name if already_seen else None)]
 
-            # update player view of reference
-            if player == "p1":
-                self.player1_view.on_field2 = other_of
-            elif player == "p2":
-                self.player2_view.on_field1 = other_of
+        # update player view of reference
+        if player == "p1":
+            self.player1_view.on_field2 = other_of
+        elif player == "p2":
+            self.player2_view.on_field1 = other_of
 
         # HP and type changes (visible information)
         other_of.name, other_of.poke_type, other_of.cur_hp, other_of.hp = (real_other.name, real_other.poke_type,
@@ -397,23 +392,27 @@ class PokeGame:
         """
 
         attacker = copy.copy(attacker)
-        max_atk = -1  # hitting min power
-        min_atk = -1  # hitting max power
+        max_atk = -1  # hitting min random factor
+        min_atk = -1  # hitting max random factor
 
         # test edge cases
         attacker.atk = MIN_STAT
-        min_60, max_60 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker,
-                                                                                                        target, 1.0)
+        min_atk_85, min_atk_100 = PokeGame.damage_formula(move, attacker, target, 0.85), \
+            PokeGame.damage_formula(move, attacker, target, 1.0)
         attacker.atk = MAX_STAT
-        min_140, max_140 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move,
-                                                                                                          attacker,
-                                                                                                          target, 1.0)
-        if hp_loss < min_60 or hp_loss == 0:  # too few remaining HP or ineffective move
+        max_atk_85, max_atk_100 = PokeGame.damage_formula(move, attacker, target, 0.85), \
+            PokeGame.damage_formula(move, attacker, target, 1.0)
+
+        if hp_loss < min_atk_85 or hp_loss == 0:  # too few remaining HP or ineffective move
             min_atk, max_atk = None, None
-        elif min_60 <= hp_loss < max_60:
+        elif min_atk_85 <= hp_loss < min_atk_100:
             min_atk = None
-        elif min_140 < hp_loss <= max_140:
+        elif max_atk_85 < hp_loss <= max_atk_100:
             max_atk = None
+
+        if max_atk_100 == hp_loss:  # atk is max stat
+            min_atk = None
+            max_atk = MAX_STAT
 
         atk = MIN_STAT
         while atk <= MAX_STAT and (max_atk == -1 or min_atk == -1):
@@ -421,10 +420,10 @@ class PokeGame:
             min_dmg = PokeGame.damage_formula(move, attacker, target, 0.85)
             max_dmg = PokeGame.damage_formula(move, attacker, target, 1)
 
-            if hp_loss < max_dmg and min_atk == -1:
+            if min_atk == -1 and hp_loss < max_dmg:
                 min_atk = atk - 1
 
-            if hp_loss < min_dmg and max_atk == -1:
+            if max_atk == -1 and hp_loss < min_dmg:
                 max_atk = atk - 1
 
             atk += 1
@@ -450,20 +449,21 @@ class PokeGame:
 
         # test edge cases
         target.des = MIN_STAT
-        min_60, max_60 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move, attacker,
-                                                                                                        target, 1)
+        min_des_85, min_des_100 = PokeGame.damage_formula(move, attacker, target, 0.85),\
+            PokeGame.damage_formula(move, attacker, target, 1)
         target.des = MAX_STAT
-        min_140, max_140 = PokeGame.damage_formula(move, attacker, target, 0.85), PokeGame.damage_formula(move,
-                                                                                                          attacker,
-                                                                                                          target, 1)
-        if hp_loss < min_140 or hp_loss == 0:  # too few remaining HP or ineffective move
+        max_des_85, max_des_100 = PokeGame.damage_formula(move, attacker, target, 0.85),\
+            PokeGame.damage_formula(move, attacker, target, 1)
+
+        if hp_loss < max_des_85 or hp_loss == 0:  # too few remaining HP or ineffective move
             max_des, min_des = None, None
-        elif min_140 <= hp_loss < max_140:
+        elif max_des_85 <= hp_loss < max_des_100:
             max_des = None
-        elif min_60 < hp_loss <= max_60:
+        elif min_des_85 < hp_loss <= min_des_100:
             min_des = None
-        elif min_60 == hp_loss:
-            min_des = MIN_STAT
+
+        if min_des_100 == hp_loss:
+            max_des = MAX_STAT
 
         des = MAX_STAT
         while des >= MIN_STAT and (max_des == -1 or min_des == -1):
