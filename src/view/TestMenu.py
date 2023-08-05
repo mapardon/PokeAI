@@ -71,8 +71,8 @@ class TestMenu:
                 else:
                     warning = "Please provide existing agent name"
 
-            elif inputted[0] in ("team1", "team2") and len(inputted) == 1:
-                if inputted[0] in available_teams() + ["random"]:
+            elif inputted[0] in ("team1", "team2") and len(inputted) == 2:
+                if inputted[1] in available_teams() + ["random"]:
                     if inputted[0] == "team1":
                         pars.team1 = inputted[1]
                     else:
@@ -98,13 +98,13 @@ class TestMenu:
 
     def display_instructions(self):
         instructions = [
-            "agent1 t   # type of agent 1 (ml or ...)",
-            "agent2 t   # learning strategy for new agent",
+            "agent1 t   # type of agent 1 {}".format(" - ".join(AGENTS_TYPE)),
+            "agent2 t   # type of agent 2 {}".format(" - ".join(AGENTS_TYPE)),
             "nb n       # set number of games for training",
             "eps f      # set epsilon greedy to f",
-            "ml1 z      # load AI named z from database for role agent1",
-            "ml2 z      # load AI named z from database for role agent2",
-            "team1/2    # toggle team1/2 type",
+            "ml1 z      # load AI named z from database for agent1",
+            "ml2 z      # load AI named z from database for agent2",
+            "team1/2 t  # give team t to player1/2",
             "test       # launch test session",
             "leave      # exit program"]
 

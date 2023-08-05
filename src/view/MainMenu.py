@@ -26,7 +26,7 @@ class MainMenu:
             "fight      # go to fight menu (match)",
             "train      # go to train and agent creation menu",
             "test       # go to comparison/test menu",
-            "manage     # go to agents management menu",
+            "manage     # go to ml agents management menu",
             "leave      # exit program",
             ""]
 

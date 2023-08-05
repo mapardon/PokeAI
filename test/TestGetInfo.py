@@ -34,13 +34,9 @@ team_specs2 = [[(("p1", "FIRE", 100, 100, 100, 100),
                  (("light_ghost", "GHOST", 50), ("heavy_bug", "BUG", 100)))]]
 
 team_specs3 = [[(("p1z", "FIRE", 100, 100, 100, 100),
-                 (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
-                (("p2", "ROCK", 100, 100, 100, 95),
-                 (("light_fairy", "FAIRY", 50), ("heavy_rock", "ROCK", 100)))],
-               [(("d1", "ELECTRIC", 100, 80, 100, 95),
-                 (("light_steel", "STEEL", 50), ("heavy_electric", "ELECTRIC", 100))),
-                (("d2", "BUG", 100, 80, 100, 100),
-                 (("light_ghost", "GHOST", 50), ("heavy_bug", "BUG", 100)))]]
+                 (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100)))],
+               [(("d1", "ICE", 100, 80, 100, 95),
+                 (("light_steel", "STEEL", 50), ("heavy_electric", "ELECTRIC", 100)))]]
 
 dummy_poke1 = Pokemon("p1", "GROUND", (100, 100, 100, 100),
                       (Move("heavy_ground", "GROUND", 100), Move("light_flying", "FLYING", 50)))
@@ -216,7 +212,10 @@ class MyTestCase(unittest.TestCase):
           [(("d1", "WATER", 100, 100, 100, 100),
             (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
            (("d2", "DRAGON", 100, 80, 100, 80),
-            (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
+            (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+        ("p1", ["heavy_fire"], ["light_steel"],
+         [[(("p1z", "FIRE", 100, 100, 100, 100), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100)))],
+          [(("d1", "ICE", 100, None, None, None), ((None, None, None), (None, None, None)))]])
     ])
     def test_directly_available_info(self, test_player, player1_moves, player2_moves, exp_specs):
         """ Try to cover as much as possible different case that could occur during a game
@@ -228,10 +227,21 @@ class MyTestCase(unittest.TestCase):
             reached by tested function
         """
 
-        game = PokeGame(team_specs_for_game)
+        game = PokeGame(team_specs3 if exp_specs[0][0][0][0] == "p1z" else team_specs_for_game)
+
         for player1_move, player2_move in zip(player1_moves, player2_moves):
-            game.apply_player_moves(game.game_state, player1_move, player2_move, 0.85)
-            game.directly_available_info(test_player, player2_move if test_player == "p1" else player1_move)
+            game.apply_player_moves(game.game_state, player1_move, player2_move, 0.85, True)
+
+            p1_moved = (player1_move is not None and "switch" in player1_move) or (player2_move is not None and "switch" in player2_move) or\
+                       (player1_move is not None and "switch" not in player1_move and
+                        (game.game_state.on_field1.cur_hp > 0 or
+                         game.game_state.on_field1.spe > game.game_state.on_field2.spe or
+                         game.game_state.on_field1.spe == game.game_state.on_field2.spe))
+            p2_moved = (player1_move is not None and "switch" in player1_move) or (player2_move is not None and "switch" in player2_move) or\
+                       (player2_move is not None and "switch" not in player2_move and
+                        (game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
+            game.directly_available_info(test_player, player2_move if test_player == "p1" else player1_move,
+                                         {"p1_moved": p1_moved, "p2_moved": p2_moved})
 
         exp_view = PokeGame.GameStruct(exp_specs)
 
@@ -255,10 +265,6 @@ class MyTestCase(unittest.TestCase):
                     p1.cur_hp = p2.cur_hp
 
         test_view = game.get_player_view(test_player)
-
-        if test_view != exp_view:
-            print(exp_view)
-            print(test_view)
 
         self.assertEqual(test_view, exp_view)
 
@@ -377,8 +383,17 @@ class MyTestCase(unittest.TestCase):
             p2_first = not p1_first
 
             game.apply_player_moves(game.game_state, player1_move, player2_move, 0.85)
-            game.directly_available_info("p1", player1_move)
-            game.directly_available_info("p2", player2_move)
+            p1_moved = (player1_move is not None and "switch" in player1_move) or (
+                        player2_move is not None and "switch" in player2_move) or \
+                       (player1_move is not None and "switch" not in player1_move and
+                        (game.game_state.on_field1.cur_hp > 0 or
+                         game.game_state.on_field1.spe > game.game_state.on_field2.spe or
+                         game.game_state.on_field1.spe == game.game_state.on_field2.spe))
+            p2_moved = (player1_move is not None and "switch" in player1_move) or (player2_move is not None and "switch" in player2_move) or\
+                       (player2_move is not None and "switch" not in player2_move and
+                        (game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
+            game.directly_available_info("p1", player1_move, {"p1_moved": p1_moved, "p2_moved": p2_moved})
+            game.directly_available_info("p2", player2_move, {"p1_moved": p1_moved, "p2_moved": p2_moved})
 
             if "switch" in player1_move and "switch" in player2_move:
                 p1view_pkmn1 = game.player1_view.team1[0]
@@ -439,8 +454,6 @@ class MyTestCase(unittest.TestCase):
             pre_of2_stats = (pre_of2_re_ref.name, pre_of2_re_ref.cur_hp, pre_of2_re_ref.spe)
 
             game.apply_player_moves(game.game_state, player1_move, player2_move, 0.9, True)
-            game.directly_available_info("p1", player1_move)
-            game.directly_available_info("p2", player2_move)
 
             ret = {'p1_moved': "switch" in player1_move or "switch" in player2_move or
                                pre_of2_stats[1] != game.game_state.on_field2.cur_hp,
@@ -451,14 +464,12 @@ class MyTestCase(unittest.TestCase):
                    'p2_fainted': not game.game_state.on_field2.is_alive(),
                    'p2_first': pre_of1_re_ref.spe < pre_of2_re_ref.spe}
 
+            game.directly_available_info("p1", player1_move, ret)
+            game.directly_available_info("p2", player2_move, ret)
             pre_stats = [pre_of1_stats, pre_of2_stats][::(-1) ** (test_player == "p2")]
-
-            print()
 
             game.statistic_estimation(test_player, ret, player1_move if test_player == "p1" else player2_move,
                                       player2_move if test_player == "p1" else player1_move, pre_stats[0], pre_stats[1])
-
-            print()
 
         test_pkmn = pre_of2_pl_ref if test_player == "p1" else pre_of1_pl_ref
         real_pkmn = pre_of2_re_ref if test_player == "p1" else pre_of1_re_ref

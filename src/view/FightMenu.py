@@ -2,7 +2,7 @@ import os
 
 from src.db.dbmanager import available_ml_agents, available_teams
 
-PLAYER_TYPES = ["ml", "mdm", "human", "random"]
+PLAYER_TYPES = ["human", "ml", "mdm", "random"]
 
 
 class FightMenu:
@@ -72,7 +72,7 @@ class FightMenu:
                     warning = "Please provide existing agent name"
 
             elif inputted[0] in ("team1", "team2") and len(inputted) == 2:
-                if inputted[0] in available_teams() + ["random"]:
+                if inputted[1] in available_teams() + ["random"]:
                     if inputted[0] == "team1":
                         pars.team1 = inputted[1]
                     else:
@@ -98,12 +98,12 @@ class FightMenu:
 
     def display_instructions(self):
         instructions = [
-            "player1 t  # type of agent 1 {}".format(' - '.join(PLAYER_TYPES)),
-            "player2 t  # learning strategy for new agent",
+            "player1 t  # type of agent for player 1 {}".format(' - '.join(PLAYER_TYPES)),
+            "player2 t  # type of agent for player 2 {}".format(' - '.join(PLAYER_TYPES[1:])),
             "eps f      # set epsilon greedy to f",
-            "ml1 z      # load AI named z from database for role agent1",
-            "ml2 z      # load AI named z from database for role agent2",
-            "team1/2 z  # team1/2 name",
+            "ml1 z      # load AI named z from database for agent1",
+            "ml2 z      # load AI named z from database for agent2",
+            "team1/2 t  # give team t to player1/2",
             "fight      # launch match",
             "leave      # exit program"]
 

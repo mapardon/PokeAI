@@ -244,8 +244,16 @@ class TestCasePokeGame(unittest.TestCase):
 
             exp.apply_player_moves(exp.game_state, p1_move, p2_move, 0.85, True)
 
-            exp.directly_available_info("p1", p2_move)
-            exp.directly_available_info("p2", p1_move)
+            p1_moved = (p1_move is not None and "switch" in p1_move) or (p2_move is not None and "switch" in p2_move) or\
+                       (p1_move is not None and "switch" not in p1_move and
+                        (game.game_state.on_field1.cur_hp > 0 or
+                         game.game_state.on_field1.spe > game.game_state.on_field2.spe or
+                         game.game_state.on_field1.spe == game.game_state.on_field2.spe))
+            p2_moved = (p1_move is not None and "switch" in p1_move) or (p2_move is not None and "switch" in p2_move) or\
+                       (p2_move is not None and "switch" not in p2_move and
+                        (game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
+            exp.directly_available_info("p1", p2_move, {"p1_moved": p1_moved, "p2_moved": p2_moved})
+            exp.directly_available_info("p2", p1_move, {"p1_moved": p1_moved, "p2_moved": p2_moved})
 
             if p1_move is not None and p2_move is not None:
                 exp.statistic_estimation("p1", ret, p1_move, p2_move, pre_team1_vp1, pre_team2_vp1)

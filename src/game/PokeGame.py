@@ -27,7 +27,7 @@ class PokeGame:
                     moves = list()
                     for atk in p[1]:
                         moves.append(Move(atk[0], atk[1], atk[2]))
-                    team.append(Pokemon(p[0][0], p[0][1], p[0][2:8], moves))
+                    team.append(Pokemon(p[0][0], p[0][1], p[0][2:6], moves))
 
             self.on_field1 = self.team1[0]
             self.on_field2 = self.team2[0]
@@ -68,10 +68,9 @@ class PokeGame:
 
         self.game_state: PokeGame.GameStruct = PokeGame.GameStruct(teams_specs)
         # For player pov, opponent team unknown
-        unknown_specs = [(tuple([None for _ in range(6)]), tuple([(None, None, None, None) for _ in range(2)])) for _ in
-                         range(2)]
-        self.player1_view: PokeGame.GameStruct = PokeGame.GameStruct([teams_specs[0]] + [unknown_specs])
-        self.player2_view: PokeGame.GameStruct = PokeGame.GameStruct([unknown_specs] + [teams_specs[1]])
+        unknown_specs = [(tuple([None for _ in range(6)]), tuple([(None, None, None, None) for _ in range(2)]))]
+        self.player1_view: PokeGame.GameStruct = PokeGame.GameStruct([teams_specs[0]] + [unknown_specs * len(teams_specs[1])])
+        self.player2_view: PokeGame.GameStruct = PokeGame.GameStruct([unknown_specs * len(teams_specs[0])] + [teams_specs[1]])
 
         # Players witness name, type and hp of first opponent Pokemon
         p2_lead_view, p2_lead_src = self.player1_view.team2[0], self.game_state.on_field2
@@ -206,13 +205,19 @@ class PokeGame:
         # test if any side has fainted & which side moved (opponent lost hp or player switched) & who moved first
         p1_moved = False
         if p1_move is not None:
-            p1_moved |= pre_of2_name == self.game_state.on_field2.name and pre_of2_cur_hp > self.game_state.on_field2.cur_hp
+            p1_moved |= p1_move is not None and "switch" not in p1_move and\
+                        (self.game_state.on_field1.cur_hp > 0 or
+                         self.game_state.on_field1.spe > self.game_state.on_field2.spe or
+                         self.game_state.on_field1.spe == self.game_state.on_field2.spe and order)
             p1_moved |= pre_of1_name != self.game_state.on_field1.name  # player switched
             p1_moved |= pre_of2_name != self.game_state.on_field2.name  # opponent switched
 
         p2_moved = False
         if p2_move is not None:
-            p2_moved |= pre_of1_cur_hp > self.game_state.on_field1.cur_hp and pre_of1_name == self.game_state.on_field1.name
+            p2_moved |= p2_move is not None and "switch" not in p2_move and\
+                        (self.game_state.on_field2.cur_hp > 0 or
+                         self.game_state.on_field2.spe > self.game_state.on_field1.spe or
+                         self.game_state.on_field1.spe == self.game_state.on_field2.spe and not order)
             p2_moved |= pre_of1_name != self.game_state.on_field1.name
             p2_moved |= pre_of2_name != self.game_state.on_field2.name
 
@@ -228,8 +233,8 @@ class PokeGame:
                'p2_moved': p2_moved, 'p2_fainted': not self.game_state.on_field2.is_alive(), 'p2_first': p2_first}
 
         # player get new information
-        self.directly_available_info("p1", p2_move)
-        self.directly_available_info("p2", p1_move)
+        self.directly_available_info("p1", p2_move, ret)
+        self.directly_available_info("p2", p1_move, ret)
 
         if p1_move is not None and p2_move is not None:  # no information to take if only 1 side moved (post KO switch)
             self.statistic_estimation("p1", ret, p1_move, p2_move, (pre_of1_name, pre_of1_cur_hp, p1v_pre_of1.spe),
@@ -330,13 +335,14 @@ class PokeGame:
 
         return game_state
 
-    def directly_available_info(self, player: str, opponent_move: str):
+    def directly_available_info(self, player: str, opponent_move: str, turn_res: dict):
         """
         Update player view with directly available information, information seen during the round (attack used by
         opponent, type and hp of Pokémon switched).
 
         :param player: "p1" or "p2", indicating whether information is searched for player1 or player2
         :param opponent_move: Name of move performed by opponent player
+        :param turn_res: "ret" object from "play_move" function
         :return: None but update internal state
         """
 
@@ -369,8 +375,8 @@ class PokeGame:
                                                                            real_other.cur_hp, real_other.hp)
 
         # Attack used
-        if opponent_move is not None and opponent_move not in [m.name for m in
-                                                               other_of.moves] and "switch" not in opponent_move:  # opponent used previously unseen attack
+        if opponent_move is not None and opponent_move not in [m.name for m in other_of.moves] and\
+                "switch" not in opponent_move and turn_res["p2_moved" if player == "p1" else "p1_moved"]:  # opponent used previously unseen attack
             unknown_move_index = 0 if other_of.moves[0].name is None else 1  # only have 2 attacks
             real_move = Move(opponent_move, *MOVES[opponent_move])
             other_of.moves[unknown_move_index] = Move(real_move.name, real_move.move_type, real_move.base_pow)

@@ -59,16 +59,16 @@ def remove_ml_agent(network_name):
 # pokemon teams management
 
 TEAMS_TEMP = {"alpha": [
-    (("b", "ground", 80, 80, 125, 80, 125, 80), (("heavy_ground", "ground", 100), ("light_fire", "fire", 50))),
-    (("c", "water", 60, 120, 60, 120, 60, 120), (("heavy_water", "water", 100), ("light_psychic", "psychic", 50)))],
-    "zeta": [(("y", "electric", 70, 70, 70, 70, 70, 125),
-              (("heavy_electric", "electric", 100), ("light_flying", "flying", 50))),
-             (("z", "fire", 130, 130, 50, 50, 50, 130),
-              (("heavy_fire", "fire", 100), ("light_dragon", "dragon", 50)))]}
+    (("b", "GROUND", 80, 80, 125, 80), (("heavy_ground", "GROUND", 100), ("light_fire", "FIRE", 50))),
+    (("c", "WATER", 60, 120, 60, 120), (("heavy_water", "WATER", 100), ("light_psychic", "PSYCHIC", 50)))],
+    "zeta": [(("y", "ELECTRIC", 70, 70, 70, 125),
+              (("heavy_electric", "ELECTRIC", 100), ("light_flying", "FLYING", 50))),
+             (("z", "FIRE", 130, 130, 50, 130),
+              (("heavy_fire", "FIRE", 100), ("light_dragon", "DRAGON", 50)))]}
 
 
 def available_teams():
-    return TEAMS_TEMP.keys()
+    return [t for t in TEAMS_TEMP.keys()]
 
 
 def retrieve_team(team_name):
