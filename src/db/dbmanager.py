@@ -35,7 +35,6 @@ def save_new_agent(network_name, network, ls, lamb, act_f):
 
     :param network: list of numpy arrays (variable lengths for deep learning)
     """
-    print(os.getcwd())
 
     db = Storage(STORAGE_PATH)
     db[network_name] = {"network": network, "ls": ls, "lamb": lamb, "act_f": act_f}
@@ -52,6 +51,8 @@ def load_ml_agent(network_name):
 
 
 def remove_ml_agent(network_name):
+    """ Delete specified agent from the database """
+
     db = Storage(STORAGE_PATH)
     del db[network_name]
 

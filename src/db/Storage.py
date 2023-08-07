@@ -3,7 +3,7 @@ import pickle
 
 
 class Storage:
-    """ The idea was to use a simple serialization system as shelve but it is unfortunately not cross-platform
+    """ The idea was to use a simple serialization system as shelve, but it is unfortunately not cross-platform
      then something similar using pickle is defined here """
 
     def __init__(self, path):

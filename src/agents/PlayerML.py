@@ -161,46 +161,35 @@ class PlayerML(AbstractPlayer):
         """
         Apply backpropagation algorithm with Q-learning strategy
 
-        :param cur_state: current state in binary encoding
-        :param chosen_state: state selected for next move
-        :param best_next_prob: victory estimation of the best possible option
+        :param cur_state: GameStruct of current state
+        :param chosen_state: GameStruct of state selected for next move. Can be None if cur_state is an end state
+        :param best_next_prob: Victory estimation of the best possible option (from cur_state)
         """
 
-        p_out = self.forward_pass(game.get_numeric_repr(cur_state))
-        delta = p_out - best_next_prob
+        cur_prob = self.forward_pass(game.get_numeric_repr(cur_state))
+        cmp_prob = best_next_prob
+        W_int = self.network[0]
+        delta = cur_prob - cmp_prob
+        W_out = self.network[1]
+        P_int = self.act_f(np.dot(W_int, cur_state))
+        p_out = self.act_f(P_int.dot(W_out))
+        grad_out = self.grad(p_out)
+        grad_int = self.grad(P_int)
+        Delta_int = grad_out * W_out * grad_int
 
-        grad_out = sigmoid_gradient(p_out)
-        layer = game.get_numeric_repr(cur_state)
-        for weights in self.network[:-1]:  # retrieve last hidden layer before output neuron
-            layer = sigmoid(np.dot(weights, layer))
-
-        # first update: last weights matrix
-        self.network[-1] -= 0.15 * delta * grad_out * layer
-
-        # update other layers sequentially
-        for i in range(len(self.network) - 2, -1, -1):
-            w_0 = self.network[i]
-            w_1 = self.network[i + 1]
-            p_0 = game.get_numeric_repr(cur_state)
-            for weights in self.network[:i]:  # last hidden layer before weights to update
-                p_0 = sigmoid(np.dot(weights, p_0))
-            p_1 = sigmoid(np.dot(self.network[i], p_0))
-
-            if i + 2 < len(self.network):
-                p_2 = sigmoid(np.dot(self.network[i + 1], p_1))
-                tmp = sigmoid_gradient(p_2) @ w_1 @ sigmoid_gradient(p_1)
-                w_0 -= 0.15 * delta * np.outer(tmp, p_0)
-            else:
-                p_2 = sigmoid(layer.dot(self.network[i + 1]))
-                tmp = sigmoid_gradient(p_2) * w_1 * sigmoid_gradient(p_1)
-                w_0 -= 0.15 * delta * np.outer(tmp, p_0)
+        W_int -= self.lr * delta * np.outer(Delta_int, cur_state)
+        W_out -= self.lr * delta * grad_out * P_int
 
     def sarsa_backpropagation(self, game, cur_state, chosen_state, best_next_prob):
         """
-        None value for chosen_state parameter indicates game is ended
+        Apply backpropagation algorithm with SARSA strategy
+
+        :param cur_state: GameStruct of current state
+        :param chosen_state: GameStruct of state selected for next move. Can be None if cur_state is an end state
+        :param best_next_prob: Victory estimation of the best possible option (from cur_state)
         """
 
-        cur_prob = self.forward_pass(cur_state)
+        cur_prob = self.forward_pass(game.get_numeric_repr(cur_state))
         cmp_prob = self.forward_pass(chosen_state) if chosen_state is not None else best_next_prob
         W_int = self.network[0]
         delta = cur_prob - cmp_prob

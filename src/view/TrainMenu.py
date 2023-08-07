@@ -3,7 +3,7 @@ import os
 from src.db.dbmanager import available_ml_agents, available_teams
 
 LS = ["Q-learning",
-      "TD-lambda"]
+      "SARSA"]
 
 ACT_F = ["sigmoid",
          "hyperbloic tangent",
@@ -196,7 +196,7 @@ class TrainMenu:
     def display_instructions(self):
         instructions = [
             "new-name z # new agent will be identified z",
-            "new-type z # type of ml for new agent ({})".format(' - '.join(ML_TYPES)),
+            # "new-type z # type of ml for new agent ({})".format(' - '.join(ML_TYPES)),
             "new-ls z   # learning strategy for new agent ({})".format(' - '.join(LS)),
             "new-shape m n ... z",
             "           # dimensions for new NN",
