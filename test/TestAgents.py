@@ -27,10 +27,10 @@ def initialize_test_game():
 class MyTestCase(unittest.TestCase):
 
     @parameterized.expand([
-        ("normal", [10], [(10, 5), (10,)]),
-        ("xavier", [12], [(12, 5), (12,)]),
-        ("normalized-xavier", [20], [(20, 5), (20,)]),
-        ("He", [15, 20, 12], [(15, 5), (20, 15), (12, 20), (12,)])
+        ("normal", [10], [(10, N_INPUT), (10,)]),
+        ("xavier", [12], [(12, N_INPUT), (12,)]),
+        ("normalized-xavier", [20], [(20, N_INPUT), (20,)]),
+        ("He", [15, 20, 12], [(15, N_INPUT), (20, 15), (12, 20), (12,)])
     ])
     def test_init_NN(self, init_mode, shape_in, expected_shape):
         net = initialize_NN(shape_in, init_mode)

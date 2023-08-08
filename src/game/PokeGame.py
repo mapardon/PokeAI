@@ -68,7 +68,7 @@ class PokeGame:
 
         self.game_state: PokeGame.GameStruct = PokeGame.GameStruct(teams_specs)
         # For player pov, opponent team unknown
-        unknown_specs = [(tuple([None for _ in range(6)]), tuple([(None, None, None, None) for _ in range(2)]))]
+        unknown_specs = [(tuple([None for _ in range(6)]), tuple([(None, None, None) for _ in range(len(teams_specs[0][0][1][0]))]))]
         self.player1_view: PokeGame.GameStruct = PokeGame.GameStruct([teams_specs[0]] + [unknown_specs * len(teams_specs[1])])
         self.player2_view: PokeGame.GameStruct = PokeGame.GameStruct([unknown_specs * len(teams_specs[0])] + [teams_specs[1]])
 
@@ -91,13 +91,19 @@ class PokeGame:
         return " complete view:\n{}\n player1 view:\n{}\n player2 view\n{}".format(self.game_state, self.player1_view,
                                                                                    self.player2_view)
 
-    @staticmethod
-    def get_numeric_repr(state: GameStruct):
+    def get_numeric_repr(self, state: GameStruct = None, player: str = None):
         """ Converts the provided state in binary vector
 
-        :param state: GameStruct object to be converted
+        :param state: GameStruct object to be converted. If None, use attributes
+        :param player: "p1" or "p2", indicating which view must be converted
         :return: list of int representing schematically the state
         """
+
+        if state is None:
+            if player == "p1":
+                state = self.player1_view
+            elif player == "p2":
+                state = self.player2_view
 
         num_state = list()
         for t, of in zip([state.team1, state.team2], [state.on_field1, state.on_field2]):
@@ -112,8 +118,8 @@ class PokeGame:
                     num_state += [None, None, None, None, None, None] + mvs
                 else:
                     num_state += [TYPES_INDEX[p.poke_type], p.cur_hp, p.hp, p.atk, p.des, p.spe] + mvs
-        # TODO: test or change
-        return [i if i is not None else -1 for i in num_state]
+
+        return [i if i is not None else 0 for i in num_state]
 
     def get_cur_state(self):
         return copy.deepcopy(self.game_state)

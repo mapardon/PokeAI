@@ -13,6 +13,9 @@ from src.game.PokeGame import PokeGame
 from src.game.constants import TYPES, MIN_HP, MAX_HP, MIN_STAT, MAX_STAT, MIN_POW, MAX_POW
 from src.view.util.UIparameters import FightUIParams, TestUIParams, TrainUIParams
 
+NB_POKEMON = 3
+NB_MOVES = 3
+
 
 class GameEngine:
     def __init__(self, ui_input: Union[FightUIParams, TestUIParams, TrainUIParams], from_ui: Queue = None,
@@ -50,29 +53,34 @@ class GameEngine:
         """
 
         out = list()
-        NB_POKEMONS = 2  # TODO: update
         if team_src == "random":
             # NB: names can't have duplicates
             names = list()
-            while len(names) < NB_POKEMONS:
+
+            while len(names) < NB_POKEMON:
                 p_name = ''.join([chr(random.randint(ord('a'), ord('z'))) for _ in range(3)])
                 if p_name not in names:
                     names.append(p_name)
 
-            for _, p_name in zip(range(NB_POKEMONS), names):
+            for _, p_name in zip(range(NB_POKEMON), names):
+                # Pokemon
                 p_type = random.choice(TYPES)
                 p_stats = [random.randint(MIN_HP, MAX_HP)] + [random.randint(MIN_STAT, MAX_STAT) for _ in range(3)]
                 poke = [tuple([p_name, p_type] + p_stats)]
 
+                # Attacks
                 temp_mv = list()
+                stab = poke[0][1]
+                cp_types = [t for t in TYPES if t != stab]
+
                 # STAB
-                a_type = poke[0][1]
-                a_power = random.choice([MIN_POW, MAX_POW])
-                a_name = ("light_" if a_power == MIN_POW else "heavy_") + a_type.lower()
+                a_type = stab
+                a_power = MIN_POW
+                a_name = "light_" + a_type.lower()
                 temp_mv.append((a_name, a_type, a_power))
 
-                for _ in range(1):
-                    a_type = random.choice(TYPES)
+                for _ in range(NB_MOVES - 1):
+                    a_type = cp_types.pop(random.randrange(len(cp_types)))
                     a_power = random.choice([MIN_POW, MAX_POW])
                     a_name = ("light_" if a_power == 50 else "heavy_") + a_type.lower()
                     temp_mv.append((a_name, a_type, a_power))

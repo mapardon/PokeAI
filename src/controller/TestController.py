@@ -1,4 +1,5 @@
 import sys
+import time
 from queue import Queue
 
 sys.path.append('/home/mathieu/PycharmProjects/PokeAI')
@@ -52,13 +53,13 @@ class TestController:
     def test_loop(self, from_backend):
         cur_prog = int()
 
-        while cur_prog != "testing done":
+        while cur_prog != "testing ended":
             os.system("clear" if os.name == "posix" else "cls")
             n_syms = ceil(20 * cur_prog / self.ui_input.nb)
             print("Progression ({}): {}".format(cur_prog, "#" * n_syms + "_" * (20 - n_syms)))
             cur_prog = from_backend.get()
 
-        input("Player 1 win rate: {}%\nPress enter to exit".format(round(100 * from_backend.get(), 2)))
+        input("Agent 1 win rate: {}%\nPress enter to exit".format(round(100 * from_backend.get(), 2)))
 
 
 if __name__ == '__main__':

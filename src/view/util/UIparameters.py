@@ -34,14 +34,21 @@ class TestUIParams(AbstractUIParams):
 class TrainUIParams(AbstractUIParams):
     def __init__(self):
         super().__init__()
-        # part "train agent"
+        # train agent
         self.agent1type = "ml"
         self.agent2type = "ml"
         self.nb = 1000
         self.mvsel = "eps-greedy"
         self.lr = 0.3
 
-        # part "create new agent"
+    def set_nb(self, val):
+        self.nb = abs(int(val))
+
+
+class ManageUIParams:
+    def __init__(self):
+        # create new agent
+        self.mode = str()
         self.newfname = None
         self.newmltype = None
         self.newls = None  # ls will be fixed with a NN
@@ -49,9 +56,6 @@ class TrainUIParams(AbstractUIParams):
         self.newinit = None
         self.newactf = None
         self.newlamb = None
-
-    def set_nb(self, val):
-        self.nb = abs(int(val))
 
 
 class FightUIParams(AbstractUIParams):

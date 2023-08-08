@@ -4,6 +4,7 @@ from src.agents.AbstractPlayer import AbstractPlayer
 
 
 # Activation functions #
+from src.game.PokeGame import PokeGame
 
 
 def sigmoid(x):
@@ -32,12 +33,13 @@ def relu_gradient(x):
 
 class PlayerML(AbstractPlayer):
 
-    def __init__(self, mode, role, network, ls, lamb, act_f, eps, lr, mvsel):
+    def __init__(self, mode: str, role: str, network: tuple, ls: str, lamb: float, act_f: str, eps: float, lr: float,
+                 mvsel: str):
         """
         ML agent for the game, using ML methods to play and learn the game.
 
         :param mode: tells which mode is being played ('match', 'train' or 'compare')
-        :param role: player1 or 2
+        :param role: "p1" or "p2"
         :param network: in train mode, both agents must share same NN object, so weights are read from GameEngine
         :param ls: As ls is fixed with a NN, it is read from database with the network
         :param lamb: lambda parameter for TD-lambda and Q-lambda
@@ -55,7 +57,7 @@ class PlayerML(AbstractPlayer):
         self.eps = eps
         self.act_f, self.grad = {"sigmoid": (sigmoid, sigmoid_gradient),
                                  "hyperbolic tangent": (hyperbolic_tangent, h_tangent_gradient),
-                                 "relu": (relu, relu_gradient)}[act_f]
+                                 "ReLU": (relu, relu_gradient)}[act_f]
 
         if mode == "train":
             self.lamb = lamb
@@ -68,28 +70,29 @@ class PlayerML(AbstractPlayer):
                                     "Q-lambda": self.q_lambda_backpropagation}[ls]
 
         else:  # test or match
-            self.ls = self.lr = self.mvsel = self.lamb = None
+            self.move_selection = self.eps_greedy_move
+            self.ls = self.lr = self.lamb = None
 
     # Communication with game loop #
 
-    def make_move(self, game):
-        """ Format game states then call adequate function to choose a move (and eventually learn)
+    def make_move(self, game: PokeGame):
+        """ Generate all states reachable from current state and convert in numeric representation to choose a move
 
         :returns: Selected move """
-        # FIXME: acting weird
+        # FIXME: NaN appearing
 
         options = list()
         moves_name = dict()
         for m1 in game.get_moves_from_state("p1", None):
             for m2 in game.get_moves_from_state("p2", None):
-                bin_state = game.get_numeric_repr(game.apply_player_moves(game.get_cur_state(), m1, m2)[0])
-                options.append(bin_state)
-                moves_name[tuple(bin_state)] = (m1, m2)
-        cur_state = game.get_cur_state()
+                num_state = game.get_numeric_repr(game.apply_player_moves(game.get_cur_state(), m1, m2))
+                options.append(num_state)
+                moves_name[tuple(num_state)] = (m1, m2)
+        cur_num_state = game.get_numeric_repr(state=None, player=self.role)
 
         new_s, best_p_out = self.move_selection(options)
         if self.mode == "train":  # Move + update weight matrices
-            self.backpropagation(game, cur_state, new_s, best_p_out)
+            self.backpropagation(game, cur_num_state, new_s, best_p_out)
 
         new_s_name = moves_name[tuple(new_s)]
         new_s_name = new_s_name[0] if self.role == "p1" else new_s_name[1]
@@ -99,7 +102,7 @@ class PlayerML(AbstractPlayer):
     def end_game(self, game, player1_won):
         """ Same as previous for the end of the game """
 
-        self.backpropagation(game, game.get_cur_state(), None, player1_won if self.role == "1" else not player1_won)
+        self.backpropagation(game, game.get_numeric_repr(None, self.role), None, player1_won if self.role == "1" else not player1_won)
 
     # Moves ranking #
 
@@ -116,7 +119,7 @@ class PlayerML(AbstractPlayer):
 
         for m in moves:
             estimation = self.forward_pass(m)
-            if best_value is None or c * estimation > c * best_value:  # black move, invert inequality
+            if best_value is None or c * estimation > c * best_value:  # opponent move, invert inequality
                 best_moves = [m]
                 best_value = estimation
             elif estimation == best_value:
@@ -147,8 +150,8 @@ class PlayerML(AbstractPlayer):
 
     # forward pass and backpropagations for different learning algorithms
 
-    def forward_pass(self, state):
-        """ Use the knowledge of the network to make an estimation of the victory probability of the white (2nd) player
+    def forward_pass(self, state: list):
+        """ Use the knowledge of the network to make an estimation of the victory probability of the first player
         of a provided game state. """
 
         res = state
@@ -157,16 +160,19 @@ class PlayerML(AbstractPlayer):
         res = self.act_f(self.network[-1].dot(res))
         return res
 
-    def q_learning_backpropagation(self, game, cur_state, chosen_state, best_next_prob):
+    def q_learning_backpropagation(self, game: PokeGame, cur_state: list,
+                                   chosen_state: list, best_next_prob: float):
         """
         Apply backpropagation algorithm with Q-learning strategy
 
-        :param cur_state: GameStruct of current state
-        :param chosen_state: GameStruct of state selected for next move. Can be None if cur_state is an end state
+        :param game: Reference to current game
+        :param cur_state: Numeric representation of current state
+        :param chosen_state: Numeric representation of state selected for next move. Can be None if cur_state
+            is an end state
         :param best_next_prob: Victory estimation of the best possible option (from cur_state)
         """
 
-        cur_prob = self.forward_pass(game.get_numeric_repr(cur_state))
+        cur_prob = self.forward_pass(cur_state)
         cmp_prob = best_next_prob
         W_int = self.network[0]
         delta = cur_prob - cmp_prob
@@ -180,17 +186,19 @@ class PlayerML(AbstractPlayer):
         W_int -= self.lr * delta * np.outer(Delta_int, cur_state)
         W_out -= self.lr * delta * grad_out * P_int
 
-    def sarsa_backpropagation(self, game, cur_state, chosen_state, best_next_prob):
+    def sarsa_backpropagation(self, game: PokeGame, cur_state: PokeGame.GameStruct, chosen_state: PokeGame.GameStruct,
+                              best_next_prob: float):
         """
         Apply backpropagation algorithm with SARSA strategy
 
+        :param game: Reference to current game
         :param cur_state: GameStruct of current state
         :param chosen_state: GameStruct of state selected for next move. Can be None if cur_state is an end state
         :param best_next_prob: Victory estimation of the best possible option (from cur_state)
         """
 
         cur_prob = self.forward_pass(game.get_numeric_repr(cur_state))
-        cmp_prob = self.forward_pass(chosen_state) if chosen_state is not None else best_next_prob
+        cmp_prob = self.forward_pass(game.get_numeric_repr(chosen_state)) if chosen_state is not None else best_next_prob
         W_int = self.network[0]
         delta = cur_prob - cmp_prob
         W_out = self.network[1]

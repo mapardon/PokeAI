@@ -46,14 +46,6 @@ class TrainMenu:
                 pars.mode = "leave"
                 out = True
 
-            elif inputted[0] == "create":
-                if None in [pars.newfname, pars.newmltype, pars.newls, pars.newshape, pars.newinit, pars.newactf] + [pars.newlamb] * ("lambda" in pars.newls):
-                    warning = "Please first fill all required parameters"
-
-                else:
-                    pars.mode = "create"
-                    out = True
-
             elif inputted[0] == "train":
                 if None in [pars.agent1type, pars.agent2type]:
                     warning = "Please specify ai type for both agents"
@@ -64,55 +56,6 @@ class TrainMenu:
                 else:
                     pars.mode = "train"
                     out = True
-
-            # new agents parameters
-            elif inputted[0] == "new-name" and len(inputted) == 2:
-                if inputted[0] not in available_ml_agents():
-                    pars.newfname = inputted[1]
-                else:
-                    warning = "This name is already used in the database"
-
-            elif inputted[0] == "new-type" and len(inputted) == 2:
-                if inputted[1] in ML_TYPES:
-                    pars.newmltype = inputted[1]
-                else:
-                    warning = "Unknown machine learning type"
-
-            elif inputted[0] == "new-ls" and len(inputted) == 2:
-                if inputted[1] in LS:
-                    pars.newls = inputted[1]
-                else:
-                    warning = "Unknown learning strategy"
-
-            elif inputted[0] == "new-shape" and len(inputted) > 1:
-                try:
-                    pars.newshape = list()
-                    for s in inputted[1:]:
-                        pars.newshape.append(abs(int(s)))
-                except ValueError:
-                    warning = "Please provide consistent value for number of neurons"
-
-            elif inputted[0] == "new-init" and len(inputted) == 2:
-                if inputted[1] not in INITS:
-                    print("Unknown initialization mode")
-                else:
-                    pars.newinit = inputted[1]
-
-            elif inputted[0] == "new-actf" and len(inputted) == 2:
-                if inputted[1] not in ACT_F:
-                    print("Unknown activation function")
-                else:
-                    pars.newactf = inputted[1]
-
-            elif inputted[0] == "new-lamb" and len(inputted) == 2:
-                try:
-                    test = round(float(inputted[1]), 2)
-                    if 0 <= test <= 1:
-                        pars.newlamb = test
-                    else:
-                        raise ValueError
-                except ValueError:
-                    warning = "Please provide consistent value for lambda parameter"
 
             # train settings
             elif inputted[0] in ("ai1", "ai2") and len(inputted) == 2:
@@ -170,14 +113,6 @@ class TrainMenu:
     def display_parameters(self):
         pars = self.params
         contexts = [
-            "New AI filename       : {}".format(pars.newfname),
-            "New agent type        : {}".format(pars.newmltype),
-            "New AI learning strat : {}".format(pars.newls),
-            "New AI shape          : {}".format(pars.newshape),  # can be several numbers
-            "New AI init method    : {}".format(pars.newinit),
-            "New AI activation fun : {}".format(pars.newactf),
-            "New AI lambda param.  : {}".format(pars.newlamb),
-            "",
             "Agent 1 type          : {}".format(pars.agent1type),
             "Agent 2 type          : {}".format(pars.agent2type),
             "ML for agent 1 (train): {}".format(pars.ml1),
@@ -195,16 +130,6 @@ class TrainMenu:
 
     def display_instructions(self):
         instructions = [
-            "new-name z # new agent will be identified z",
-            # "new-type z # type of ml for new agent ({})".format(' - '.join(ML_TYPES)),
-            "new-ls z   # learning strategy for new agent ({})".format(' - '.join(LS)),
-            "new-shape m n ... z",
-            "           # dimensions for new NN",
-            "new-init z # network initialization method ({})".format(' - '.join(INITS)),
-            "new-actf z # network activation function ({})".format(' - '.join(ACT_F)),
-            "new-lamb f # set lambda value for TD-lambda",
-            "create     # create new agent with specified params",
-            "",
             "ai1/2 z    # ai type z for agent 1/2 ({})".format(' - '.join(AGENTS_TYPE)),
             "ml1/2 z    # load ml named z from database for role ai1/2 ({})".format(available_ml_agents()),
             "nb n       # set number of games for training",

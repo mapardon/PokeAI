@@ -39,9 +39,9 @@ class Pokemon:
         return Pokemon(self.name, self.poke_type, cp_stats, cp_moves)
 
     def __repr__(self):
-        return "{} @ {} ({}/{}, {}, {}, {}) [({}) - ({})]".format(self.name, self.poke_type, self.cur_hp, self.hp,
-                                                                  self.atk, self.des, self.spe, str(self.moves[0]),
-                                                                  str(self.moves[1]))
+        mvs = " - ".join(["({})".format(str(m)) for m in self.moves])
+        return "{} @ {} ({}/{}, {}, {}, {}) [{}]".format(self.name, self.poke_type, self.cur_hp, self.hp,
+                                                         self.atk, self.des, self.spe, mvs)
 
     def __str__(self):
         return self.__repr__()
