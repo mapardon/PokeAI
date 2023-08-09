@@ -48,7 +48,7 @@ class Pokemon:
 
 
 class Move:
-    def __init__(self, name, move_type, base_pow):
+    def __init__(self, name: str = None, move_type: str = None, base_pow: int = None):
         self.name = name
         self.move_type = move_type
         self.base_pow = base_pow

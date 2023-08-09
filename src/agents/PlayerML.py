@@ -8,6 +8,7 @@ from src.game.PokeGame import PokeGame
 
 
 def sigmoid(x):
+    #print(x)
     return 1 / (1 + np.exp(-x))
 
 
@@ -24,6 +25,9 @@ def h_tangent_gradient(x):
 
 
 def relu(x):
+    tmp = np.amax(x)
+    if tmp > 10 ** 4:
+        print(tmp)
     return x * (x > 0)
 
 
@@ -33,8 +37,8 @@ def relu_gradient(x):
 
 class PlayerML(AbstractPlayer):
 
-    def __init__(self, mode: str, role: str, network: tuple, ls: str, lamb: float, act_f: str, eps: float, lr: float,
-                 mvsel: str):
+    def __init__(self, mode: str, role: str, network: tuple, ls: str, lamb: float | None, act_f: str, eps: float,
+                 lr: float, mvsel: str):
         """
         ML agent for the game, using ML methods to play and learn the game.
 
@@ -154,11 +158,12 @@ class PlayerML(AbstractPlayer):
         """ Use the knowledge of the network to make an estimation of the victory probability of the first player
         of a provided game state. """
 
-        res = state
-        for layer in self.network[:-1]:
-            res = self.act_f(np.dot(layer, res))
-        res = self.act_f(self.network[-1].dot(res))
-        return res
+        W_int = self.network[0]
+        W_out = self.network[1]
+        P_int = self.act_f(np.dot(W_int, state))
+        p_out = self.act_f(P_int.dot(W_out))
+
+        return p_out if self.act_f == sigmoid else sigmoid(p_out)
 
     def q_learning_backpropagation(self, game: PokeGame, cur_state: list,
                                    chosen_state: list, best_next_prob: float):

@@ -127,6 +127,7 @@ class MyTestCase(unittest.TestCase):
         for n in agent_names:
             db[n] = None
         remove_ml_agent("protocol-1")
+        remove_ml_agent("protocol-1")
         del agent_names[0]
 
         self.assertSetEqual(set(n for n in db.keys()), set(agent_names))

@@ -54,7 +54,8 @@ def remove_ml_agent(network_name):
     """ Delete specified agent from the database """
 
     db = Storage(STORAGE_PATH)
-    del db[network_name]
+    if network_name in db:
+        del db[network_name]
 
 
 # pokemon teams management

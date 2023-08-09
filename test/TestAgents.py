@@ -1,8 +1,11 @@
+import copy
 import unittest, random
 
 import numpy as np
 from parameterized import parameterized
 
+from src.agents.PlayerBM import PlayerBM
+from src.agents.PlayerMDM import PlayerMDM
 from src.agents.PlayerRandom import PlayerRandom
 from src.agents.init_NN import initialize_NN, N_INPUT
 from src.agents.PlayerML import PlayerML
@@ -20,10 +23,6 @@ team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100),
                          (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]
 
 
-def initialize_test_game():
-    return PokeGame(team_specs_for_game)
-
-
 class MyTestCase(unittest.TestCase):
 
     @parameterized.expand([
@@ -35,38 +34,74 @@ class MyTestCase(unittest.TestCase):
     def test_init_NN(self, init_mode, shape_in, expected_shape):
         net = initialize_NN(shape_in, init_mode)
         net_shapes = [l.shape for l in net]
-        self.assertListEqual(net_shapes, expected_shape, init_mode)
+        self.assertListEqual(expected_shape, net_shapes, init_mode)
 
     def test_forward_pass(self):
         # mode, role, network, ls, lamb, act_f, eps, lr, mvsel
         sentinel = True
         network = initialize_NN([10], "normal")
-        pstate = np.array([random.randint(0, 1) for _ in range(N_INPUT)])
-        nstate = np.array([random.randint(0, 1) for _ in range(N_INPUT)])
-        player_ml = PlayerML("train", "1", network, "Q-learning", None, "sigmoid", 0.3, 0.15, "eps-greedy")
-        pre = player_ml.forward_pass(pstate)
-        player_ml.backpropagation(pstate, nstate, 0.75)
-        post = player_ml.forward_pass(pstate)
+        pstate = [random.randint(0, 1) for _ in range(N_INPUT)]
+        nstate = [random.randint(0, 1) for _ in range(N_INPUT)]
+
+        try:
+            player_ml = PlayerML("train", "p1", network, "Q-learning", None, "sigmoid", 0.3, 0.15, "eps-greedy")
+            pre = player_ml.forward_pass(pstate)
+            player_ml.backpropagation(PokeGame(team_specs_for_game), pstate, nstate, 0.75)
+            post = player_ml.forward_pass(pstate)
+        except Exception as e:
+            sentinel = False
 
         self.assertTrue(sentinel, "Failed test strategy {}".format("Q-learning"))
 
     # test make_move of different agents
 
     def test_makemove_random(self):
-        game = initialize_test_game()
+        game = PokeGame(team_specs_for_game)
         sentinel = True
+
         try:
-            agent = PlayerRandom("1")
+            agent = PlayerRandom("p1")
             select = agent.make_move(game)
         except Exception:
             sentinel = False
+
         self.assertTrue(sentinel)
 
-    def test_makemove_ml(self):
-        self.assertTrue(True)
+    @parameterized.expand([
+        ("p1", "heavy_fire", False),
+        ("p2", "heavy_water", False),
+        ("p2", "switch d2", True)
+    ])
+    def test_makemove_mdm(self, test_player, exp_move, is_ko):
+        game = PokeGame(team_specs_for_game)
+        agent = PlayerMDM(test_player)
 
-    def test_makemove_minimax(self):
-        self.assertTrue(True)
+        if is_ko:
+            if test_player == "p2":
+                game.game_state.on_field2.cur_hp = 0
+                game.player1_view.on_field2.cur_hp = 0
+                game.player2_view.on_field2.cur_hp = 0
+        test = agent.make_move(game)
+
+        self.assertEqual(exp_move, test)
+
+    @parameterized.expand([
+        ("p1", False, "heavy_fire"),
+        ("p2", False, "heavy_water"),
+        ("p1", True, "switch p2"),
+        ("p2", True, "heavy_water")
+    ])
+    def test_makemove_bm(self, test_player, full_view, exp_move):
+        game = PokeGame(team_specs_for_game)
+        agent = PlayerBM(test_player)
+
+        if full_view:
+            game.player1_view = copy.deepcopy(game.game_state)
+            game.player2_view = copy.deepcopy(game.game_state)
+
+        test = agent.make_move(game)
+
+        self.assertEqual(exp_move, test)
 
 
 if __name__ == '__main__':

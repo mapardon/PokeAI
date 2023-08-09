@@ -3,7 +3,7 @@ from queue import Queue
 from typing import Union
 
 from src.agents import AbstractPlayer
-from src.agents.PlayerComputer import PlayerComputer
+from src.agents.PlayerBM import PlayerBM
 from src.agents.PlayerHuman import PlayerHuman
 from src.agents.PlayerMDM import PlayerMDM
 from src.agents.PlayerML import PlayerML
@@ -102,9 +102,7 @@ class GameEngine:
         """
 
         players = list()
-        # TODO: train mode, both player in ML and same NN -> share object
-        for p, n in zip([ui_input.agent1type, ui_input.agent2type], [1, 2]):
-            n = "p" + str(n)
+        for p, n in zip([ui_input.agent1type, ui_input.agent2type], ["p1", "p2"]):
             if p == "random":
                 players.append(PlayerRandom(n))
 
@@ -114,17 +112,22 @@ class GameEngine:
             elif p == "mdm":
                 players.append(PlayerMDM(n))
 
+            elif p == "bm":
+                players.append(PlayerBM(n))
+
             elif p == "ml":
                 network, ls, lamb, act_f = load_ml_agent(ui_input.ml1 if n == "p1" else ui_input.ml2)
+                uip = ui_input
+                if uip.agent1type == "ml" and uip.agent2type == "ml" and uip.ml1 == uip.ml2 and p == "p2" and uip.mode == "train":
+                    # train mode, both player in ML and same NN -> share object
+                    network = players[0].network
                 lr = ui_input.lr if ui_input.mode == "train" else None
                 mvsel = ui_input.mvsel if ui_input.mode == "train" else "eps-greedy"
                 players.append(PlayerML(ui_input.mode, n, network, ls, lamb, act_f, ui_input.eps, lr, mvsel))
 
-            elif p == "cpt":
-                players.append(PlayerComputer(n))
-
             else:
                 players.append(None)
+
         return players
 
     # game loops

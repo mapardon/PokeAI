@@ -1,25 +1,7 @@
 import os
 
 from src.db.dbmanager import available_ml_agents, available_teams
-
-LS = ["Q-learning",
-      "SARSA"]
-
-ACT_F = ["sigmoid",
-         "hyperbloic tangent",
-         "ReLU"]
-
-INITS = ["normal",
-         "xavier",
-         "normalized-xavier",
-         "He"]
-
-MVSEL = ["eps-greedy",
-         "softmax-exp"]
-
-ML_TYPES = ["perceptron"]
-
-AGENTS_TYPE = ["ml", "mdm", "random"]
+from src.view.util.InputFieldsValues import AGENT_TYPES, MVSEL
 
 
 class TrainMenu:
@@ -59,7 +41,7 @@ class TrainMenu:
 
             # train settings
             elif inputted[0] in ("ai1", "ai2") and len(inputted) == 2:
-                if inputted[1] in AGENTS_TYPE:
+                if inputted[1] in AGENT_TYPES:
                     if inputted[0] == "ai1":
                         pars.agent1type = inputted[1]
                     else:
@@ -130,7 +112,7 @@ class TrainMenu:
 
     def display_instructions(self):
         instructions = [
-            "ai1/2 z    # ai type z for agent 1/2 ({})".format(' - '.join(AGENTS_TYPE)),
+            "ai1/2 z    # ai type z for agent 1/2 ({})".format(' - '.join(AGENT_TYPES)),
             "ml1/2 z    # load ml named z from database for role ai1/2 ({})".format(available_ml_agents()),
             "nb n       # set number of games for training",
             "mvsel z    # move selection method for training ".format(' - '.join(MVSEL)),

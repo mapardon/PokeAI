@@ -1,8 +1,7 @@
 import os
 
 from src.db.dbmanager import available_ml_agents, available_teams
-
-PLAYER_TYPES = ["human", "ml", "mdm", "random"]
+from src.view.util.InputFieldsValues import PLAYER_TYPES
 
 
 class FightMenu:

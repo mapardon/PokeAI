@@ -72,12 +72,13 @@ class PokeGame:
         self.player1_view: PokeGame.GameStruct = PokeGame.GameStruct([teams_specs[0]] + [unknown_specs * len(teams_specs[1])])
         self.player2_view: PokeGame.GameStruct = PokeGame.GameStruct([unknown_specs * len(teams_specs[0])] + [teams_specs[1]])
 
-        # Players witness name, type and hp of first opponent Pokemon
+        # Players witness name, type and hp of first opponent Pokemon (+ know they have a light power STAB)
         p2_lead_view, p2_lead_src = self.player1_view.team2[0], self.game_state.on_field2
         p2_lead_view.name, p2_lead_view.poke_type, p2_lead_view.hp, p2_lead_view.cur_hp = (p2_lead_src.name,
                                                                                            p2_lead_src.poke_type,
                                                                                            p2_lead_src.cur_hp,
                                                                                            p2_lead_src.hp)
+
         p1_lead_view, p1_lead_src = self.player2_view.team1[0], self.game_state.on_field1
         p1_lead_view.name, p1_lead_view.poke_type, p1_lead_view.hp, p1_lead_view.cur_hp = (p1_lead_src.name,
                                                                                            p1_lead_src.poke_type,
@@ -133,7 +134,7 @@ class PokeGame:
 
         return copy.deepcopy(self.player1_view) if player == "p1" else copy.deepcopy(self.player2_view)
 
-    def get_moves_from_state(self, player, state):
+    def get_moves_from_state(self, player: str, state: GameStruct):
         """
         Return possible moves for the specified player from the specified state (allows to retrieve possible moves
         for a player from a state that is not self.game_state)
@@ -383,9 +384,9 @@ class PokeGame:
         # Attack used
         if opponent_move is not None and opponent_move not in [m.name for m in other_of.moves] and\
                 "switch" not in opponent_move and turn_res["p2_moved" if player == "p1" else "p1_moved"]:  # opponent used previously unseen attack
-            unknown_move_index = 0 if other_of.moves[0].name is None else 1  # only have 2 attacks
-            real_move = Move(opponent_move, *MOVES[opponent_move])
-            other_of.moves[unknown_move_index] = Move(real_move.name, real_move.move_type, real_move.base_pow)
+            unknown_move_index = [m.move_type for m in other_of.moves].index(None)
+            move = Move(opponent_move, *MOVES[opponent_move])
+            other_of.moves[unknown_move_index] = move
 
     @staticmethod
     def reverse_attack_calculator(move: Move, attacker: Pokemon, target: Pokemon, hp_loss: int):

@@ -31,6 +31,9 @@ class Storage:
         with open(self.storage_path, 'wb') as db:
             pickle.dump(storage, db)
 
+    def __contains__(self, key):
+        return key in self.keys()
+
     def keys(self):
         with open(self.storage_path, 'rb') as db:
             buf = pickle.load(db)

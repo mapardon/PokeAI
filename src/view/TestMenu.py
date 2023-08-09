@@ -1,8 +1,7 @@
 import os
 
 from src.db.dbmanager import available_ml_agents, available_teams
-
-AGENTS_TYPE = ["ml", "mdm", "random"]
+from src.view.util.InputFieldsValues import AGENT_TYPES
 
 
 class TestMenu:
@@ -41,7 +40,7 @@ class TestMenu:
 
             # training parameters
             elif inputted[0] in ("agent1", "agent2") and len(inputted) == 2:
-                if inputted[1] in AGENTS_TYPE:
+                if inputted[1] in AGENT_TYPES:
                     if inputted[0] == "agent1":
                         pars.agent1type = inputted[1]
                     else:
@@ -98,8 +97,8 @@ class TestMenu:
 
     def display_instructions(self):
         instructions = [
-            "agent1 t   # type of agent 1 {}".format(" - ".join(AGENTS_TYPE)),
-            "agent2 t   # type of agent 2 {}".format(" - ".join(AGENTS_TYPE)),
+            "agent1 t   # type of agent 1 {}".format(" - ".join(AGENT_TYPES)),
+            "agent2 t   # type of agent 2 {}".format(" - ".join(AGENT_TYPES)),
             "nb n       # set number of games for training",
             "eps f      # set epsilon greedy to f",
             "ml1 z      # load AI named z from database for agent1",
