@@ -1,26 +1,27 @@
 import copy
 import unittest, random
 
-import numpy as np
 from parameterized import parameterized
 
 from src.agents.PlayerBM import PlayerBM
+from src.agents.PlayerGT import PlayerGT
 from src.agents.PlayerMDM import PlayerMDM
 from src.agents.PlayerRandom import PlayerRandom
 from src.agents.init_NN import initialize_NN, N_INPUT
 from src.agents.PlayerML import PlayerML
 from src.game.PokeGame import PokeGame
+from src.game.constants import MIN_POW
 
 random.seed(19)
 
-team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100, 100, 100),
-                         (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
-                        (("p2", "ELECTRIC", 100, 80, 100, 80, 100, 100),
-                         (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
-                       [(("d1", "WATER", 100, 100, 100, 100, 100, 100),
-                         (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
-                        (("d2", "DRAGON", 100, 80, 100, 80, 100, 100),
-                         (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]
+team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100),
+                         (("light_psychic", "PSYCHIC", 50), ("light_fire", "FIRE", 50))),
+                        (("p2", "ELECTRIC", 100, 80, 100, 100),
+                         (("light_grass", "GRASS", 50), ("light_electric", "ELECTRIC", 50)))],
+                       [(("d1", "WATER", 100, 100, 100, 100),
+                         (("light_steel", "STEEL", 50), ("light_water", "WATER", 50))),
+                        (("d2", "DRAGON", 100, 80, 100, 100),
+                         (("light_bug", "BUG", 50), ("light_dragon", "DRAGON", 50)))]]
 
 
 class MyTestCase(unittest.TestCase):
@@ -68,8 +69,8 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(sentinel)
 
     @parameterized.expand([
-        ("p1", "heavy_fire", False),
-        ("p2", "heavy_water", False),
+        ("p1", "light_psychic", False),
+        ("p2", "light_water", False),
         ("p2", "switch d2", True)
     ])
     def test_makemove_mdm(self, test_player, exp_move, is_ko):
@@ -86,10 +87,10 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(exp_move, test)
 
     @parameterized.expand([
-        ("p1", False, "heavy_fire"),
-        ("p2", False, "heavy_water"),
+        ("p1", False, "light_psychic"),
+        ("p2", False, "light_water"),
         ("p1", True, "switch p2"),
-        ("p2", True, "heavy_water")
+        ("p2", True, "light_water")
     ])
     def test_makemove_bm(self, test_player, full_view, exp_move):
         game = PokeGame(team_specs_for_game)
@@ -102,6 +103,64 @@ class MyTestCase(unittest.TestCase):
         test = agent.make_move(game)
 
         self.assertEqual(exp_move, test)
+
+    @parameterized.expand([
+        ([], [],
+         [[(("p1", "FIRE", 100, 100, 100, 100),
+            (("light_psychic", "PSYCHIC", 50), ("light_fire", "FIRE", 50))),
+           (("p2", "ELECTRIC", 100, 80, 100, 100),
+            (("light_grass", "GRASS", 50), ("light_electric", "ELECTRIC", 50)))],
+          [(("d1", "WATER", 100, 100, 100, 100),
+            (("light_water", "WATER", MIN_POW), ("light_notype", "NOTYPE", MIN_POW))),
+           (("d2", "NOTYPE", 175, 100, 100, 100),
+            (("light_notype", "NOTYPE", MIN_POW), (None, None, None)))]],
+         [[(("p1", "FIRE", 100, 100, 100, 100),
+            (("light_fire", "FIRE", MIN_POW), ("light_notype", "NOTYPE", MIN_POW))),
+           (("p2", "NOTYPE", 100, 80, 100, 100),
+            (("light_notype", "NOTYPE", MIN_POW), (None, None, None)))],
+          [(("d1", "WATER", 100, 100, 100, 100),
+            (("light_water", "WATER", MIN_POW), ("light_notype", "NOTYPE", MIN_POW))),
+           (("d2", "NOTYPE", 175, 100, 100, 100),
+            (("light_notype", "NOTYPE", MIN_POW), (None, None, None)))]]),
+        (["light_psychic"], ["light_steel"],
+         [[(("p1", "FIRE", 100, 100, 100, 100),
+            (("light_psychic", "PSYCHIC", 50), ("light_fire", "FIRE", 50))),
+           (("p2", "ELECTRIC", 100, 80, 100, 100),
+            (("light_grass", "GRASS", 50), ("light_electric", "ELECTRIC", 50)))],
+          [(("d1", "WATER", 100, 102, 115, 99),
+            (("light_steel", "STEEL", 50), ("light_water", "WATER", 50))),
+           (("d2", "NOTYPE", 175, 100, 100, 100),
+            (("light_notype", "NOTYPE", 50), (None, None, None)))]],
+         [[(("p1", "FIRE", 100, 100, 100, 100),
+            (("light_psychic", "PSYCHIC", 50), ("light_fire", "FIRE", 50))),
+           (("p2", "NOTYPE", 100, 80, 100, 100),
+            (("light_notype", "NOTYPE", 50), (None, None, None)))],
+          [(("d1", "WATER", 100, 102, 115, 99),
+            (("light_steel", "STEEL", 50), ("light_water", "WATER", 50))),
+           (("d2", "NOTYPE", 175, 100, 100, 100),
+            (("light_notype", "NOTYPE", 50), (None, None, None)))]]
+         )
+    ])
+    def test_gt_fill_game(self, p1_moves, p2_moves, exp_specs_p1view, exp_specs_p2view):
+        game = PokeGame(team_specs_for_game)
+
+        for m1, m2 in zip(p1_moves, p2_moves):
+            game.play_round(m1, m2, 0.85, True)
+
+        a1 = PlayerGT("p1")
+        a1.make_move(game)
+
+        exp_p1 = PokeGame.GameStruct(exp_specs_p1view)
+        exp_p2 = PokeGame.GameStruct(exp_specs_p2view)
+        for p, q in zip(exp_p1.team1 + exp_p1.team2, a1.game.player1_view.team1 + a1.game.player1_view.team2):
+            p.cur_hp = q.cur_hp
+        for p, q in zip(exp_p2.team1 + exp_p2.team2, a1.game.player2_view.team1 + a1.game.player2_view.team2):
+            p.cur_hp = q.cur_hp
+
+        if (exp_p1, exp_p2) != (a1.game.player1_view, a1.game.player2_view):
+            print(exp_p1, exp_p2, a1.game.player1_view, a1.game.player2_view, sep='\n')
+
+        self.assertEqual((exp_p1, exp_p2), (a1.game.player1_view, a1.game.player2_view))
 
 
 if __name__ == '__main__':

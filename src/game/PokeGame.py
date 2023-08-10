@@ -67,8 +67,8 @@ class PokeGame:
         """
 
         self.game_state: PokeGame.GameStruct = PokeGame.GameStruct(teams_specs)
-        # For player pov, opponent team unknown
-        unknown_specs = [(tuple([None for _ in range(6)]), tuple([(None, None, None) for _ in range(len(teams_specs[0][0][1][0]))]))]
+        # For player pov, opponent team unknown (NB: suppose all Pokémon have same # of attacks)
+        unknown_specs = [(tuple([None for _ in range(6)]), tuple([(None, None, None) for _ in range(len(teams_specs[0][0][1]))]))]
         self.player1_view: PokeGame.GameStruct = PokeGame.GameStruct([teams_specs[0]] + [unknown_specs * len(teams_specs[1])])
         self.player2_view: PokeGame.GameStruct = PokeGame.GameStruct([unknown_specs * len(teams_specs[0])] + [teams_specs[1]])
 
@@ -273,8 +273,7 @@ class PokeGame:
         # modifiers
         rd = force_dmg if 0.85 <= force_dmg <= 1 else random.randint(85, 100) / 100
         stab = 1.5 if move.move_type == attacker.poke_type else 1
-        type_aff = 1 if target.poke_type not in TYPE_CHART[move.move_type] else TYPE_CHART[move.move_type][
-            target.poke_type]
+        type_aff = TYPE_CHART[move.move_type][target.poke_type]
         dmg *= rd * stab * type_aff
 
         return floor(dmg)

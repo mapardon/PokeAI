@@ -25,7 +25,7 @@ class PlayerMDM(AbstractPlayer):
             moves_final_pow = list()
             for m in own_of.moves:
                 moves_final_pow += [m.base_pow * TYPE_CHART[
-                    own_of.poke_type][other_of.poke_type] * (1.5 * (m.move_type == own_of.poke_type))]
+                    m.move_type][other_of.poke_type] * (1 + 0.5 * (m.move_type == own_of.poke_type))]
             ret = own_of.moves[max(enumerate(moves_final_pow), key=lambda x: x[1])[0]].name
 
         return ret
