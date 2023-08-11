@@ -20,6 +20,9 @@ class PlayerMDM(AbstractPlayer):
         if own_of.cur_hp == 0:  # must switch
             ret = random.choice(game.get_moves_from_state(self.role, game.game_state))
 
+        elif other_of.cur_hp == 0:
+            ret = None
+
         else:
             # Damage potential of a move is defined by its final power (considering enemy weakness and STAB)
             moves_final_pow = list()

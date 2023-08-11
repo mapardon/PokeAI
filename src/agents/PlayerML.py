@@ -83,7 +83,9 @@ class PlayerML(AbstractPlayer):
         """ Generate all states reachable from current state and convert in numeric representation to choose a move
 
         :returns: Selected move """
-        # FIXME: NaN appearing
+
+        if not game.player1_view.on_field2.cur_hp if self.role == "p1" else game.player2_view.on_field1.cur_hp:
+            return None
 
         options = list()
         moves_name = dict()

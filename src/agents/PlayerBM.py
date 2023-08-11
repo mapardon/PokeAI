@@ -22,6 +22,9 @@ class PlayerBM(AbstractPlayer):
         if own_of.cur_hp == 0:
             ret = random.choice(game.get_moves_from_state(self.role, game.game_state))
 
+        elif other_of.cur_hp == 0:
+            ret = None
+
         else:
             # Player offensive possibilities
             own_moves_final_pow = list()

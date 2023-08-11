@@ -4,6 +4,7 @@ from typing import Union
 
 from src.agents import AbstractPlayer
 from src.agents.PlayerBM import PlayerBM
+from src.agents.PlayerGT import PlayerGT
 from src.agents.PlayerHuman import PlayerHuman
 from src.agents.PlayerMDM import PlayerMDM
 from src.agents.PlayerML import PlayerML
@@ -125,6 +126,9 @@ class GameEngine:
                 mvsel = ui_input.mvsel if ui_input.mode == "train" else "eps-greedy"
                 players.append(PlayerML(ui_input.mode, n, network, ls, lamb, act_f, ui_input.eps, lr, mvsel))
 
+            elif p == "gt":
+                players.append(PlayerGT(n))
+
             else:
                 players.append(None)
 
@@ -212,13 +216,14 @@ class GameEngine:
 
             # game loop
             while not game_finished and turn_nb < max_rounds:
-                player1_move = players[0].make_move(self.game)
-                player2_move = players[1].make_move(self.game)
+                of1, of2 = self.game.game_state.on_field1, self.game.game_state.on_field2
+                player1_move = players[0].make_move(self.game) if of1.cur_hp and of2.cur_hp or not of1.cur_hp else None
+                player2_move = players[1].make_move(self.game) if of1.cur_hp and of2.cur_hp or not of2.cur_hp else None
 
                 turn_res = self.game.play_round(player1_move, player2_move)
                 game_finished = self.game.is_end_state(None)
 
-                if not game_finished and self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
+                if not game_finished and of1.cur_hp > 0 and of2.cur_hp > 0:
                     turn_nb += 1
 
             p1_victories += game_finished and self.game.first_player_won()
@@ -254,13 +259,14 @@ class GameEngine:
 
             # game loop
             while not game_finished and turn_nb < max_rounds:
-                player1_move = players[0].make_move(self.game)
-                player2_move = players[1].make_move(self.game)
+                of1, of2 = self.game.game_state.on_field1, self.game.game_state.on_field2
+                player1_move = players[0].make_move(self.game) if of1.cur_hp and of2.cur_hp or not of1.cur_hp else None
+                player2_move = players[1].make_move(self.game) if of1.cur_hp and of2.cur_hp or not of2.cur_hp else None
 
                 self.game.play_round(player1_move, player2_move)
                 game_finished = self.game.is_end_state(None)
 
-                if not game_finished and self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
+                if not game_finished and of1.cur_hp > 0 and of2.cur_hp > 0:
                     # turn change once attacks have been applied and fainted Pokemon switched
                     turn_nb += 1
 

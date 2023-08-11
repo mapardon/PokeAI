@@ -23,6 +23,20 @@ team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100),
                         (("d2", "DRAGON", 100, 80, 100, 100),
                          (("light_bug", "BUG", 50), ("light_dragon", "DRAGON", 50)))]]
 
+team_specs_for_game2 = [[(("p1", "FIRE", 100, 100, 100, 100),
+                          (("light_psychic", "PSYCHIC", 50), ("light_fire", "FIRE", 50), ("light_bug", "BUG", 50))),
+                         (("p2", "ELECTRIC", 100, 100, 100, 100),
+                          (("light_grass", "GRASS", 50), ("light_electric", "ELECTRIC", 50),
+                           ("light_ghost", "GHOST", 50))),
+                         (("p3", "GRASS", 100, 100, 100, 100),
+                          (("light_grass", "GRASS", 50), ("light_ice", "ICE", 50), ("light_fighting", "FIGHTING", 50)))],
+                        [(("d1", "WATER", 100, 100, 100, 100),
+                          (("light_steel", "STEEL", 50), ("light_water", "WATER", 50), ("light_fairy", "FAIRY", 50))),
+                         (("d2", "DRAGON", 100, 100, 100, 100),
+                          (("light_bug", "BUG", 50), ("light_dragon", "DRAGON", 50), ("light_ground", "GROUND", 50))),
+                         (("d3", "BUG", 100, 100, 100, 100),
+                          (("light_bug", "BUG", 50), ("light_normal", "NORMAL", 50), ("light_dark", "DARK", 50)))]]
+
 
 class MyTestCase(unittest.TestCase):
 
@@ -161,6 +175,34 @@ class MyTestCase(unittest.TestCase):
             print(exp_p1, exp_p2, a1.game.player1_view, a1.game.player2_view, sep='\n')
 
         self.assertEqual((exp_p1, exp_p2), (a1.game.player1_view, a1.game.player2_view))
+
+    @parameterized.expand([
+        ("p1", {'light_psychic': {'light_water': (-3.333, 3.333), 'light_notype': (-0.228, 0.228), 'switch d2': (0.456, -0.456), 'switch d3': (0.456, -0.456)},
+                'light_fire': {'light_water': (-3.333, 3.333), 'light_notype': (-0.339, 0.339), 'switch d2': (0.689, -0.689), 'switch d3': (0.689, -0.689)},
+                'light_bug': {'light_water': (-3.333, 3.333), 'light_notype': (-0.228, 0.228), 'switch d2': (0.456, -0.456), 'switch d3': (0.456, -0.456)},
+                'switch p2': {'light_water': (-1.033, 1.033), 'light_notype': (-0.683, 0.683), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)},
+                'switch p3': {'light_water': (-0.517, 1.033), 'light_notype': (-0.683, 0.683), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)}}),
+        ("p2", {'light_steel': {'light_fire': (-0.061, 0.061), 'light_notype': (-0.228, 0.228), 'switch p2': (0.456, -0.456), 'switch p3': (0.456, -0.456)},
+                'light_water': {'light_fire': (2.778, -2.778), 'light_notype': (2.778, -2.778), 'switch p2': (0.689, -0.689), 'switch p3': (0.689, -0.689)},
+                'light_fairy': {'light_fire': (-0.294, 0.061), 'light_notype': (-0.461, 0.228), 'switch p2': (0.456, -0.456), 'switch p3': (0.456, -0.456)},
+                'switch d2': {'light_fire': (-0.517, 1.033), 'light_notype': (-0.683, 0.683), 'switch p2': (0.0, 0.0), 'switch p3': (0.0, 0.0)},
+                'switch d3': {'light_fire': (-3.333, 1.033), 'light_notype': (-0.683, 0.683), 'switch p2': (0.0, 0.0), 'switch p3': (0.0, 0.0)}})
+    ])
+    def test_gt_build_payoff_matrix(self, test_player, exp_mat):
+        game = PokeGame(team_specs_for_game2)
+        gt = PlayerGT(test_player)
+
+        gt.game = copy.deepcopy(game)
+        gt.fill_game_with_estimation()
+        gt.build_payoff_matrix()
+        test_mat = gt.payoff_mat
+
+        if test_mat != exp_mat:
+            for m in (test_mat, exp_mat):
+                for k in m.keys():
+                    print(k, m[k])
+
+        self.assertDictEqual(exp_mat, test_mat)
 
 
 if __name__ == '__main__':
