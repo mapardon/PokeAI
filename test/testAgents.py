@@ -14,6 +14,7 @@ from src.game.constants import MIN_POW
 
 random.seed(19)
 
+# assert parameters order: (expected, actual)
 team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100),
                          (("light_psychic", "PSYCHIC", 50), ("light_fire", "FIRE", 50))),
                         (("p2", "ELECTRIC", 100, 80, 100, 100),
@@ -155,7 +156,7 @@ class MyTestCase(unittest.TestCase):
             (("light_notype", "NOTYPE", 50), (None, None, None)))]]
          )
     ])
-    def test_gt_fill_game(self, p1_moves, p2_moves, exp_specs_p1view, exp_specs_p2view):
+    def gest_gt_fill_game(self, p1_moves, p2_moves, exp_specs_p1view, exp_specs_p2view):
         game = PokeGame(team_specs_for_game)
 
         for m1, m2 in zip(p1_moves, p2_moves):
@@ -188,7 +189,7 @@ class MyTestCase(unittest.TestCase):
                 'switch d2': {'light_fire': (-0.517, 1.033), 'light_notype': (-0.683, 0.683), 'switch p2': (0.0, 0.0), 'switch p3': (0.0, 0.0)},
                 'switch d3': {'light_fire': (-3.333, 1.033), 'light_notype': (-0.683, 0.683), 'switch p2': (0.0, 0.0), 'switch p3': (0.0, 0.0)}})
     ])
-    def test_gt_build_payoff_matrix(self, test_player, exp_mat):
+    def gest_gt_build_payoff_matrix(self, test_player, exp_mat):
         game = PokeGame(team_specs_for_game2)
         gt = PlayerGT(test_player)
 

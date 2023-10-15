@@ -1,9 +1,9 @@
 import copy
 import random
-from math import floor
+from math import floor, ceil
 
 from src.game.Pokemon import Pokemon, Move
-from src.game.constants import TYPES_INDEX, TYPE_CHART, MOVES, MIN_STAT, MAX_STAT
+from src.game.constants import TYPES_INDEX, TYPE_CHART, MOVES
 
 
 class TeamSpecs:
@@ -72,7 +72,7 @@ class PokeGame:
         self.player1_view: PokeGame.GameStruct = PokeGame.GameStruct([teams_specs[0]] + [unknown_specs * len(teams_specs[1])])
         self.player2_view: PokeGame.GameStruct = PokeGame.GameStruct([unknown_specs * len(teams_specs[0])] + [teams_specs[1]])
 
-        # Players witness name, type and hp of first opponent Pokemon (+ know they have a light power STAB)
+        # Players witness name, type and hp of first opponent Pokémon (+ know they have a light power STAB)
         p2_lead_view, p2_lead_src = self.player1_view.team2[0], self.game_state.on_field2
         p2_lead_view.name, p2_lead_view.poke_type, p2_lead_view.hp, p2_lead_view.cur_hp = (p2_lead_src.name,
                                                                                            p2_lead_src.poke_type,
@@ -105,6 +105,8 @@ class PokeGame:
                 state = self.player1_view
             elif player == "p2":
                 state = self.player2_view
+            else:
+                return None
 
         num_state = list()
         for t, of in zip([state.team1, state.team2], [state.on_field1, state.on_field2]):
@@ -172,7 +174,7 @@ class PokeGame:
 
     def first_player_won(self, state=None):
         """
-        Check if some pokemon from team1 are not dead. NB: a False value returned does not imply player2 won (game may
+        Check if some Pokémon from team1 are not dead. NB: a False value returned does not imply player2 won (game may
         be unfinished).
 
         :param state: PokeGame object to test.
@@ -257,8 +259,8 @@ class PokeGame:
         Compute the amount of damage caused by the move used in specified conditions.
 
         :param move: Move object corresponding to attack used
-        :param attacker: Pokemon object corresponding to the Pokémon using the move
-        :param target: Pokemon object corresponding to the Pokémon receiving the move
+        :param attacker: Pokémon object corresponding to the Pokémon using the move
+        :param target: Pokémon object corresponding to the Pokémon receiving the move
         :param force_dmg: if between 0.85 and 1: used as substitution of random parameter (force value of multiplier),
             otherwise: generate random number.
         :return: Number of damage caused, as an integer
@@ -275,6 +277,8 @@ class PokeGame:
         stab = 1.5 if move.move_type == attacker.poke_type else 1
         type_aff = TYPE_CHART[move.move_type][target.poke_type]
         dmg *= rd * stab * type_aff
+        if 0 < dmg < 1:
+            dmg = 1
 
         return floor(dmg)
 
@@ -397,50 +401,19 @@ class PokeGame:
         Therefore, a lower and upper bound are considered.
 
         :param move: Move object corresponding to attack used
-        :param attacker: Pokemon object corresponding to the Pokémon using the move
-        :param target: Pokemon object corresponding to the Pokémon receiving the move
+        :param attacker: Pokémon object corresponding to the Pokémon using the move
+        :param target: Pokémon object corresponding to the Pokémon receiving the move
         :param hp_loss: Amount of health point lost by target
         :return: Lowest and highest estimations of statistic
         """
 
-        attacker = copy.copy(attacker)
-        max_atk = -1  # hitting min random factor
-        min_atk = -1  # hitting max random factor
-
-        # test edge cases
-        attacker.atk = MIN_STAT
-        min_atk_85, min_atk_100 = PokeGame.damage_formula(move, attacker, target, 0.85), \
-            PokeGame.damage_formula(move, attacker, target, 1.0)
-        attacker.atk = MAX_STAT
-        max_atk_85, max_atk_100 = PokeGame.damage_formula(move, attacker, target, 0.85), \
-            PokeGame.damage_formula(move, attacker, target, 1.0)
-
-        if hp_loss < min_atk_85 or hp_loss == 0:  # too few remaining HP or ineffective move
-            min_atk, max_atk = None, None
-        elif min_atk_85 <= hp_loss < min_atk_100:
-            min_atk = None
-        elif max_atk_85 < hp_loss <= max_atk_100:
-            max_atk = None
-
-        if max_atk_100 == hp_loss:  # atk is max stat
-            min_atk = None
-            max_atk = MAX_STAT
-
-        atk = MIN_STAT
-        while atk <= MAX_STAT and (max_atk == -1 or min_atk == -1):
-            attacker.atk = atk
-            min_dmg = PokeGame.damage_formula(move, attacker, target, 0.85)
-            max_dmg = PokeGame.damage_formula(move, attacker, target, 1)
-
-            if min_atk == -1 and hp_loss < max_dmg:
-                min_atk = atk - 1
-
-            if max_atk == -1 and hp_loss < min_dmg:
-                max_atk = atk - 1
-
-            atk += 1
-
-        return min_atk, max_atk
+        stab = 1.5 ** (move.move_type == attacker.poke_type)
+        type_aff = TYPE_CHART[move.move_type][target.poke_type]
+        if not type_aff or not hp_loss:
+            return None, None  # no further estimation possible
+        lo = (50 * target.des * ceil(hp_loss / (1 * stab * type_aff) - 2)) / (42 * move.base_pow)
+        hi = (50 * target.des * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2)) / (42 * move.base_pow)
+        return ceil(lo), floor(hi)
 
     @staticmethod
     def reverse_defense_calculator(move: Move, attacker: Pokemon, target: Pokemon, hp_loss: int):
@@ -449,49 +422,19 @@ class PokeGame:
         cannot be made (too few remaining HP), None value is returned.
 
         :param move: Move object corresponding to attack used
-        :param attacker: Pokemon object corresponding to the Pokémon using the move
-        :param target: Pokemon object corresponding to the Pokémon receiving the move
+        :param attacker: Pokémon object corresponding to the Pokémon using the move
+        :param target: Pokémon object corresponding to the Pokémon receiving the move
         :param hp_loss: Amount of health point lost by target
         :return: Lowest and highest estimations of statistic
         """
 
-        target = copy.copy(target)
-        max_des = -1  # taking max power
-        min_des = -1  # taking min power
-
-        # test edge cases
-        target.des = MIN_STAT
-        min_des_85, min_des_100 = PokeGame.damage_formula(move, attacker, target, 0.85),\
-            PokeGame.damage_formula(move, attacker, target, 1)
-        target.des = MAX_STAT
-        max_des_85, max_des_100 = PokeGame.damage_formula(move, attacker, target, 0.85),\
-            PokeGame.damage_formula(move, attacker, target, 1)
-
-        if hp_loss < max_des_85 or hp_loss == 0:  # too few remaining HP or ineffective move
-            max_des, min_des = None, None
-        elif max_des_85 <= hp_loss < max_des_100:
-            max_des = None
-        elif min_des_85 < hp_loss <= min_des_100:
-            min_des = None
-
-        if min_des_100 == hp_loss:
-            max_des = MAX_STAT
-
-        des = MAX_STAT
-        while des >= MIN_STAT and (max_des == -1 or min_des == -1):
-            target.des = des
-            min_dmg = PokeGame.damage_formula(move, attacker, target, 0.85)
-            max_dmg = PokeGame.damage_formula(move, attacker, target, 1)
-
-            if hp_loss < max_dmg and max_des == -1:
-                max_des = des - 1
-
-            if hp_loss < min_dmg and min_des == -1:
-                min_des = des - 1
-
-            des -= 1
-
-        return min_des, max_des
+        stab = 1.5 ** (move.move_type == attacker.poke_type)
+        type_aff = TYPE_CHART[move.move_type][target.poke_type]
+        if not type_aff or not hp_loss:
+            return None, None
+        lo = (42 * move.base_pow * attacker.atk) / (50 * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2))
+        hi = (42 * move.base_pow * attacker.atk) / (50 * ceil(hp_loss / (1 * stab * type_aff) - 2))
+        return ceil(lo), floor(hi)
 
     @staticmethod
     def estimate_speed(player_first: bool, own_move: str, opp_move: str, own_spe: int, opp_spe: int):
@@ -554,10 +497,8 @@ class PokeGame:
 
             # evaluate min and max possible value of stat landing the attack
             min_est, max_est = self.reverse_attack_calculator(move, opp_of, own_of, hp_loss)
-            est = max_est if max_est is not None else min_est
-
-            if est is not None:  # hp_loss may not represent full opponent power
-                opp_of.atk = max(est, opp_of.atk) if opp_of.atk is not None else est
+            if max_est is not None:
+                opp_of.atk = max(max_est, opp_of.atk) if opp_of.atk is not None else max_est
 
         # opponent defense
         if own_moved and "switch" not in own_move:
@@ -565,10 +506,8 @@ class PokeGame:
             move = Move(own_move, *MOVES[own_move])
 
             min_est, max_est = self.reverse_defense_calculator(move, own_of, opp_of, hp_loss)
-            est = max_est if max_est is not None else min_est
-
-            if est is not None:
-                opp_of.des = max(est, opp_of.des) if opp_of.des is not None else est
+            if max_est is not None:
+                opp_of.des = max(max_est, opp_of.des) if opp_of.des is not None else max_est
 
         # opponent speed
         if "switch" in own_move and "switch" in opp_move:

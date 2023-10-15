@@ -19,7 +19,7 @@ INITS = ["normal",
 MVSEL = ["eps-greedy",
          "softmax-exp"]
 
-AGENTS_TYPE = ["ml", "mdm", "random"]
+AGENTS_TYPE = ["ml"]
 
 
 class ManageController:

@@ -38,11 +38,11 @@ class FightMenu:
                     pars.mode = "fight"
                     out = True
 
-            # training parameters
+            # match parameters
             elif inputted[0] in ("player1", "player2") and len(inputted) == 2:
                 if inputted[0] == "player2" and inputted[1] == "human":
                     warning = "Player 2 can only be artificial player"
-                elif inputted[1] in PLAYER_TYPES:
+                elif inputted[1] in PLAYER_TYPES + ["human"]:
                     if inputted[0] == "player1":
                         pars.agent1type = inputted[1]
                     else:

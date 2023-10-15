@@ -51,7 +51,7 @@ class PlayerBM(AbstractPlayer):
                 own_def_ops = [max(ops) for ops in own_def_ops]
                 safest_switch_idx = min(enumerate(own_def_ops), key=lambda x: x[1])[0]
 
-            # No info about opponent moves, player has strongest option or safest switch is current Pokémon: use strongest move
+            # Unknown opponent moves, player has strongest option, safest switch is current Pokémon: use strongest move
             if not len(opp_moves_final_pow) or max(opp_moves_final_pow) <= max(own_moves_final_pow) or safest_switch_idx == 0:
                 ret = own_of.moves[max(enumerate(own_moves_final_pow), key=lambda x: x[1])[0]].name
 
