@@ -237,21 +237,26 @@ class TestCasePokeGame(unittest.TestCase):
 
         exp = PokeGame(team_specs_for_game2)
         for p1_move, p2_move, ret in zip(p1_moves, p2_moves, rets):
-            pre_team1_vp1 = (exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player1_view.on_field1.spe)
-            pre_team2_vp1 = (exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player1_view.on_field2.spe)
-            pre_team1_vp2 = (exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player2_view.on_field1.spe)
-            pre_team2_vp2 = (exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player2_view.on_field2.spe)
+            pre_team1_vp1 = (
+            exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player1_view.on_field1.spe)
+            pre_team2_vp1 = (
+            exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player1_view.on_field2.spe)
+            pre_team1_vp2 = (
+            exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player2_view.on_field1.spe)
+            pre_team2_vp2 = (
+            exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player2_view.on_field2.spe)
 
             exp.apply_player_moves(exp.game_state, p1_move, p2_move, 0.85, True)
 
-            p1_moved = (p1_move is not None and "switch" in p1_move) or (p2_move is not None and "switch" in p2_move) or\
+            p1_moved = (p1_move is not None and "switch" in p1_move) or (p2_move is not None and "switch" in p2_move) or \
                        (p1_move is not None and "switch" not in p1_move and
                         (game.game_state.on_field1.cur_hp > 0 or
                          game.game_state.on_field1.spe > game.game_state.on_field2.spe or
                          game.game_state.on_field1.spe == game.game_state.on_field2.spe))
-            p2_moved = (p1_move is not None and "switch" in p1_move) or (p2_move is not None and "switch" in p2_move) or\
+            p2_moved = (p1_move is not None and "switch" in p1_move) or (p2_move is not None and "switch" in p2_move) or \
                        (p2_move is not None and "switch" not in p2_move and
-                        (game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
+                        (
+                                    game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
             exp.directly_available_info("p1", p2_move, {"p1_moved": p1_moved, "p2_moved": p2_moved})
             exp.directly_available_info("p2", p1_move, {"p1_moved": p1_moved, "p2_moved": p2_moved})
 
@@ -286,13 +291,14 @@ class TestCasePokeGame(unittest.TestCase):
                                                   (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
                                                  (("p2", "ELECTRIC", 100, 80, 100, 100),
                                                   (("light_grass", "GRASS", 50), ("heavy_electric", "ELECTRIC", 100)))],
-                                                [(("d1", "WATER", 100, 102, 115, 99),
+                                                [(("d1", "WATER", 100, 102, 120, 99),
                                                   (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
-                                                 (("d2", "DRAGON", 100, 80, 116, 140),
+                                                 (("d2", "DRAGON", 100, 80, 120, 140),
                                                   (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
-        exp.player2_view = PokeGame.GameStruct([[(("p1", "FIRE", 100, 102, 115, 140),
+
+        exp.player2_view = PokeGame.GameStruct([[(("p1", "FIRE", 100, 102, 120, 140),
                                                   (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
-                                                 (("p2", "ELECTRIC", 100, 80, 119, 100),
+                                                 (("p2", "ELECTRIC", 100, 80, 124, 100),
                                                   (("heavy_electric", "ELECTRIC", 100), (None, None, None)))],
                                                 [(("d1", "WATER", 100, 100, 100, 99),
                                                   (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
@@ -309,7 +315,7 @@ class TestCasePokeGame(unittest.TestCase):
         exp.player2_view.team1[0].cur_hp, exp.player2_view.team1[1].cur_hp, exp.player2_view.team2[0].cur_hp, \
             exp.player2_view.team2[1].cur_hp = 0, 0, 0, 14
 
-        self.assertEqual(game, exp, msg="{}\n{}".format(game, exp))
+        self.assertEqual(game, exp, msg="act: {}\nexp: {}".format(game, exp))
 
     @parameterized.expand([
         (None, [1, 100, 100, 100, 100, 100, 10, 50, 1, 100,

@@ -3,7 +3,7 @@ import random
 from math import floor, ceil
 
 from src.game.Pokemon import Pokemon, Move
-from src.game.constants import TYPES_INDEX, TYPE_CHART, MOVES
+from src.game.constants import TYPES_INDEX, TYPE_CHART, MOVES, MIN_STAT, MAX_STAT
 
 
 class TeamSpecs:
@@ -413,7 +413,8 @@ class PokeGame:
             return None, None  # no further estimation possible
         lo = (50 * target.des * ceil(hp_loss / (1 * stab * type_aff) - 2)) / (42 * move.base_pow)
         hi = (50 * target.des * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2)) / (42 * move.base_pow)
-        return ceil(lo), floor(hi)
+        lo, hi = min(MAX_STAT, max(MIN_STAT, ceil(lo))), min(MAX_STAT, max(MIN_STAT, floor(hi)))
+        return lo, hi
 
     @staticmethod
     def reverse_defense_calculator(move: Move, attacker: Pokemon, target: Pokemon, hp_loss: int):
@@ -434,7 +435,8 @@ class PokeGame:
             return None, None
         lo = (42 * move.base_pow * attacker.atk) / (50 * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2))
         hi = (42 * move.base_pow * attacker.atk) / (50 * ceil(hp_loss / (1 * stab * type_aff) - 2))
-        return ceil(lo), floor(hi)
+        lo, hi = min(MAX_STAT, max(MIN_STAT, ceil(lo))), min(MAX_STAT, max(MIN_STAT, floor(hi)))
+        return lo, hi
 
     @staticmethod
     def estimate_speed(player_first: bool, own_move: str, opp_move: str, own_spe: int, opp_spe: int):
@@ -498,7 +500,8 @@ class PokeGame:
             # evaluate min and max possible value of stat landing the attack
             min_est, max_est = self.reverse_attack_calculator(move, opp_of, own_of, hp_loss)
             if max_est is not None:
-                opp_of.atk = max(max_est, opp_of.atk) if opp_of.atk is not None else max_est
+                if not (own_fainted and opp_of.atk is not None):  # estimation is biased, keep old value
+                    opp_of.atk = max(max_est, opp_of.atk) if opp_of.atk is not None else max_est
 
         # opponent defense
         if own_moved and "switch" not in own_move:
@@ -507,7 +510,8 @@ class PokeGame:
 
             min_est, max_est = self.reverse_defense_calculator(move, own_of, opp_of, hp_loss)
             if max_est is not None:
-                opp_of.des = max(max_est, opp_of.des) if opp_of.des is not None else max_est
+                if not (opp_fainted and opp_of.des is not None):
+                    opp_of.des = max(max_est, opp_of.des) if opp_of.des is not None else max_est
 
         # opponent speed
         if "switch" in own_move and "switch" in opp_move:
