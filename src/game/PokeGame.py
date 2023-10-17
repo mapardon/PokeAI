@@ -409,11 +409,20 @@ class PokeGame:
 
         stab = 1.5 ** (move.move_type == attacker.poke_type)
         type_aff = TYPE_CHART[move.move_type][target.poke_type]
-        if not type_aff or not hp_loss:
-            return None, None  # no further estimation possible
-        lo = (50 * target.des * ceil(hp_loss / (1 * stab * type_aff) - 2)) / (42 * move.base_pow)
-        hi = (50 * target.des * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2)) / (42 * move.base_pow)
-        lo, hi = min(MAX_STAT, max(MIN_STAT, ceil(lo))), min(MAX_STAT, max(MIN_STAT, floor(hi)))
+        if not type_aff:
+            # no info from no hp_loss (plus, it would trigger a zero division)
+            return None, None
+
+        lo_num, lo_den = (50 * target.des * ceil(hp_loss / (1 * stab * type_aff) - 2)), (42 * move.base_pow)
+        hi_num, hi_den = (50 * target.des * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2)), (42 * move.base_pow)
+        if lo_num < 0:
+            print(end='')
+        if 0 in (lo_den, hi_den):
+            # if hp_loss is very small, den ends up in 2 - 2, but such case gives no useful info & it's just ignored
+            return None, None
+
+        lo, hi = ceil(lo_num / lo_den), floor(hi_num / hi_den)
+        lo, hi = min(MAX_STAT, max(MIN_STAT, lo)), min(MAX_STAT, max(MIN_STAT, hi))
         return lo, hi
 
     @staticmethod
@@ -431,11 +440,18 @@ class PokeGame:
 
         stab = 1.5 ** (move.move_type == attacker.poke_type)
         type_aff = TYPE_CHART[move.move_type][target.poke_type]
-        if not type_aff or not hp_loss:
+        if not type_aff:
+            # no info from no hp_loss (plus, it would trigger a zero division)
             return None, None
-        lo = (42 * move.base_pow * attacker.atk) / (50 * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2))
-        hi = (42 * move.base_pow * attacker.atk) / (50 * ceil(hp_loss / (1 * stab * type_aff) - 2))
-        lo, hi = min(MAX_STAT, max(MIN_STAT, ceil(lo))), min(MAX_STAT, max(MIN_STAT, floor(hi)))
+
+        lo_num, lo_den = (42 * move.base_pow * attacker.atk), (50 * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2))
+        hi_num, hi_den = (42 * move.base_pow * attacker.atk), (50 * ceil(hp_loss / (1 * stab * type_aff) - 2))
+        if 0 in (lo_den, hi_den):
+            # if hp_loss is very small, den ends up in 2 - 2, but such case gives no useful info & it's just ignored
+            return None, None
+
+        lo, hi = ceil(lo_num / lo_den), floor(hi_num / hi_den)
+        lo, hi = min(MAX_STAT, max(MIN_STAT, lo)), min(MAX_STAT, max(MIN_STAT, hi))
         return lo, hi
 
     @staticmethod

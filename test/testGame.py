@@ -31,6 +31,13 @@ team_specs_for_game2 = [[(("p1", "FIRE", 100, 100, 100, 100),
                          (("d2", "DRAGON", 100, 80, 100, 101),
                           (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]
 
+team_specs_for_game3 = [[(("p1", "FAIRY", 100, 100, 100, 100),
+                          (("light_psychic", "PSYCHIC", 50), ("heavy_fairy", "FIRE", 100))),
+                         (("p2", "FIRE", 100, 80, 100, 100),
+                          (("light_grass", "GRASS", 50), ("heavy_fire", "ELECTRIC", 100)))],
+                        [(("d1", "WATER", 100, 100, 100, 99),
+                          (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100)))]]
+
 
 def gen_move_list_1():
     return [Move("light_psychic", "PSYCHIC", 50), Move("heavy_fire", "FIRE", 100)]
@@ -219,44 +226,44 @@ class TestCasePokeGame(unittest.TestCase):
         self.assertEqual(res, exp_out)
 
     @parameterized.expand([
-        (["light_psychic"], ["light_steel"]),
-        (["light_psychic", "switch p2"], ["switch d2", "light_bug"]),
-        (["switch p2"], ["switch d2"]),
-        (["light_psychic"], ["heavy_water"]),
-        (["light_psychic"], ["switch d2"]),
-        (["light_psychic", "switch p2", "light_grass"], ["switch d2", "light_bug", "light_bug"]),
-        ([None], ["switch d2"])
+        (["light_psychic"], ["light_steel"], team_specs_for_game2),
+        (["light_psychic", "switch p2"], ["switch d2", "light_bug"], team_specs_for_game2),
+        (["switch p2"], ["switch d2"], team_specs_for_game2),
+        (["light_psychic"], ["heavy_water"], team_specs_for_game2),
+        (["light_psychic"], ["switch d2"], team_specs_for_game2),
+        (["light_psychic", "switch p2", "light_grass"], ["switch d2", "light_bug", "light_bug"], team_specs_for_game2),
+        ([None], ["switch d2"], team_specs_for_game2),
+        ([None, "switch p2"], ["light_steel", "light_steel"], team_specs_for_game3)
     ])
-    def test_play_round_effects(self, p1_moves, p2_moves):
-        game = PokeGame(team_specs_for_game2)
+    def test_play_round_effects(self, p1_moves, p2_moves, team_specs):
+        game = PokeGame(team_specs)
         rets = list()
 
         for p1_move, p2_move in zip(p1_moves, p2_moves):
             rets.append(game.play_round(p1_move, p2_move, 0.85, True))
             # NB: feedback of round was tested in other test and can thus be used safely in this test
 
-        exp = PokeGame(team_specs_for_game2)
+        exp = PokeGame(team_specs)
         for p1_move, p2_move, ret in zip(p1_moves, p2_moves, rets):
             pre_team1_vp1 = (
-            exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player1_view.on_field1.spe)
+                exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player1_view.on_field1.spe)
             pre_team2_vp1 = (
-            exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player1_view.on_field2.spe)
+                exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player1_view.on_field2.spe)
             pre_team1_vp2 = (
-            exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player2_view.on_field1.spe)
+                exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player2_view.on_field1.spe)
             pre_team2_vp2 = (
-            exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player2_view.on_field2.spe)
+                exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player2_view.on_field2.spe)
 
             exp.apply_player_moves(exp.game_state, p1_move, p2_move, 0.85, True)
 
             p1_moved = (p1_move is not None and "switch" in p1_move) or (p2_move is not None and "switch" in p2_move) or \
                        (p1_move is not None and "switch" not in p1_move and
-                        (game.game_state.on_field1.cur_hp > 0 or
-                         game.game_state.on_field1.spe > game.game_state.on_field2.spe or
-                         game.game_state.on_field1.spe == game.game_state.on_field2.spe))
+                       (game.game_state.on_field1.cur_hp > 0 or
+                        game.game_state.on_field1.spe > game.game_state.on_field2.spe or
+                        game.game_state.on_field1.spe == game.game_state.on_field2.spe))
             p2_moved = (p1_move is not None and "switch" in p1_move) or (p2_move is not None and "switch" in p2_move) or \
                        (p2_move is not None and "switch" not in p2_move and
-                        (
-                                    game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
+                       (game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
             exp.directly_available_info("p1", p2_move, {"p1_moved": p1_moved, "p2_moved": p2_moved})
             exp.directly_available_info("p2", p1_move, {"p1_moved": p1_moved, "p2_moved": p2_moved})
 
@@ -296,7 +303,7 @@ class TestCasePokeGame(unittest.TestCase):
                                                  (("d2", "DRAGON", 100, 80, 120, 140),
                                                   (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]])
 
-        exp.player2_view = PokeGame.GameStruct([[(("p1", "FIRE", 100, 102, 120, 140),
+        exp.player2_view = PokeGame.GameStruct([[(("p1", "FIRE", 100, 102, 123, 140),
                                                   (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
                                                  (("p2", "ELECTRIC", 100, 80, 124, 100),
                                                   (("heavy_electric", "ELECTRIC", 100), (None, None, None)))],
