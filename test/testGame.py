@@ -181,7 +181,7 @@ class TestCasePokeGame(unittest.TestCase):
         ("switch p2", None, "p2", "d1"),
         (None, "switch d2", "p1", "d2"),
         ("light_psychic", "heavy_water", "p1", "d1")
-    ])
+    ])  # TODO: attack & None
     def test_apply_player_moves(self, player1_move, player2_move, exp_field1_name, exp_field2_name):
         game = PokeGame(team_specs_for_game)
         gs = game.game_state
@@ -223,7 +223,7 @@ class TestCasePokeGame(unittest.TestCase):
         for p1_move, p2_move in zip(p1_moves, p2_moves):
             res = game.play_round(p1_move, p2_move)
 
-        self.assertEqual(res, exp_out)
+        self.assertEqual(exp_out, res)
 
     @parameterized.expand([
         (["light_psychic"], ["light_steel"], team_specs_for_game2),
@@ -233,45 +233,19 @@ class TestCasePokeGame(unittest.TestCase):
         (["light_psychic"], ["switch d2"], team_specs_for_game2),
         (["light_psychic", "switch p2", "light_grass"], ["switch d2", "light_bug", "light_bug"], team_specs_for_game2),
         ([None], ["switch d2"], team_specs_for_game2),
-        ([None, "switch p2"], ["light_steel", "light_steel"], team_specs_for_game3)
-    ])
+        (["light_psychic", "switch p2"], ["light_steel", "light_steel"], team_specs_for_game3)
+    ])  # todo: test checking if no negative hp has been encountered
     def test_play_round_effects(self, p1_moves, p2_moves, team_specs):
         game = PokeGame(team_specs)
         rets = list()
 
         for p1_move, p2_move in zip(p1_moves, p2_moves):
-            rets.append(game.play_round(p1_move, p2_move, 0.85, True))
-            # NB: feedback of round was tested in other test and can thus be used safely in this test
+            game.play_round(p1_move, p2_move, 0.85, True)
 
-        exp = PokeGame(team_specs)
-        for p1_move, p2_move, ret in zip(p1_moves, p2_moves, rets):
-            pre_team1_vp1 = (
-                exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player1_view.on_field1.spe)
-            pre_team2_vp1 = (
-                exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player1_view.on_field2.spe)
-            pre_team1_vp2 = (
-                exp.game_state.on_field1.name, exp.game_state.on_field1.cur_hp, exp.player2_view.on_field1.spe)
-            pre_team2_vp2 = (
-                exp.game_state.on_field2.name, exp.game_state.on_field2.cur_hp, exp.player2_view.on_field2.spe)
+        # expected values
 
-            exp.apply_player_moves(exp.game_state, p1_move, p2_move, 0.85, True)
 
-            p1_moved = (p1_move is not None and "switch" in p1_move) or (p2_move is not None and "switch" in p2_move) or \
-                       (p1_move is not None and "switch" not in p1_move and
-                       (game.game_state.on_field1.cur_hp > 0 or
-                        game.game_state.on_field1.spe > game.game_state.on_field2.spe or
-                        game.game_state.on_field1.spe == game.game_state.on_field2.spe))
-            p2_moved = (p1_move is not None and "switch" in p1_move) or (p2_move is not None and "switch" in p2_move) or \
-                       (p2_move is not None and "switch" not in p2_move and
-                       (game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
-            exp.directly_available_info("p1", p2_move, {"p1_moved": p1_moved, "p2_moved": p2_moved})
-            exp.directly_available_info("p2", p1_move, {"p1_moved": p1_moved, "p2_moved": p2_moved})
-
-            if p1_move is not None and p2_move is not None:
-                exp.statistic_estimation("p1", ret, p1_move, p2_move, pre_team1_vp1, pre_team2_vp1)
-                exp.statistic_estimation("p2", ret, p2_move, p1_move, pre_team2_vp2, pre_team1_vp2)
-
-        self.assertEqual(game, exp)
+        self.assertEqual(game, exp, msg="moves: ({}, {})\nexp: {}\nact: {}".format(p1_moves, p2_moves, exp, game))
 
     def test_play_round_full_game(self):
         game = PokeGame(team_specs_for_game2)
