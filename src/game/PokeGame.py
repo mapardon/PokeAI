@@ -39,9 +39,9 @@ class PokeGame:
             # teams
             for ts, to in zip((self.team1, self.team2), (other.team1, other.team2)):
                 for ps, po in zip(ts, to):
-                    test &= ps == po and ps.cur_hp == po.cur_hp  # as we are comparing states, cur_hp of Pokémon matter
+                    test &= ps == po and ps.cur_hp == po.cur_hp  # as we are comparing states, cur_hp of Pokémon matters
 
-            # on-field
+            # on-field (names are unique per team)
             test &= self.on_field1.name == other.on_field1.name
             test &= self.on_field2.name == other.on_field2.name
 
