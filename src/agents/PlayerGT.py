@@ -2,13 +2,9 @@ import copy
 import random
 
 from src.agents.AbstractPlayer import AbstractPlayer
-from src.agents.PlayerMDM import PlayerMDM
 from src.game.PokeGame import PokeGame
 from src.game.Pokemon import Move
 from src.game.constants import MIN_POW, MIN_STAT, MAX_STAT, MIN_HP, MAX_HP
-
-# MIN_HP, MAX_HP = 100, 100
-
 
 team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100),
                          (("light_psychic", "PSYCHIC", 50), ("light_fire", "FIRE", 50), ("light_bug", "BUG", 50))),
@@ -46,7 +42,7 @@ class PlayerGT(AbstractPlayer):
         own_view_own_team, own_view_opp_team = [own_view.team1, own_view.team2][::(-1) ** (self.role == "p2")]
         opp_view_own_team, opp_view_opp_team = [opp_view.team1, opp_view.team2][::(-1) ** (self.role == "p2")]
 
-        # Give names of one team to the other (this reveals no supposedly unknown information and allows to make switches match)
+        # Give names of one team to the other (this reveals no sensitive info and allows to be coherent in the switches)
         for p, q in zip(own_view_own_team + opp_view_opp_team, opp_view_own_team + own_view_opp_team):
             q.name = p.name
 
@@ -76,12 +72,15 @@ class PlayerGT(AbstractPlayer):
                         p.moves[i] = Move("light_notype", "NOTYPE", MIN_POW)
                         break
 
-        # Own Pokémon unknown to opponent are set to default, real stats are provided for Pokémon already seen
+        # Own Pokémons unknown to opponent are set to default, real stats are provided for Pokémon already seen
         for p, q in zip(opp_view_own_team, own_view_own_team):
             if p.poke_type is None:
                 p.poke_type = "NOTYPE"
+                p.cur_hp, p.hp, p.atk, p.des, p.spe = ((MIN_HP + MAX_HP) // 2, (MIN_HP + MAX_HP) // 2,
+                                    (MIN_STAT + MAX_STAT) // 2, (MIN_STAT + MAX_STAT) // 2, (MIN_STAT + MAX_STAT) // 2)
 
-            p.cur_hp, p.hp, p.atk, p.des, p.spe = q.cur_hp, q.hp, q.atk, q.des, q.spe
+            else:
+                p.cur_hp, p.hp, p.atk, p.des, p.spe = q.cur_hp, q.hp, q.atk, q.des, q.spe
 
             # All Pokémon have at least 1 STAB of MIN_POW
             if p.poke_type not in (m.move_type for m in p.moves):
@@ -95,7 +94,7 @@ class PlayerGT(AbstractPlayer):
                         p.moves[i] = Move("light_notype", "NOTYPE", MIN_POW)
                         break
 
-        # Team of the opponent is considered our view of it (no access to supposedly unknown elements)
+        # Team of the opponent is considered our view of it: we're not supposed to know its real choices and configs
         if self.role == "p1":
             opp_view.team2 = copy.deepcopy(own_view.team2)
             opp_view.on_field2 = opp_view.team2[
@@ -184,8 +183,8 @@ class PlayerGT(AbstractPlayer):
 
         # Update the payoff matrix by removing dominated rows and columns
         tmp = {own_move: {opp_move: self.payoff_mat[own_move][opp_move]
-                                      for opp_move in opp_moves if opp_move not in dominated_columns}
-                           for own_move in own_moves if own_move not in dominated_rows}
+                          for opp_move in opp_moves if opp_move not in dominated_columns}
+               for own_move in own_moves if own_move not in dominated_rows}
         self.payoff_mat = tmp
 
         return dominated_rows or dominated_columns
@@ -227,20 +226,24 @@ class PlayerGT(AbstractPlayer):
 
     def make_move(self, game: PokeGame):
 
-        if not self.game.player1_view.on_field2.cur_hp if self.role == "p1" else self.game.player2_view.on_field1.cur_hp:
-            move = None
-
-        else:
+        if self.game is None:
             # initializations + compute payoff matrix
             self.game = copy.deepcopy(game)
             self.fill_game_with_estimation()
             self.build_payoff_matrix()
 
-            if not self.game.player1_view.on_field1.cur_hp if self.role == "p1" else self.game.player2_view.on_field2.cur_hp:
-                move = self.post_faint_move()
+        # opponent down
+        if (not self.game.player1_view.on_field2.cur_hp and self.role == "p1" or
+                not self.game.player2_view.on_field1.cur_hp and self.role == "p2"):
+            move = None
 
-            else:
-                move = self.regular_move()
+        # ourselves down
+        elif (not self.game.player1_view.on_field1.cur_hp and self.role == "p1" or
+                not self.game.player2_view.on_field2.cur_hp and self.role == "p2"):
+            move = self.post_faint_move()
+
+        else:
+            move = self.regular_move()
 
         return move
 
