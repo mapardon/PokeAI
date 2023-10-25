@@ -216,6 +216,26 @@ class MyTestCase(unittest.TestCase):
 
         self.assertDictEqual(exp_mat, test_mat)
 
+    @parameterized.expand([
+        ({"a1": {"b1": (1, 1), "b2": (0, 0)}, "a2": {"b1": (0, 0), "b2": (1, 1)}},
+         {"a1": {"b1": (1, 1), "b2": (0, 0)}, "a2": {"b1": (0, 0), "b2": (1, 1)}}),
+        ({"a1": {"b1": (0, 0), "b2": (1, 1)}, "a2": {"b1": (1, 1), "b2": (2, 2)}},
+         {"a2": {"b2": (2, 2)}}),
+        (None, {'switch p3': {'light_water': (-0.517, 0.689)}})
+    ])
+    def test_remove_strictly_dominated_strategies(self, init, exp):
+        game = PokeGame(team_specs_for_game2)
+        agent = PlayerGT("p1")
+        agent.game = game
+        agent.fill_game_with_estimation()
+        agent.build_payoff_matrix(False)
+
+        if init is not None:
+            agent.payoff_mat = init
+        agent.remove_strictly_dominated_strategies()
+
+        self.assertDictEqual(exp, agent.payoff_mat)
+
 
 if __name__ == '__main__':
     unittest.main()

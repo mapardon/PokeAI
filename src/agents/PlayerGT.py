@@ -157,44 +157,39 @@ class PlayerGT(AbstractPlayer):
 
                 self.payoff_mat[own_mv][opp_mv] = (round(own_po, 3), round(opp_po, 3))
 
-    def remove_strictly_dominated_strategies(self, player: int):
+    def remove_strictly_dominated_strategies(self):
         """
             From the payoff matrix previously built, search for strictly dominated strategies and remove them from
-            the matrix (for the provided player)
-
-            :param player: 0 or 1, indicating the target value in the tuples
-            :return: indicates if a modification has been performed
+            the matrix. Dominated strategies are removed for player and opponent (suppose the opponent won't play such
+            moves). Only remove strategies dominated by other pure strategy.
         """
 
-        dominated_rows = []
-        dominated_columns = []
+        dominated_rows, dominated_columns = [None], [None]
 
-        own_moves = list(self.payoff_mat.keys())
-        try:
-            opp_moves = list(self.payoff_mat[own_moves[0]].keys())
-        except Exception as e:
-            print()
+        while dominated_columns or dominated_rows:
+            p1_moves = list(self.payoff_mat.keys())
+            p2_moves = list(self.payoff_mat[p1_moves[0]].keys())
+            dominated_columns.clear()
+            dominated_rows.clear()
 
-        if not player:  # line elimination
-            for own_move in own_moves:
-                if any(all(self.payoff_mat[own_move][opponent_move][player] < self.payoff_mat[m2][opponent_move][player]
-                           for opponent_move in opp_moves) for m2 in own_moves if m2 != own_move):
+            # dominated moves for p1, line eliminations
+            for own_move in p1_moves:
+                if any(all(self.payoff_mat[own_move][opponent_move][0] < self.payoff_mat[m2][opponent_move][0]
+                           for opponent_move in p2_moves) for m2 in p1_moves if m2 != own_move):
                     dominated_rows.append(own_move)
 
-        else:  # column elimination
-            for opp_move in opp_moves:
-                if any(all(self.payoff_mat[player_move][opp_move][player] < self.payoff_mat[player_move][m2][player]
-                           for player_move in own_moves) for m2 in opp_moves if
-                       m2 != opp_moves.index(opp_move)):
+            # dominated moves for p2, column elimination
+            for opp_move in p2_moves:
+                if any(all(self.payoff_mat[player_move][opp_move][1] < self.payoff_mat[player_move][m2][1]
+                           for player_move in p1_moves) for m2 in p2_moves if
+                       m2 != p2_moves.index(opp_move)):
                     dominated_columns.append(opp_move)
 
-        # Update the payoff matrix by removing dominated rows and columns
-        tmp = {own_move: {opp_move: self.payoff_mat[own_move][opp_move]
-                          for opp_move in opp_moves if opp_move not in dominated_columns}
-               for own_move in own_moves if own_move not in dominated_rows}
-        self.payoff_mat = tmp
-
-        return dominated_rows or dominated_columns
+            # Update the payoff matrix by removing dominated rows and columns
+            tmp = {own_move: {opp_move: self.payoff_mat[own_move][opp_move]
+                              for opp_move in p2_moves if opp_move not in dominated_columns}
+                   for own_move in p1_moves if own_move not in dominated_rows}
+            self.payoff_mat = tmp
 
     def mixed_nash_equilibrium(self):
         """
@@ -213,8 +208,7 @@ class PlayerGT(AbstractPlayer):
         """
 
         # determine best option
-        while self.remove_strictly_dominated_strategies(0) or self.remove_strictly_dominated_strategies(1):
-            continue
+        # ?
 
         if len(self.payoff_mat) > 1 and False:
             move = self.mixed_nash_equilibrium()
@@ -226,7 +220,8 @@ class PlayerGT(AbstractPlayer):
     def post_faint_move(self):
         """
             Choose a move (more specifically, a switch) after current on-field fainted. The games induced by the
-            different possible switches are evaluated and the most promising one determines the switch.
+            different possible switches are evaluated and the one offering the most promising situation determines
+            the switch.
         """
 
         return
