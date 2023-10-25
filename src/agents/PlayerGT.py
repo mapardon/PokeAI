@@ -34,8 +34,8 @@ class PlayerGT(AbstractPlayer):
 
     def fill_game_with_estimation(self):
         """
-            Local copy of the game is filled with estimations (this is done to have a slightly better approximation than
-            simply discard actions concerning unknown Pokémon)
+            Agent's copy of the game is filled with estimations (this is done to have a slightly better approximation than
+            simply discarding actions concerning unknown Pokémon)
         """
 
         own_view, opp_view = [self.game.player1_view, self.game.player2_view][::(-1) ** (self.role == "p2")]
@@ -77,7 +77,8 @@ class PlayerGT(AbstractPlayer):
             if p.poke_type is None:
                 p.poke_type = "NOTYPE"
                 p.cur_hp, p.hp, p.atk, p.des, p.spe = ((MIN_HP + MAX_HP) // 2, (MIN_HP + MAX_HP) // 2,
-                                    (MIN_STAT + MAX_STAT) // 2, (MIN_STAT + MAX_STAT) // 2, (MIN_STAT + MAX_STAT) // 2)
+                                                       (MIN_STAT + MAX_STAT) // 2, (MIN_STAT + MAX_STAT) // 2,
+                                                       (MIN_STAT + MAX_STAT) // 2)
 
             else:
                 p.cur_hp, p.hp, p.atk, p.des, p.spe = q.cur_hp, q.hp, q.atk, q.des, q.spe
@@ -115,19 +116,25 @@ class PlayerGT(AbstractPlayer):
 
         return payoff
 
-    def build_payoff_matrix(self):
+    def build_payoff_matrix(self, post_faint_move: bool = False):
         """
-            Shape: [player action][opponent action]: (player payoff, opponent payoff)
+            Fill the payoff matrix with payoffs related to possible attacks of the player
+            Matrix format: dict[player action][opponent action]: (player payoff, opponent payoff),
                 player is considered the same as in self.role
+
+            :param post_faint_move: If a move is requested from a post faint situation (on field Pokémon fainted and
+                a replacement must be made), decision is made among the possible switches
         """
 
         own_view, opp_view = [self.game.player1_view, self.game.player2_view][::(-1) ** (self.role == "p2")]
         opp_view_own_of, opp_view_opp_of = [opp_view.on_field1, opp_view.on_field2][::(-1) ** (self.role == "p2")]
+        force_order = self.role != "p1"
         self.payoff_mat = dict()
 
-        own_ops = [v for v in self.game.get_moves_from_state(self.role, own_view) if v is not None]
-        opp_ops = [v for v in self.game.get_moves_from_state(list({"p1", "p2"} - {self.role})[0], opp_view) if
-                   v is not None]
+        own_ops = [m for m in self.game.get_moves_from_state(self.role, own_view) if m is not None and "switch" in m or
+                   not post_faint_move]
+        opp_ops = [m for m in self.game.get_moves_from_state(list({"p1", "p2"} - {self.role})[0], opp_view) if
+                   m is not None]
 
         for own_mv in own_ops:
             if own_mv not in self.payoff_mat.keys():
@@ -135,20 +142,20 @@ class PlayerGT(AbstractPlayer):
 
             for opp_mv in opp_ops:
                 p1_mv, p2_mv = [own_mv, opp_mv][::(-1) ** (self.role == "p2")]
+                own_po = self.compute_player_payoff(self.game.apply_player_moves(copy.deepcopy(own_view),
+                                                                                 p1_mv, p2_mv, 0.95, force_order),
+                                                    self.role)
 
+                # our moves that opponent doesn't know are considered generic moves ("notype") for them
                 eff_mv = own_mv if "switch" in own_mv or own_mv in (m.name for m in
                                                                     opp_view_own_of.moves) else "light_notype"
-                # opponent might not know all player options
-
-                own_po = self.compute_player_payoff(self.game.apply_player_moves(copy.deepcopy(own_view),
-                                                                                 p1_mv, p2_mv, 0.95, False), self.role)
+                # force_order: pessimistic estimation for both sides
                 p1_mv, p2_mv = (eff_mv, p2_mv) if self.role == "p1" else (p1_mv, eff_mv)
                 opp_po = self.compute_player_payoff(self.game.apply_player_moves(copy.deepcopy(opp_view),
-                                                                                 p1_mv, p2_mv, 0.95, False),
+                                                                                 p1_mv, p2_mv, 0.95, not force_order),
                                                     list({"p1", "p2"} - {self.role})[0])
 
                 self.payoff_mat[own_mv][opp_mv] = (round(own_po, 3), round(opp_po, 3))
-        print()
 
     def remove_strictly_dominated_strategies(self, player: int):
         """
@@ -239,7 +246,7 @@ class PlayerGT(AbstractPlayer):
 
         # ourselves down
         elif (not self.game.player1_view.on_field1.cur_hp and self.role == "p1" or
-                not self.game.player2_view.on_field2.cur_hp and self.role == "p2"):
+              not self.game.player2_view.on_field2.cur_hp and self.role == "p2"):
             move = self.post_faint_move()
 
         else:

@@ -131,7 +131,7 @@ class MyTestCase(unittest.TestCase):
             (("light_notype", "NOTYPE", MIN_POW), (None, None, None)))]],
          [[(("p1", "FIRE", 100, 100, 100, 100),
             (("light_fire", "FIRE", MIN_POW), ("light_notype", "NOTYPE", MIN_POW))),
-           (("p2", "NOTYPE", 100, 80, 100, 100),
+           (("p2", "NOTYPE", 175, 100, 100, 100),
             (("light_notype", "NOTYPE", MIN_POW), (None, None, None)))],
           [(("d1", "WATER", 100, 100, 100, 100),
             (("light_water", "WATER", MIN_POW), ("light_notype", "NOTYPE", MIN_POW))),
@@ -142,21 +142,21 @@ class MyTestCase(unittest.TestCase):
             (("light_psychic", "PSYCHIC", 50), ("light_fire", "FIRE", 50))),
            (("p2", "ELECTRIC", 100, 80, 100, 100),
             (("light_grass", "GRASS", 50), ("light_electric", "ELECTRIC", 50)))],
-          [(("d1", "WATER", 100, 102, 115, 99),
+          [(("d1", "WATER", 100, 102, 120, 99),
             (("light_steel", "STEEL", 50), ("light_water", "WATER", 50))),
            (("d2", "NOTYPE", 175, 100, 100, 100),
             (("light_notype", "NOTYPE", 50), (None, None, None)))]],
          [[(("p1", "FIRE", 100, 100, 100, 100),
             (("light_psychic", "PSYCHIC", 50), ("light_fire", "FIRE", 50))),
-           (("p2", "NOTYPE", 100, 80, 100, 100),
+           (("p2", "NOTYPE", 175, 100, 100, 100),
             (("light_notype", "NOTYPE", 50), (None, None, None)))],
-          [(("d1", "WATER", 100, 102, 115, 99),
+          [(("d1", "WATER", 100, 102, 120, 99),
             (("light_steel", "STEEL", 50), ("light_water", "WATER", 50))),
            (("d2", "NOTYPE", 175, 100, 100, 100),
             (("light_notype", "NOTYPE", 50), (None, None, None)))]]
          )
     ])
-    def gest_gt_fill_game(self, p1_moves, p2_moves, exp_specs_p1view, exp_specs_p2view):
+    def test_gt_fill_game(self, p1_moves, p2_moves, exp_specs_p1view, exp_specs_p2view):
         game = PokeGame(team_specs_for_game)
 
         for m1, m2 in zip(p1_moves, p2_moves):
@@ -175,21 +175,22 @@ class MyTestCase(unittest.TestCase):
         if (exp_p1, exp_p2) != (a1.game.player1_view, a1.game.player2_view):
             print(exp_p1, exp_p2, a1.game.player1_view, a1.game.player2_view, sep='\n')
 
-        self.assertEqual((exp_p1, exp_p2), (a1.game.player1_view, a1.game.player2_view))
+        self.assertEqual((exp_p1, exp_p2), (a1.game.player1_view, a1.game.player2_view),
+                         msg="exp: {},\nact: {}".format(exp_p1, a1.game.player1_view))
 
     @parameterized.expand([
-        ("p1", {'light_psychic': {'light_water': (-3.333, 3.333), 'light_notype': (-0.228, 0.228), 'switch d2': (0.456, -0.456), 'switch d3': (0.456, -0.456)},
-                'light_fire': {'light_water': (-3.333, 3.333), 'light_notype': (-0.339, 0.339), 'switch d2': (0.689, -0.689), 'switch d3': (0.689, -0.689)},
-                'light_bug': {'light_water': (-3.333, 3.333), 'light_notype': (-0.228, 0.228), 'switch d2': (0.456, -0.456), 'switch d3': (0.456, -0.456)},
-                'switch p2': {'light_water': (-1.033, 1.033), 'light_notype': (-0.683, 0.683), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)},
-                'switch p3': {'light_water': (-0.517, 1.033), 'light_notype': (-0.683, 0.683), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)}}),
-        ("p2", {'light_steel': {'light_fire': (-0.061, 0.061), 'light_notype': (-0.228, 0.228), 'switch p2': (0.456, -0.456), 'switch p3': (0.456, -0.456)},
-                'light_water': {'light_fire': (2.778, -2.778), 'light_notype': (2.778, -2.778), 'switch p2': (0.689, -0.689), 'switch p3': (0.689, -0.689)},
-                'light_fairy': {'light_fire': (-0.294, 0.061), 'light_notype': (-0.461, 0.228), 'switch p2': (0.456, -0.456), 'switch p3': (0.456, -0.456)},
-                'switch d2': {'light_fire': (-0.517, 1.033), 'light_notype': (-0.683, 0.683), 'switch p2': (0.0, 0.0), 'switch p3': (0.0, 0.0)},
-                'switch d3': {'light_fire': (-3.333, 1.033), 'light_notype': (-0.683, 0.683), 'switch p2': (0.0, 0.0), 'switch p3': (0.0, 0.0)}})
+        ("p1", {'light_psychic': {'light_water': (-3.333, 2.322), 'light_notype': (-0.228, 0.0), 'switch d2': (0.456, -0.456), 'switch d3': (0.456, -0.456)},
+                'light_fire': {'light_water': (-3.333, 2.433), 'light_notype': (-0.339, 0.111), 'switch d2': (0.689, -0.689), 'switch d3': (0.689, -0.689)},
+                'light_bug': {'light_water': (-3.333, 2.322), 'light_notype': (-0.228, 0.0), 'switch d2': (0.456, -0.456), 'switch d3': (0.456, -0.456)},
+                'switch p2': {'light_water': (-1.033, 0.689), 'light_notype': (-0.683, 0.456), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)},
+                'switch p3': {'light_water': (-0.517, 0.689), 'light_notype': (-0.683, 0.456), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)}}),
+        ("p2", {'light_steel': {'light_fire': (-0.294, -0.111), 'light_notype': (-0.461, 0.0), 'switch p2': (0.456, -0.456), 'switch p3': (0.456, -0.456)},
+                'light_water': {'light_fire': (2.261, -2.778), 'light_notype': (2.094, -2.778), 'switch p2': (0.689, -0.689), 'switch p3': (0.689, -0.689)},
+                'light_fairy': {'light_fire': (-0.294, -0.111), 'light_notype': (-0.461, 0.0), 'switch p2': (0.456, -0.456), 'switch p3': (0.456, -0.456)},
+                'switch d2': {'light_fire': (-0.517, 0.689), 'light_notype': (-0.683, 0.456), 'switch p2': (0.0, 0.0), 'switch p3': (0.0, 0.0)},
+                'switch d3': {'light_fire': (-3.333, 0.689), 'light_notype': (-0.683, 0.456), 'switch p2': (0.0, 0.0), 'switch p3': (0.0, 0.0)}})
     ])
-    def gest_gt_build_payoff_matrix(self, test_player, exp_mat):
+    def test_gt_build_payoff_matrix(self, test_player, exp_mat):
         game = PokeGame(team_specs_for_game2)
         gt = PlayerGT(test_player)
 
@@ -199,9 +200,19 @@ class MyTestCase(unittest.TestCase):
         test_mat = gt.payoff_mat
 
         if test_mat != exp_mat:
-            for m in (test_mat, exp_mat):
+            for m, n in zip((test_mat, exp_mat), ("test", "exp")):
+                print(n)
                 for k in m.keys():
                     print(k, m[k])
+
+        for k1, k2 in zip(test_mat.keys(), exp_mat.keys()):
+            for k11, k22 in zip(test_mat[k1].keys(), exp_mat[k2].keys()):
+                if test_mat[k1][k11][1] != exp_mat[k2][k22][1]:
+                    print("->>>", k1, k11, test_mat[k1][k11][1], k2, k22, exp_mat[k2][k22][1])
+        for k1, k2 in zip(test_mat.keys(), exp_mat.keys()):
+            for k11, k22 in zip(test_mat[k1].keys(), exp_mat[k2].keys()):
+                if test_mat[k1][k11][0] != exp_mat[k2][k22][0]:
+                    print("-<<<", k1, k11, test_mat[k1][k11][0], k2, k22, exp_mat[k2][k22][0])
 
         self.assertDictEqual(exp_mat, test_mat)
 

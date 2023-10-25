@@ -136,7 +136,7 @@ class PokeGame:
 
         return copy.deepcopy(self.player1_view) if player == "p1" else copy.deepcopy(self.player2_view)
 
-    def get_moves_from_state(self, player: str, state: GameStruct):
+    def get_moves_from_state(self, player: str, state: GameStruct) -> list[str]:
         """
         Return possible moves for the specified player from the specified state (allows to retrieve possible moves
         for a player from a state that is not self.game_state)
