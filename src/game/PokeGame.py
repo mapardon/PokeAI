@@ -136,7 +136,7 @@ class PokeGame:
 
         return copy.deepcopy(self.player1_view) if player == "p1" else copy.deepcopy(self.player2_view)
 
-    def get_moves_from_state(self, player: str, state: GameStruct) -> list[str]:
+    def get_moves_from_state(self, player: str, state: GameStruct) -> list[str | None]:
         """
         Return possible moves for the specified player from the specified state (allows to retrieve possible moves
         for a player from a state that is not self.game_state)
@@ -443,7 +443,7 @@ class PokeGame:
         lo_num, lo_den = (50 * target.des * ceil(hp_loss / (1 * stab * type_aff) - 2)), (42 * move.base_pow)
         hi_num, hi_den = (50 * target.des * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2)), (42 * move.base_pow)
         if 0 in (lo_den, hi_den):
-            # if hp_loss is very small, den ends up in 2 - 2, but such case gives no useful info & it's just ignored
+            # if hp_loss is very small, denom ends up in 2 - 2, but such case gives no useful info & it's just ignored
             return None, None
 
         lo, hi = ceil(lo_num / lo_den), floor(hi_num / hi_den)
@@ -472,7 +472,7 @@ class PokeGame:
         lo_num, lo_den = (42 * move.base_pow * attacker.atk), (50 * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2))
         hi_num, hi_den = (42 * move.base_pow * attacker.atk), (50 * ceil(hp_loss / (1 * stab * type_aff) - 2))
         if 0 in (lo_den, hi_den):
-            # if hp_loss is very small, den ends up in 2 - 2, but such case gives no useful info & it's just ignored
+            # if hp_loss is very small, denom ends up in 2 - 2, but such case gives no useful info & it's just ignored
             return None, None
 
         lo, hi = ceil(lo_num / lo_den), floor(hi_num / hi_den)

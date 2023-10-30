@@ -1,6 +1,9 @@
 import copy
 import random
 
+import numpy as np
+import nashpy as nash
+
 from src.agents.AbstractPlayer import AbstractPlayer
 from src.game.PokeGame import PokeGame
 from src.game.Pokemon import Move
@@ -191,31 +194,77 @@ class PlayerGT(AbstractPlayer):
                    for own_move in p1_moves if own_move not in dominated_rows}
             self.payoff_mat = tmp
 
-    def mixed_nash_equilibrium(self):
+    def nash_equilibrium_for_move(self):
         """
-            If the strictly dominated strategies elimination left several choices for the player, a randomized choice
-            must be performed on the remaining moves
+            Search the Nash equilibria of the game in self.payoff_mat and return the most promising with its expected
+            payoffs.
+            If the game has multiple Nash equilibria, check if some are Pareto optimal (and discard others). If several
+            moves are Pareto optimal (or none of them are), a selection is made based on the average of players'
+            expected payoffs. The geometric average is used to favor strategies where payoffs are similar for both
+            players to strategies where one of them has significantly larger payoff than the other. Ex.: if the NE are
+            (1, 0), (0, 1), (0.5, 0.5), they all have same arithmetic mean but only the last one has non-null geometric
+            mean, and it is precisely reasonable to consider that last choice as a good compromise between the
+            individually best and worst possible outcomes (more justification in the pdf). Finally, a tie at
+            the geometric average level is solved with a random draw.
 
-            :return: Selected move (name)
+            :return: probability distribution over the choices of each player corresponding to the NE and the related
+                expected payoffs
         """
 
-        move = random.choice([k for k in self.payoff_mat.keys()])
-        return move
+        # Find Nash equilibria
+        mat = self.payoff_mat
+        p1_poffs = np.array([[mat[k1][k2][0] for k2 in mat[k1].keys()] for k1 in mat.keys()])
+        p2_poffs = np.array([[mat[k1][k2][1] for k2 in mat[k1].keys()] for k1 in mat.keys()])
+        game = nash.Game(p1_poffs, p2_poffs)
+        neq = list(game.support_enumeration())
+        exp_payoffs = [game[p1_po, p2_po] for p1_po, p2_po in neq]
+        print(neq)
+        print(exp_payoffs)
+
+        # If there are several NE, try to discard some via Pareto optimality
+        non_pareto_idx = list()
+        if len(neq) > 1:
+            for ne1_idx in range(len(neq)):
+                for ne2_idx in range(len(neq)):
+                    if ne1_idx != ne2_idx:
+                        # check if exists other NE whose payoffs are always >= and > for at least one
+                        ne1_better = exp_payoffs[ne1_idx][0] >= exp_payoffs[ne2_idx][0] and exp_payoffs[ne1_idx][1] >= exp_payoffs[ne2_idx][1]
+                        ne1_better &= exp_payoffs[ne1_idx][0] > exp_payoffs[ne2_idx][0] or exp_payoffs[ne1_idx][1] > exp_payoffs[ne2_idx][1]
+                        if ne1_better and ne2_idx not in non_pareto_idx:
+                            non_pareto_idx.append(ne2_idx)
+
+            print(non_pareto_idx)
+
+            shift = int()
+            if len(non_pareto_idx) < len(neq):
+                for idx in non_pareto_idx:
+                    del neq[idx - shift]
+                    del exp_payoffs[idx - shift]
+                    shift += 1
+
+        # If still several NE, keep the one with the best geometric mean
+        if len(neq) > 1:
+            pass
+
+        # If still several NE, choose one randomly
+        if len(neq) > 1:
+            pass
+
+        # Finally, use the probability distribution of the NE to select a move
+        move = None
+
+        print(neq)
+        print(exp_payoffs)
 
     def regular_move(self):
         """
-            Choose a move for regular game conditions
+            Choose among moves currently available for the player (current payoff matrix)
         """
 
-        # determine best option
-        # ?
-
-        if len(self.payoff_mat) > 1 and False:
-            move = self.mixed_nash_equilibrium()
-        else:
-            move = list(self.payoff_mat.keys())[0]
+        move = None
 
         return move
+
 
     def post_faint_move(self):
         """

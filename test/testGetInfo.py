@@ -241,8 +241,7 @@ class MyTestCase(unittest.TestCase):
             p2_moved = (player1_move is not None and "switch" in player1_move) or (
                     player2_move is not None and "switch" in player2_move) or \
                        (player2_move is not None and "switch" not in player2_move and
-                        (
-                                game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
+                        (game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
             game.directly_available_info(test_player, player2_move if test_player == "p1" else player1_move,
                                          {"p1_moved": p1_moved, "p2_moved": p2_moved})
 
