@@ -31,7 +31,8 @@ team_specs_for_game2 = [[(("p1", "FIRE", 100, 100, 100, 100),
                           (("light_grass", "GRASS", 50), ("light_electric", "ELECTRIC", 50),
                            ("light_ghost", "GHOST", 50))),
                          (("p3", "GRASS", 100, 100, 100, 100),
-                          (("light_grass", "GRASS", 50), ("light_ice", "ICE", 50), ("light_fighting", "FIGHTING", 50)))],
+                          (
+                          ("light_grass", "GRASS", 50), ("light_ice", "ICE", 50), ("light_fighting", "FIGHTING", 50)))],
                         [(("d1", "WATER", 100, 100, 100, 100),
                           (("light_steel", "STEEL", 50), ("light_water", "WATER", 50), ("light_fairy", "FAIRY", 50))),
                          (("d2", "DRAGON", 100, 100, 100, 100),
@@ -180,16 +181,17 @@ class MyTestCase(unittest.TestCase):
                          msg="exp: {},\nact: {}".format(exp_p1, a1.game.player1_view))
 
     @parameterized.expand([
-        ("p1", {'light_psychic': {'light_water': (-3.333, 2.322), 'light_notype': (-0.228, 0.0), 'switch d2': (0.456, -0.456), 'switch d3': (0.456, -0.456)},
-                'light_fire': {'light_water': (-3.333, 2.433), 'light_notype': (-0.339, 0.111), 'switch d2': (0.689, -0.689), 'switch d3': (0.689, -0.689)},
-                'light_bug': {'light_water': (-3.333, 2.322), 'light_notype': (-0.228, 0.0), 'switch d2': (0.456, -0.456), 'switch d3': (0.456, -0.456)},
-                'switch p2': {'light_water': (-1.033, 0.689), 'light_notype': (-0.683, 0.456), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)},
-                'switch p3': {'light_water': (-0.517, 0.689), 'light_notype': (-0.683, 0.456), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)}}),
-        ("p2", {'light_steel': {'light_fire': (-0.294, -0.111), 'light_notype': (-0.461, 0.0), 'switch p2': (0.456, -0.456), 'switch p3': (0.456, -0.456)},
-                'light_water': {'light_fire': (2.261, -2.778), 'light_notype': (2.094, -2.778), 'switch p2': (0.689, -0.689), 'switch p3': (0.689, -0.689)},
-                'light_fairy': {'light_fire': (-0.294, -0.111), 'light_notype': (-0.461, 0.0), 'switch p2': (0.456, -0.456), 'switch p3': (0.456, -0.456)},
-                'switch d2': {'light_fire': (-0.517, 0.689), 'light_notype': (-0.683, 0.456), 'switch p2': (0.0, 0.0), 'switch p3': (0.0, 0.0)},
-                'switch d3': {'light_fire': (-3.333, 0.689), 'light_notype': (-0.683, 0.456), 'switch p2': (0.0, 0.0), 'switch p3': (0.0, 0.0)}})
+        ("p1",
+         {'light_psychic': {'light_water': (-3.333, 2.322), 'light_notype': (-0.228, 0.0), 'switch d2': (0.456, -0.456), 'switch d3': (0.456, -0.456)},
+          'light_fire': {'light_water': (-3.333, 2.433), 'light_notype': (-0.339, 0.111), 'switch d2': (0.689, -0.689), 'switch d3': (0.689, -0.689)},
+          'light_bug': {'light_water': (-3.333, 2.322), 'light_notype': (-0.228, 0.0), 'switch d2': (0.456, -0.456), 'switch d3': (0.456, -0.456)},
+          'switch p2': {'light_water': (-1.033, 0.689), 'light_notype': (-0.683, 0.456), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)},
+          'switch p3': {'light_water': (-0.517, 0.689), 'light_notype': (-0.683, 0.456), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)}}),
+        ("p2",
+         {'light_fire': {'light_steel': (-0.111, -0.294), 'light_water': (-2.433, 2.778), 'light_fairy': (-0.111, -0.294), 'switch d2': (0.689, -0.517), 'switch d3': (0.689, -3.333)},
+          'light_notype': {'light_steel': (0.0, -0.461), 'light_water': (-2.322, 2.778), 'light_fairy': (0.0, -0.461), 'switch d2': (0.456, -0.683), 'switch d3': (0.456, -0.683)},
+          'switch p2': {'light_steel': (-0.456, 0.456), 'light_water': (-0.689, 0.689), 'light_fairy': (-0.456, 0.456), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)},
+          'switch p3': {'light_steel': (-0.456, 0.456), 'light_water': (-0.689, 0.689), 'light_fairy': (-0.456, 0.456), 'switch d2': (0.0, 0.0), 'switch d3': (0.0, 0.0)}})
     ])
     def test_gt_build_payoff_matrix(self, test_player, exp_mat):
         game = PokeGame(team_specs_for_game2)
@@ -229,7 +231,7 @@ class MyTestCase(unittest.TestCase):
         agent = PlayerGT("p1")
         agent.game = game
         agent.fill_game_with_estimation()
-        agent.build_payoff_matrix(False)
+        agent.build_payoff_matrix()
 
         if init is not None:
             agent.payoff_mat = init
@@ -239,9 +241,9 @@ class MyTestCase(unittest.TestCase):
 
     @parameterized.expand([
         ("p1", {'a': {'c': (2, 1), 'd': (0, 0)}, 'b': {'c': (0, 0), 'd': (1, 2)}},
-         ((np.array([0., 1.]), np.array([0., 1.])), np.array([1., 2.]))),
+         ((np.array([1., 0.]), np.array([1., 0.])), np.array([2., 1.]))),
         ("p2", {'a': {'c': (5, 5), 'd': (0, 0)}, 'b': {'c': (0, 0), 'd': (5, 5)}},
-         ((np.array([0., 1.]), np.array([0., 1.])), np.array([5., 5.]))),
+         ((np.array([1., 0.]), np.array([1., 0.])), np.array([5., 5.]))),
         ("p1", {'a': {'d': (3, -1), 'e': (-1, 1)}, 'b': {'d': (0, 0), 'e': (0, 0)}, 'c': {'d': (-1, 2), 'e': (2, -1)}},
          ((np.array([0.6, 0., 0.4]), np.array([0.42857143, 0.57142857])), np.array([0.71428571, 0.2])))
     ])
@@ -249,7 +251,7 @@ class MyTestCase(unittest.TestCase):
         agent = PlayerGT(player)
         agent.game = PokeGame(team_specs_for_game2)
         agent.fill_game_with_estimation()
-        agent.build_payoff_matrix(False)
+        agent.build_payoff_matrix()
         agent.remove_strictly_dominated_strategies()
         agent.payoff_mat = payoff_mat
         act = agent.nash_equilibrium_for_move()
@@ -266,6 +268,18 @@ class MyTestCase(unittest.TestCase):
                 print(round(e1, 8) - round(e2, 8))
 
         self.assertTrue(test_payoffs and test_prob, msg="exp: {}\nact: {}".format(exp, act))
+
+    @parameterized.expand([
+        ("p1", "switch p3")
+    ])
+    def test_regular_move(self, role, exp):
+        agent = PlayerGT(role)
+        agent.game = PokeGame(team_specs_for_game2)
+        agent.fill_game_with_estimation()
+        agent.build_payoff_matrix()
+        agent.remove_strictly_dominated_strategies()
+        act = agent.regular_move()
+        self.assertEqual(exp, act)
 
 
 if __name__ == '__main__':

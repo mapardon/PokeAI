@@ -121,46 +121,48 @@ class PlayerGT(AbstractPlayer):
 
         return payoff
 
-    def build_payoff_matrix(self, post_faint_move: bool = False):
+    def build_payoff_matrix(self):
         """
-            Fill the payoff matrix with payoffs related to possible attacks of the player
-            Matrix format: dict[player action][opponent action]: (player payoff, opponent payoff),
-                player is considered the same as in self.role
+            Build a payoff matrix with payoffs related to possible actions of the player
+            Matrix format: dict[p1 action][p2 action]: (p1 payoff, p2 payoff)
 
-            :param post_faint_move: If a move is requested from a post faint situation (on field Pokémon fainted and
-                a replacement must be made), decision is made among the possible switches
+            NB: this function only considers situations where both players choose an action. The post-faint move
+            (replacement switch, where only one player acts) is managed in another function.
         """
 
-        own_view, opp_view = [self.game.player1_view, self.game.player2_view][::(-1) ** (self.role == "p2")]
-        opp_view_own_of, opp_view_opp_of = [opp_view.on_field1, opp_view.on_field2][::(-1) ** (self.role == "p2")]
+        p1_view, p2_view = self.game.player1_view, self.game.player2_view
+        if self.role == "p1":
+            p2_view_p1_of, p2_view_p2_of = p2_view.on_field1, p2_view.on_field2
+        else:
+            p1_view_p1_of, p1_view_p2_of = p1_view.on_field1, p1_view.on_field2
+
         force_order = self.role != "p1"
         self.payoff_mat = dict()
 
-        own_ops = [m for m in self.game.get_moves_from_state(self.role, own_view) if m is not None and "switch" in m or
-                   not post_faint_move]
-        opp_ops = [m for m in self.game.get_moves_from_state(list({"p1", "p2"} - {self.role})[0], opp_view) if
-                   m is not None]
+        p1_ops = [m for m in self.game.get_moves_from_state("p1", p1_view) if m is not None]
+        p2_ops = [m for m in self.game.get_moves_from_state("p2", p2_view) if m is not None]
 
-        for own_mv in own_ops:
-            if own_mv not in self.payoff_mat.keys():
-                self.payoff_mat[own_mv] = dict()
+        for p1_mv in p1_ops:
+            if p1_mv not in self.payoff_mat.keys():
+                self.payoff_mat[p1_mv] = dict()
 
-            for opp_mv in opp_ops:
-                p1_mv, p2_mv = [own_mv, opp_mv][::(-1) ** (self.role == "p2")]
-                own_po = self.compute_player_payoff(self.game.apply_player_moves(copy.deepcopy(own_view),
-                                                                                 p1_mv, p2_mv, 0.95, force_order),
-                                                    self.role)
+            for p2_mv in p2_ops:
 
                 # our moves that opponent doesn't know are considered generic moves ("notype") for them
-                eff_mv = own_mv if "switch" in own_mv or own_mv in (m.name for m in
-                                                                    opp_view_own_of.moves) else "light_notype"
-                # force_order: pessimistic estimation for both sides
-                p1_mv, p2_mv = (eff_mv, p2_mv) if self.role == "p1" else (p1_mv, eff_mv)
-                opp_po = self.compute_player_payoff(self.game.apply_player_moves(copy.deepcopy(opp_view),
-                                                                                 p1_mv, p2_mv, 0.95, not force_order),
-                                                    list({"p1", "p2"} - {self.role})[0])
+                if self.role == "p1":
+                    m1_for_p1, m2_for_p1, m2_for_p2 = p1_mv, p2_mv, p2_mv
+                    m1_for_p2 = p1_mv if "switch" in p1_mv or p1_mv in (m.name for m in p2_view_p1_of.moves) else "light_notype"
+                else:
+                    m1_for_p2, m2_for_p2, m1_for_p1 = p1_mv, p2_mv, p1_mv
+                    m2_for_p1 = p2_mv if "switch" in p2_mv or p2_mv in (m.name for m in p1_view_p2_of.moves) else "light_notype"
 
-                self.payoff_mat[own_mv][opp_mv] = (round(own_po, 3), round(opp_po, 3))
+                # force_order: pessimistic estimation for both sides
+                p1_po = self.compute_player_payoff(self.game.apply_player_moves(copy.deepcopy(p1_view), m1_for_p1,
+                                                                                m2_for_p1, 0.95, force_order), "p1")
+                p2_po = self.compute_player_payoff(self.game.apply_player_moves(copy.deepcopy(p2_view), m1_for_p2,
+                                                                                m2_for_p2, 0.95, not force_order), "p2")
+
+                self.payoff_mat[p1_mv][p2_mv] = (round(p1_po, 3), round(p2_po, 3))
 
     def remove_strictly_dominated_strategies(self):
         """
@@ -220,8 +222,6 @@ class PlayerGT(AbstractPlayer):
         game = nash.Game(p1_poffs, p2_poffs)
         neq = list(game.support_enumeration())
         exp_payoffs = [game[p1_po, p2_po] for p1_po, p2_po in neq]
-        print("neq:", neq)
-        print("exp_po:", exp_payoffs)
 
         # If there are several NE, try to discard some via Pareto optimality
         non_pareto_idx = list()
@@ -230,8 +230,10 @@ class PlayerGT(AbstractPlayer):
                 for ne2_idx in range(len(neq)):
                     if ne1_idx != ne2_idx:
                         # check if exists other NE whose payoffs are always >= and > for at least one
-                        ne1_better = exp_payoffs[ne1_idx][0] >= exp_payoffs[ne2_idx][0] and exp_payoffs[ne1_idx][1] >= exp_payoffs[ne2_idx][1]
-                        ne1_better &= exp_payoffs[ne1_idx][0] > exp_payoffs[ne2_idx][0] or exp_payoffs[ne1_idx][1] > exp_payoffs[ne2_idx][1]
+                        ne1_better = exp_payoffs[ne1_idx][0] >= exp_payoffs[ne2_idx][0] and exp_payoffs[ne1_idx][1] >= \
+                                     exp_payoffs[ne2_idx][1]
+                        ne1_better &= exp_payoffs[ne1_idx][0] > exp_payoffs[ne2_idx][0] or exp_payoffs[ne1_idx][1] > \
+                                      exp_payoffs[ne2_idx][1]
                         if ne1_better and ne2_idx not in non_pareto_idx:
                             non_pareto_idx.append(ne2_idx)
 
@@ -265,10 +267,18 @@ class PlayerGT(AbstractPlayer):
             Choose among moves currently available for the player (current payoff matrix)
         """
 
-        move = None
+        probs, po = self.nash_equilibrium_for_move()
+        probs = probs[0] if self.role == "p1" else probs[1]
 
-        return move
+        # choose random move considering prob distribution
+        pick = 1 - random.random()  # ensure it's never 0
+        for i, p in enumerate(probs):
+            if pick <= p:
+                break
 
+        # corresponding move
+        return [k for k in self.payoff_mat.keys()][i] if self.role == "p1" else \
+        [k2 for k2 in self.payoff_mat[[k1 for k1 in self.payoff_mat.keys()][0]].keys()][i]
 
     def post_faint_move(self):
         """
