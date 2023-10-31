@@ -4,6 +4,8 @@ import random
 import numpy as np
 import nashpy as nash
 
+from scipy.stats import gmean
+
 from src.agents.AbstractPlayer import AbstractPlayer
 from src.game.PokeGame import PokeGame
 from src.game.Pokemon import Move
@@ -194,7 +196,7 @@ class PlayerGT(AbstractPlayer):
                    for own_move in p1_moves if own_move not in dominated_rows}
             self.payoff_mat = tmp
 
-    def nash_equilibrium_for_move(self):
+    def nash_equilibrium_for_move(self) -> tuple[tuple[np.array, np.array], np.array]:
         """
             Search the Nash equilibria of the game in self.payoff_mat and return the most promising with its expected
             payoffs.
@@ -218,8 +220,8 @@ class PlayerGT(AbstractPlayer):
         game = nash.Game(p1_poffs, p2_poffs)
         neq = list(game.support_enumeration())
         exp_payoffs = [game[p1_po, p2_po] for p1_po, p2_po in neq]
-        print(neq)
-        print(exp_payoffs)
+        print("neq:", neq)
+        print("exp_po:", exp_payoffs)
 
         # If there are several NE, try to discard some via Pareto optimality
         non_pareto_idx = list()
@@ -233,28 +235,30 @@ class PlayerGT(AbstractPlayer):
                         if ne1_better and ne2_idx not in non_pareto_idx:
                             non_pareto_idx.append(ne2_idx)
 
-            print(non_pareto_idx)
-
-            shift = int()
             if len(non_pareto_idx) < len(neq):
-                for idx in non_pareto_idx:
-                    del neq[idx - shift]
-                    del exp_payoffs[idx - shift]
-                    shift += 1
+                for idx in sorted(non_pareto_idx, reverse=True):
+                    del neq[idx]
+                    del exp_payoffs[idx]
 
         # If still several NE, keep the one with the best geometric mean
         if len(neq) > 1:
-            pass
+            avg = list()
+            max_avg = float('-inf')
+            for po in exp_payoffs:
+                cur_avg = gmean(po)
+                avg.append(cur_avg)
+                max_avg = max(max_avg, cur_avg)
 
-        # If still several NE, choose one randomly
-        if len(neq) > 1:
-            pass
+            for idx in range(len(neq) - 1, -1, -1):
+                if avg[idx] < max_avg:
+                    del neq[idx]
+                    del exp_payoffs[idx]
 
-        # Finally, use the probability distribution of the NE to select a move
-        move = None
+        # If still several NE, choose one randomly (otherwise, selection allows to remove useless remaining list shape)
+        idx = random.randrange(len(neq))
+        neq, exp_payoffs = neq[idx], exp_payoffs[idx]
 
-        print(neq)
-        print(exp_payoffs)
+        return neq, exp_payoffs
 
     def regular_move(self):
         """

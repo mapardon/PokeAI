@@ -1,6 +1,7 @@
 import copy
 import unittest, random
 
+import numpy as np
 from parameterized import parameterized
 
 from src.agents.PlayerBM import PlayerBM
@@ -235,6 +236,36 @@ class MyTestCase(unittest.TestCase):
         agent.remove_strictly_dominated_strategies()
 
         self.assertDictEqual(exp, agent.payoff_mat)
+
+    @parameterized.expand([
+        ("p1", {'a': {'c': (2, 1), 'd': (0, 0)}, 'b': {'c': (0, 0), 'd': (1, 2)}},
+         ((np.array([0., 1.]), np.array([0., 1.])), np.array([1., 2.]))),
+        ("p2", {'a': {'c': (5, 5), 'd': (0, 0)}, 'b': {'c': (0, 0), 'd': (5, 5)}},
+         ((np.array([0., 1.]), np.array([0., 1.])), np.array([5., 5.]))),
+        ("p1", {'a': {'d': (3, -1), 'e': (-1, 1)}, 'b': {'d': (0, 0), 'e': (0, 0)}, 'c': {'d': (-1, 2), 'e': (2, -1)}},
+         ((np.array([0.6, 0., 0.4]), np.array([0.42857143, 0.57142857])), np.array([0.71428571, 0.2])))
+    ])
+    def test_ne_for_move(self, player, payoff_mat, exp):
+        agent = PlayerGT(player)
+        agent.game = PokeGame(team_specs_for_game2)
+        agent.fill_game_with_estimation()
+        agent.build_payoff_matrix(False)
+        agent.remove_strictly_dominated_strategies()
+        agent.payoff_mat = payoff_mat
+        act = agent.nash_equilibrium_for_move()
+
+        # comparison of numpy arrays is special
+        test_payoffs = True
+        for exp_expo, act_expo in zip(exp[1], act[1]):
+            test_payoffs &= round(exp_expo, 8) == round(act_expo, 8)  # numpy is annoying with floats in arrays
+
+        test_prob = True
+        for exp_probs, act_probs in zip(exp[0], act[0]):
+            for e1, e2 in zip(exp_probs, act_probs):
+                test_prob &= round(e1, 8) == round(e2, 8)
+                print(round(e1, 8) - round(e2, 8))
+
+        self.assertTrue(test_payoffs and test_prob, msg="exp: {}\nact: {}".format(exp, act))
 
 
 if __name__ == '__main__':
