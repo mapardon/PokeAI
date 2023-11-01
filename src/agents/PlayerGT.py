@@ -1,15 +1,18 @@
 import copy
 import random
+import warnings
+from statistics import stdev
 
 import numpy as np
 import nashpy as nash
-
-from scipy.stats import gmean
+from line_profiler import profile
 
 from src.agents.AbstractPlayer import AbstractPlayer
 from src.game.PokeGame import PokeGame
 from src.game.Pokemon import Move
 from src.game.constants import MIN_POW, MIN_STAT, MAX_STAT, MIN_HP, MAX_HP
+
+warnings.filterwarnings("ignore")
 
 team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100),
                          (("light_psychic", "PSYCHIC", 50), ("light_fire", "FIRE", 50), ("light_bug", "BUG", 50))),
@@ -39,8 +42,8 @@ class PlayerGT(AbstractPlayer):
 
     def fill_game_with_estimation(self):
         """
-            Agent's copy of the game is filled with estimations (this is done to have a slightly better approximation than
-            simply discarding actions concerning unknown Pokémon)
+            Agent's copy of the game is filled with estimations (this is done to have a slightly better approximation
+            than simply discarding actions concerning unknown Pokémon)
         """
 
         own_view, opp_view = [self.game.player1_view, self.game.player2_view][::(-1) ** (self.role == "p2")]
@@ -203,13 +206,17 @@ class PlayerGT(AbstractPlayer):
             Search the Nash equilibria of the game in self.payoff_mat and return the most promising with its expected
             payoffs.
             If the game has multiple Nash equilibria, check if some are Pareto optimal (and discard others). If several
-            moves are Pareto optimal (or none of them are), a selection is made based on the average of players'
-            expected payoffs. The geometric average is used to favor strategies where payoffs are similar for both
+            moves are Pareto optimal (or none of them are), a selection is made based on the standard deviations of
+            players' expected payoffs. The stdev is used to favor strategies where payoffs are similar for both
             players to strategies where one of them has significantly larger payoff than the other. Ex.: if the NE are
-            (1, 0), (0, 1), (0.5, 0.5), they all have same arithmetic mean but only the last one has non-null geometric
-            mean, and it is precisely reasonable to consider that last choice as a good compromise between the
+            (1, 0), (0, 1), (0.5, 0.5), they all have same arithmetic mean but only the last one has null stdev,
+            and it is precisely reasonable to consider that last choice as a good compromise between the
             individually best and worst possible outcomes (more justification in the pdf). Finally, a tie at
             the geometric average level is solved with a random draw.
+
+            NB: The function computing NE can return a warning in case of even number of equilibria found, which is
+            usually caused by weak dominance between strategies. In this situation, it is not problematic: it
+            simply means that at least one player has exact same interest in several choices (more details in the pdf).
 
             :return: probability distribution over the choices of each player corresponding to the NE and the related
                 expected payoffs
@@ -242,17 +249,17 @@ class PlayerGT(AbstractPlayer):
                     del neq[idx]
                     del exp_payoffs[idx]
 
-        # If still several NE, keep the one with the best geometric mean
+        # If still several NE, keep the one with the lowest stdev for both player's payoffs
         if len(neq) > 1:
-            avg = list()
-            max_avg = float('-inf')
+            std = list()
+            min_std = float('inf')
             for po in exp_payoffs:
-                cur_avg = gmean(po)
-                avg.append(cur_avg)
-                max_avg = max(max_avg, cur_avg)
+                cur_std = stdev(po)
+                std.append(cur_std)
+                max_avg = min(min_std, cur_std)
 
             for idx in range(len(neq) - 1, -1, -1):
-                if avg[idx] < max_avg:
+                if std[idx] > min_std:
                     del neq[idx]
                     del exp_payoffs[idx]
 
@@ -267,6 +274,9 @@ class PlayerGT(AbstractPlayer):
             Choose among moves currently available for the player (current payoff matrix)
         """
 
+        self.fill_game_with_estimation()
+        self.build_payoff_matrix()
+        self.remove_strictly_dominated_strategies()
         probs, po = self.nash_equilibrium_for_move()
         probs = probs[0] if self.role == "p1" else probs[1]
 
@@ -276,9 +286,8 @@ class PlayerGT(AbstractPlayer):
             if pick <= p:
                 break
 
-        # corresponding move
-        return [k for k in self.payoff_mat.keys()][i] if self.role == "p1" else \
-        [k2 for k2 in self.payoff_mat[[k1 for k1 in self.payoff_mat.keys()][0]].keys()][i]
+        # corresponding move name in payoff matrix
+        return [k for k in self.payoff_mat.keys()][i] if self.role == "p1" else [k2 for k2 in self.payoff_mat[[k1 for k1 in self.payoff_mat.keys()][0]].keys()][i]
 
     def post_faint_move(self):
         """
@@ -287,15 +296,29 @@ class PlayerGT(AbstractPlayer):
             the switch.
         """
 
-        return
+        save_game = copy.deepcopy(self.game)
+        mvs_and_expo = list()
+
+        # generate games induced by possible switches
+        tmp = self.game.get_moves_from_state(self.role, None)
+        for m in self.game.get_moves_from_state(self.role, None):
+            p1m, p2m = [m, None][::(-1) ** (self.role == "p2")]
+            self.game.play_round(p1m, p2m, 0.95, None)
+            self.fill_game_with_estimation()
+            self.build_payoff_matrix()
+            self.remove_strictly_dominated_strategies()
+
+            # see actions possible from induced game state
+            mvs_and_expo.append((m, self.nash_equilibrium_for_move()[1][int(self.role == "p2")]))
+
+            self.game = copy.deepcopy(save_game)
+
+        # check which switch allows most promising payoff
+        return max(mvs_and_expo, key=lambda x: x[1])[0]
 
     def make_move(self, game: PokeGame):
 
-        if self.game is None:
-            # initializations + compute payoff matrix
-            self.game = copy.deepcopy(game)
-            self.fill_game_with_estimation()
-            self.build_payoff_matrix()
+        self.game = game
 
         # opponent down
         if (not self.game.player1_view.on_field2.cur_hp and self.role == "p1" or
@@ -307,6 +330,7 @@ class PlayerGT(AbstractPlayer):
               not self.game.player2_view.on_field2.cur_hp and self.role == "p2"):
             move = self.post_faint_move()
 
+        # regular conditions
         else:
             move = self.regular_move()
 

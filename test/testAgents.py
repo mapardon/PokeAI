@@ -241,9 +241,11 @@ class MyTestCase(unittest.TestCase):
 
     @parameterized.expand([
         ("p1", {'a': {'c': (2, 1), 'd': (0, 0)}, 'b': {'c': (0, 0), 'd': (1, 2)}},
-         ((np.array([1., 0.]), np.array([1., 0.])), np.array([2., 1.]))),
+         #((np.array([1., 0.]), np.array([1., 0.])), np.array([2., 1.]))),
+         ((np.array([0., 1.]), np.array([0., 1.])), np.array([1., 2.]))),
         ("p2", {'a': {'c': (5, 5), 'd': (0, 0)}, 'b': {'c': (0, 0), 'd': (5, 5)}},
          ((np.array([1., 0.]), np.array([1., 0.])), np.array([5., 5.]))),
+         #((np.array([0., 1.]), np.array([0., 1.])), np.array([5., 5.]))),
         ("p1", {'a': {'d': (3, -1), 'e': (-1, 1)}, 'b': {'d': (0, 0), 'e': (0, 0)}, 'c': {'d': (-1, 2), 'e': (2, -1)}},
          ((np.array([0.6, 0., 0.4]), np.array([0.42857143, 0.57142857])), np.array([0.71428571, 0.2])))
     ])
@@ -270,15 +272,38 @@ class MyTestCase(unittest.TestCase):
         self.assertTrue(test_payoffs and test_prob, msg="exp: {}\nact: {}".format(exp, act))
 
     @parameterized.expand([
-        ("p1", "switch p3")
+        ("p1", "switch p3"),
+        ("p2", "light_water")
     ])
     def test_regular_move(self, role, exp):
         agent = PlayerGT(role)
         agent.game = PokeGame(team_specs_for_game2)
-        agent.fill_game_with_estimation()
-        agent.build_payoff_matrix()
-        agent.remove_strictly_dominated_strategies()
         act = agent.regular_move()
+        self.assertEqual(exp, act)
+
+    @parameterized.expand([
+        ("p1", "switch p2"),
+        ("p2", "switch d2")
+    ])
+    def test_post_faint_move(self, role, exp):
+        agent = PlayerGT(role)
+        agent.game = PokeGame(team_specs_for_game2)
+
+        if role == "p1":
+            agent.game.game_state.on_field1.cur_hp = agent.game.player1_view.on_field1.cur_hp = agent.game.player2_view.on_field1.cur_hp = int()
+        elif role == "p2":
+            agent.game.game_state.on_field2.cur_hp = agent.game.player1_view.on_field2.cur_hp = agent.game.player2_view.on_field2.cur_hp = int()
+
+        act = agent.post_faint_move()
+        self.assertEqual(exp, act)
+
+    @parameterized.expand([
+        ("p1", "switch p3"),
+        ("p2", "light_water")
+    ])
+    def test_make_move_gt(self, player, exp):
+        agent = PlayerGT(player)
+        act = agent.make_move(PokeGame(team_specs_for_game2))
         self.assertEqual(exp, act)
 
 
