@@ -265,8 +265,7 @@ class PokeGame:
         self.directly_available_info("p1", p2_move, ret)
         self.directly_available_info("p2", p1_move, ret)
 
-        if None not in (p1_move, p2_move):
-            # post faint switch, no useful info to gather
+        if None not in (p1_move, p2_move):  # in post faint switch, no further useful info to gather
             self.statistic_estimation("p1", ret, p1_move, p2_move, (pre_of1_name, pre_of1_cur_hp, p1v_pre_of1.spe),
                                       (pre_of2_name, pre_of2_cur_hp, p1v_pre_of2.spe))
             self.statistic_estimation("p2", ret, p2_move, p1_move, (pre_of2_name, pre_of2_cur_hp, p2v_pre_of2.spe),

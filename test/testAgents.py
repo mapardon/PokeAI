@@ -241,8 +241,8 @@ class MyTestCase(unittest.TestCase):
 
     @parameterized.expand([
         ("p1", {'a': {'c': (2, 1), 'd': (0, 0)}, 'b': {'c': (0, 0), 'd': (1, 2)}},
-         #((np.array([1., 0.]), np.array([1., 0.])), np.array([2., 1.]))),
-         ((np.array([0., 1.]), np.array([0., 1.])), np.array([1., 2.]))),
+         ((np.array([1., 0.]), np.array([1., 0.])), np.array([2., 1.]))),
+         #((np.array([0., 1.]), np.array([0., 1.])), np.array([1., 2.]))),
         ("p2", {'a': {'c': (5, 5), 'd': (0, 0)}, 'b': {'c': (0, 0), 'd': (5, 5)}},
          ((np.array([1., 0.]), np.array([1., 0.])), np.array([5., 5.]))),
          #((np.array([0., 1.]), np.array([0., 1.])), np.array([5., 5.]))),
@@ -305,6 +305,36 @@ class MyTestCase(unittest.TestCase):
         agent = PlayerGT(player)
         act = agent.make_move(PokeGame(team_specs_for_game2))
         self.assertEqual(exp, act)
+
+    def test_player_gt_complete_game(self):
+        fail = False
+        out = str()
+        try:
+            nb = 10
+            max_rounds = 50
+            players = [PlayerRandom("p1"), PlayerGT("p2")]
+
+            for i in range(nb):
+                game = PokeGame(team_specs_for_game2)
+                turn_nb = 1
+                game_finished = False
+
+                # game loop
+                while not game_finished and turn_nb < max_rounds:
+                    of1, of2 = game.game_state.on_field1, game.game_state.on_field2
+                    player1_move = players[0].make_move(game) if of1.cur_hp and of2.cur_hp or not of1.cur_hp else None
+                    player2_move = players[1].make_move(game) if of1.cur_hp and of2.cur_hp or not of2.cur_hp else None
+
+                    game.play_round(player1_move, player2_move)
+                    game_finished = game.is_end_state(None)
+
+                    if not game_finished and of1.cur_hp > 0 and of2.cur_hp > 0:
+                        # turn change once attacks have been applied and fainted Pokemon switched
+                        turn_nb += 1
+        except Exception as e:
+            fail = True
+            out = "-> " + e.__repr__()
+        self.assertFalse(fail, msg=out)
 
 
 if __name__ == '__main__':

@@ -2,10 +2,10 @@ import copy
 import random
 import warnings
 from statistics import stdev
+from copy import deepcopy
 
 import numpy as np
 import nashpy as nash
-from line_profiler import profile
 
 from src.agents.AbstractPlayer import AbstractPlayer
 from src.game.PokeGame import PokeGame
@@ -42,8 +42,8 @@ class PlayerGT(AbstractPlayer):
 
     def fill_game_with_estimation(self):
         """
-            Agent's copy of the game is filled with estimations (this is done to have a slightly better approximation
-            than simply discarding actions concerning unknown Pokémon)
+            Agent's copy of the game is filled with estimations. This is done to have a slightly better approximation
+            than simply discarding actions concerning unknown Pokémons and moves.
         """
 
         own_view, opp_view = [self.game.player1_view, self.game.player2_view][::(-1) ** (self.role == "p2")]
@@ -51,8 +51,13 @@ class PlayerGT(AbstractPlayer):
         opp_view_own_team, opp_view_opp_team = [opp_view.team1, opp_view.team2][::(-1) ** (self.role == "p2")]
 
         # Give names of one team to the other (this reveals no sensitive info and allows to be coherent in the switches)
-        for p, q in zip(own_view_own_team + opp_view_opp_team, opp_view_own_team + own_view_opp_team):
-            q.name = p.name
+        plv_unknown_names = {p.name for p in opp_view_opp_team} - {p.name for p in own_view_opp_team}
+        opv_unknown_names = {p.name for p in own_view_own_team} - {p.name for p in opp_view_own_team}
+        for p, q in zip(own_view_opp_team, opp_view_own_team):
+            if p.name is None:
+                p.name = plv_unknown_names.pop()
+            if q.name is None:
+                q.name = opv_unknown_names.pop()
 
         # Unknown opponent Pokémon are default "NOTYPE" + average stat
         for p in own_view_opp_team:
@@ -81,15 +86,17 @@ class PlayerGT(AbstractPlayer):
                         break
 
         # Own Pokémons unknown to opponent are set to default, real stats are provided for Pokémon already seen
-        for p, q in zip(opp_view_own_team, own_view_own_team):
-            if p.poke_type is None:
-                p.poke_type = "NOTYPE"
-                p.cur_hp, p.hp, p.atk, p.des, p.spe = ((MIN_HP + MAX_HP) // 2, (MIN_HP + MAX_HP) // 2,
-                                                       (MIN_STAT + MAX_STAT) // 2, (MIN_STAT + MAX_STAT) // 2,
-                                                       (MIN_STAT + MAX_STAT) // 2)
+        for p in opp_view_own_team:
+            for q in own_view_own_team:
+                if p.name == q.name:
+                    if p.poke_type is None:
+                        p.poke_type = "NOTYPE"
+                        p.cur_hp, p.hp, p.atk, p.des, p.spe = ((MIN_HP + MAX_HP) // 2, (MIN_HP + MAX_HP) // 2,
+                                                               (MIN_STAT + MAX_STAT) // 2, (MIN_STAT + MAX_STAT) // 2,
+                                                               (MIN_STAT + MAX_STAT) // 2)
 
-            else:
-                p.cur_hp, p.hp, p.atk, p.des, p.spe = q.cur_hp, q.hp, q.atk, q.des, q.spe
+                    else:
+                        p.cur_hp, p.hp, p.atk, p.des, p.spe = q.cur_hp, q.hp, q.atk, q.des, q.spe
 
             # All Pokémon have at least 1 STAB of MIN_POW
             if p.poke_type not in (m.move_type for m in p.moves):
@@ -105,11 +112,11 @@ class PlayerGT(AbstractPlayer):
 
         # Team of the opponent is considered our view of it: we're not supposed to know its real choices and configs
         if self.role == "p1":
-            opp_view.team2 = copy.deepcopy(own_view.team2)
+            opp_view.team2 = deepcopy(own_view.team2)
             opp_view.on_field2 = opp_view.team2[
                 [i for i, p in enumerate(opp_view.team2) if p.name == opp_view.on_field2.name][0]]
         else:
-            opp_view.team1 = copy.deepcopy(own_view.team1)
+            opp_view.team1 = deepcopy(own_view.team1)
             opp_view.on_field1 = opp_view.team1[
                 [i for i, p in enumerate(opp_view.team1) if p.name == opp_view.on_field1.name][0]]
 
@@ -160,9 +167,9 @@ class PlayerGT(AbstractPlayer):
                     m2_for_p1 = p2_mv if "switch" in p2_mv or p2_mv in (m.name for m in p1_view_p2_of.moves) else "light_notype"
 
                 # force_order: pessimistic estimation for both sides
-                p1_po = self.compute_player_payoff(self.game.apply_player_moves(copy.deepcopy(p1_view), m1_for_p1,
+                p1_po = self.compute_player_payoff(self.game.apply_player_moves(deepcopy(p1_view), m1_for_p1,
                                                                                 m2_for_p1, 0.95, force_order), "p1")
-                p2_po = self.compute_player_payoff(self.game.apply_player_moves(copy.deepcopy(p2_view), m1_for_p2,
+                p2_po = self.compute_player_payoff(self.game.apply_player_moves(deepcopy(p2_view), m1_for_p2,
                                                                                 m2_for_p2, 0.95, not force_order), "p2")
 
                 self.payoff_mat[p1_mv][p2_mv] = (round(p1_po, 3), round(p2_po, 3))
@@ -214,9 +221,11 @@ class PlayerGT(AbstractPlayer):
             individually best and worst possible outcomes (more justification in the pdf). Finally, a tie at
             the geometric average level is solved with a random draw.
 
-            NB: The function computing NE can return a warning in case of even number of equilibria found, which is
+            NB: 1. The function computing NE can return a warning in case of even number of equilibria found, which is
             usually caused by weak dominance between strategies. In this situation, it is not problematic: it
             simply means that at least one player has exact same interest in several choices (more details in the pdf).
+            2. This function can also return no equilibrium. Despite Nash's theorem, this algorithm may fail to identify
+            equilibria for degenerate games (more details in the pdf).
 
             :return: probability distribution over the choices of each player corresponding to the NE and the related
                 expected payoffs
@@ -229,6 +238,17 @@ class PlayerGT(AbstractPlayer):
         game = nash.Game(p1_poffs, p2_poffs)
         neq = list(game.support_enumeration())
         exp_payoffs = [game[p1_po, p2_po] for p1_po, p2_po in neq]
+
+        # If no NE returned, rest of this function will consider all pure strategies in place of equilibria
+        if not neq:
+            nb_mv_p1 = len(mat.keys())
+            nb_mv_p2 = len(mat[[k for k in mat.keys()][0]].keys())
+            for i, p1m in enumerate(self.payoff_mat.keys()):
+                for j, p2m in enumerate(self.payoff_mat[p1m].keys()):
+                    p1_mv_idx = [0] * i + [1] + [0] * (nb_mv_p1 - i)
+                    p2_mv_idx = [0] * j + [1] + [0] * (nb_mv_p2 - j)
+                    neq.append((np.array(p1_mv_idx), np.array(p2_mv_idx)))
+                    exp_payoffs.append(mat[p1m][p2m])
 
         # If there are several NE, try to discard some via Pareto optimality
         non_pareto_idx = list()
@@ -296,11 +316,10 @@ class PlayerGT(AbstractPlayer):
             the switch.
         """
 
-        save_game = copy.deepcopy(self.game)
+        save_game = deepcopy(self.game)
         mvs_and_expo = list()
 
         # generate games induced by possible switches
-        tmp = self.game.get_moves_from_state(self.role, None)
         for m in self.game.get_moves_from_state(self.role, None):
             p1m, p2m = [m, None][::(-1) ** (self.role == "p2")]
             self.game.play_round(p1m, p2m, 0.95, None)
@@ -311,14 +330,14 @@ class PlayerGT(AbstractPlayer):
             # see actions possible from induced game state
             mvs_and_expo.append((m, self.nash_equilibrium_for_move()[1][int(self.role == "p2")]))
 
-            self.game = copy.deepcopy(save_game)
+            self.game = deepcopy(save_game)
 
         # check which switch allows most promising payoff
         return max(mvs_and_expo, key=lambda x: x[1])[0]
 
     def make_move(self, game: PokeGame):
 
-        self.game = game
+        self.game = deepcopy(game)  # this agent modifies game state so local copy is made
 
         # opponent down
         if (not self.game.player1_view.on_field2.cur_hp and self.role == "p1" or
@@ -335,18 +354,3 @@ class PlayerGT(AbstractPlayer):
             move = self.regular_move()
 
         return move
-
-
-if __name__ == '__main__':
-
-    for p in ["p1", "p2"]:
-        game = PokeGame(team_specs_for_game)
-        a1 = PlayerGT(p)
-        a1.make_move(game)
-        game.play_round("switch p2", "light_steel", 0.85, True)
-        a1.make_move(game)
-
-        pm = a1.payoff_mat
-
-        for k in pm.keys():
-            print(k, pm[k])
