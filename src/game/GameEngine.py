@@ -55,12 +55,11 @@ class GameEngine:
 
         out = list()
         if team_src == "random":
-            # NB: names can't have duplicates
             names = list()
 
             while len(names) < NB_POKEMON:
                 p_name = ''.join([chr(random.randint(ord('a'), ord('z'))) for _ in range(3)])
-                if p_name not in names:
+                if p_name not in names:  # can't have duplicates names
                     names.append(p_name)
 
             for _, p_name in zip(range(NB_POKEMON), names):
