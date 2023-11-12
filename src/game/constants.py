@@ -7,7 +7,7 @@ TYPES = ['BUG', 'DARK', 'DRAGON', 'ELECTRIC', 'FAIRY', 'FIGHTING', 'FIRE', 'FLYI
 
 #  {offensive: {defensive: multiplier}}
 TYPE_CHART = {'NORMAL': {'ROCK': 0.5, 'GHOST': 0, 'STEEL': 0.5, 'NORMAL': 1, 'FIRE': 1, 'WATER': 1, 'ELECTRIC': 1, 'GRASS': 1, 'ICE': 1, 'FIGHTING': 1, 'POISON': 1, 'GROUND': 1, 'FLYING': 1, 'PSYCHIC': 1, 'BUG': 1, 'DRAGON': 1, 'DARK': 1, 'FAIRY': 1, 'NOTYPE': 1},
-              'FIRE': {'FIRE': 0.5, 'WATER': 0.5, 'GRASS': 2, 'ICE': 2, 'BUG': 2, 'ROCK': 0.5, 'DRAGON': 0.5, 'STEEL': 0.5, 'NORMAL': 1, 'ELECTRIC': 1, 'FIGHTING': 1, 'POISON': 1, 'GROUND': 1, 'FLYING': 1, 'PSYCHIC': 1, 'GHOST': 1, 'DARK': 1, 'FAIRY': 1, 'NOTYPE': 1},
+              'FIRE': {'FIRE': 0.5, 'WATER': 0.5, 'GRASS': 2, 'ICE': 2, 'BUG': 2, 'ROCK': 0.5, 'DRAGON': 0.5, 'STEEL': 2, 'NORMAL': 1, 'ELECTRIC': 1, 'FIGHTING': 1, 'POISON': 1, 'GROUND': 1, 'FLYING': 1, 'PSYCHIC': 1, 'GHOST': 1, 'DARK': 1, 'FAIRY': 1, 'NOTYPE': 1},
               'WATER': {'FIRE': 2, 'WATER': 0.5, 'GRASS': 0.5, 'GROUND': 2, 'ROCK': 2, 'DRAGON': 0.5, 'NORMAL': 1, 'ELECTRIC': 1, 'ICE': 1, 'FIGHTING': 1, 'POISON': 1, 'FLYING': 1, 'PSYCHIC': 1, 'BUG': 1, 'GHOST': 1, 'DARK': 1, 'STEEL': 1, 'FAIRY': 1, 'NOTYPE': 1},
               'ELECTRIC': {'WATER': 2, 'ELECTRIC': 0.5, 'GRASS': 0.5, 'GROUND': 0, 'FLYING': 2, 'DRAGON': 0.5, 'NORMAL': 1, 'FIRE': 1, 'ICE': 1, 'FIGHTING': 1, 'POISON': 1, 'PSYCHIC': 1, 'BUG': 1, 'ROCK': 1, 'GHOST': 1, 'DARK': 1, 'STEEL': 1, 'FAIRY': 1, 'NOTYPE': 1},
               'GRASS': {'FIRE': 0.5, 'WATER': 2, 'GRASS': 0.5, 'POISON': 0.5, 'GROUND': 2, 'FLYING': 0.5, 'BUG': 0.5, 'ROCK': 2, 'DRAGON': 0.5, 'STEEL': 0.5, 'NORMAL': 1, 'ELECTRIC': 1, 'ICE': 1, 'FIGHTING': 1, 'PSYCHIC': 1, 'GHOST': 1, 'DARK': 1, 'FAIRY': 1, 'NOTYPE': 1},
@@ -44,7 +44,8 @@ TYPES_INDEX = {
     'DRAGON': 14,
     'DARK': 15,
     'STEEL': 16,
-    'FAIRY': 17
+    'FAIRY': 17,
+    'NOTYPE': 18
 }
 
 MOVES = {

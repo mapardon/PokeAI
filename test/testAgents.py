@@ -8,7 +8,7 @@ from src.agents.PlayerBM import PlayerBM
 from src.agents.PlayerGT import PlayerGT
 from src.agents.PlayerMDM import PlayerMDM
 from src.agents.PlayerRandom import PlayerRandom
-from src.agents.init_NN import initialize_NN, N_INPUT
+from src.agents.init_NN import initialize_nn, N_INPUT
 from src.agents.PlayerML import PlayerML
 from src.game.PokeGame import PokeGame
 from src.game.constants import MIN_POW
@@ -50,19 +50,19 @@ class MyTestCase(unittest.TestCase):
         ("He", [15, 20, 12], [(15, N_INPUT), (20, 15), (12, 20), (12,)])
     ])
     def test_init_NN(self, init_mode, shape_in, expected_shape):
-        net = initialize_NN(shape_in, init_mode)
+        net = initialize_nn(shape_in, init_mode)
         net_shapes = [l.shape for l in net]
         self.assertListEqual(expected_shape, net_shapes, init_mode)
 
     def test_forward_pass(self):
         # mode, role, network, ls, lamb, act_f, eps, lr, mvsel
         sentinel = True
-        network = initialize_NN([10], "normal")
+        network = initialize_nn([10], "normal")
         pstate = [random.randint(0, 1) for _ in range(N_INPUT)]
         nstate = [random.randint(0, 1) for _ in range(N_INPUT)]
 
         try:
-            player_ml = PlayerML("train", "p1", network, "Q-learning", None, "sigmoid", 0.3, 0.15, "eps-greedy")
+            player_ml = PlayerML("p1", "train", network, "Q-learning", None, "sigmoid", 0.3, 0.15, "eps-greedy")
             pre = player_ml.forward_pass(pstate)
             player_ml.backpropagation(PokeGame(team_specs_for_game), pstate, nstate, 0.75)
             post = player_ml.forward_pass(pstate)

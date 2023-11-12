@@ -110,18 +110,19 @@ class TestCasePokeGame(unittest.TestCase):
         self.assertEqual(game.is_end_state(game.get_cur_state()), expected_output)
 
     @parameterized.expand([
-        (True, True),
-        (False, False)
+        (True, False, (True, False)),
+        (False, True, (False, True)),
+        (False, False, (False, False))
     ])
-    def test_first_player_won(self, team1_victory, expected_output):
+    def test_first_player_won(self, p1_victory, p2_victory, expected_output):
         game = PokeGame(team_specs_for_game)
-        if team1_victory:
+        if p1_victory:
             for p in game.game_state.team2:
                 p.cur_hp = 0
-        else:
+        elif p2_victory:
             for p in game.game_state.team1:
                 p.cur_hp = 0
-        self.assertEqual(game.first_player_won(), expected_output)
+        self.assertEqual(game.match_result(), expected_output)
 
     def test_get_player1_view(self):
         game = PokeGame(team_specs_for_game)

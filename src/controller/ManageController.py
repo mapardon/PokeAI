@@ -1,6 +1,6 @@
 import os
 
-from src.agents.init_NN import initialize_NN
+from src.agents.init_NN import initialize_nn
 from src.db.dbmanager import available_ml_agents, remove_ml_agent, save_new_agent
 from src.view.util.UIparameters import ManageUIParams
 
@@ -43,7 +43,7 @@ class ManageController:
 
     def create_ai(self):
         uip = self.ui_input
-        network = initialize_NN(self.ui_input.newshape, self.ui_input.newinit)
+        network = initialize_nn(self.ui_input.newshape, self.ui_input.newinit)
         input("creating new agent: {}, {}, {}, {}, {}, {}".format(self.ui_input.newfname, self.ui_input.newshape,
                                                                   self.ui_input.newls, self.ui_input.newlamb,
                                                                   self.ui_input.newactf, self.ui_input.newinit))
@@ -116,8 +116,7 @@ class ManageController:
                     warning = "Please provide consistent value for lambda parameter"
 
             elif inputted[0] == "create":
-                if None in [pars.newfname, pars.newls, pars.newshape, pars.newinit, pars.newactf] + [
-                    pars.newlamb] * ("lambda" in pars.newls):
+                if None in [pars.newfname, pars.newls, pars.newshape, pars.newinit, pars.newactf] + [pars.newlamb] * ("lambda" in pars.newls):
                     warning = "Please first fill all required parameters"
 
                 else:

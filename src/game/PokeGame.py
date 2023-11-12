@@ -92,10 +92,10 @@ class PokeGame:
         return " complete view:\n{}\n player1 view:\n{}\n player2 view\n{}".format(self.game_state, self.player1_view,
                                                                                    self.player2_view)
 
-    def get_numeric_repr(self, state: GameStruct = None, player: str = None):
+    def get_numeric_repr(self, state: GameStruct = None, player: str = None) -> list[int]:
         """ Converts the provided state in binary vector
 
-        :param state: GameStruct object to be converted. If None, use attributes
+        :param state: GameStruct object to be converted. If None, use object attributes
         :param player: "p1" or "p2", indicating which view must be converted
         :return: list of int representing schematically the state
         """
@@ -106,7 +106,7 @@ class PokeGame:
             elif player == "p2":
                 state = self.player2_view
             else:
-                return None
+                state = self.game_state
 
         num_state = list()
         for t, of in zip([state.team1, state.team2], [state.on_field1, state.on_field2]):
@@ -124,10 +124,13 @@ class PokeGame:
 
         return [i if i is not None else 0 for i in num_state]
 
-    def get_cur_state(self):
+    def get_cur_state(self) -> GameStruct:
+        """
+        Returns a copy of the complete game (self.game_state)
+        """
         return copy.deepcopy(self.game_state)
 
-    def get_player_view(self, player: str):
+    def get_player_view(self, player: str) -> GameStruct:
         """
         Returns a copy of the GameStruct object related to specified player view
 
@@ -141,12 +144,11 @@ class PokeGame:
         Return possible moves for the specified player from the specified state (allows to retrieve possible moves
         for a player from a state that is not self.game_state)
 
-        :param player: "p1" or "p2" to indicate for which player moves must be listed
+        :param player: "p1" or "p2" to indicate which player moves must be listed
         :param state: GameStruct object where moves must be searched
         :return: List of string containing name of moves playable.
         """
 
-        state = state if state is not None else self.player1_view if player == "p1" else self.player2_view
         team, on_field, opp_on_field = (state.team1, state.on_field1, state.on_field2) if player == "p1" else (
             state.team2, state.on_field2, state.on_field1)
 
@@ -161,7 +163,7 @@ class PokeGame:
             moves = [m.name for m in on_field.moves] + switches
         return moves
 
-    def is_end_state(self, state=None):
+    def is_end_state(self, state: GameStruct = None) -> bool:
         """
         Test if the provided or current state is an end state, meaning one of the players have all Pokémon with 0 cur_hp
 
@@ -172,17 +174,18 @@ class PokeGame:
         state = state if state is not None else self.game_state
         return sum([p.is_alive() for p in state.team1]) == 0 or sum([p.is_alive() for p in state.team2]) == 0
 
-    def first_player_won(self, state=None):
+    def match_result(self, state: GameStruct = None) -> (bool, bool):
         """
-        Check if some Pokémon from team1 are not dead. NB: a False value returned does not imply player2 won (game may
-        be unfinished).
+        Returns two booleans indicating the result of the match: first indicates victory of player 1 (all player 2
+        Pokémon are K.O., second indicates victory of player 2. The value (False, False) is returned if match is
+        unfinished (which can be contextually be interpreted as a tie).
 
-        :param state: PokeGame object to test.
-        :return: bool value
+        :param state: GameStruct object to test
+        :return: result of match
         """
 
         state = state if state is not None else self.game_state
-        return sum([p.is_alive() for p in state.team1]) > 0
+        return sum([p.is_alive() for p in state.team2]) == 0, sum([p.is_alive() for p in state.team1]) == 0
 
     def swap_states(self, game_state: GameStruct):
         self.game_state = game_state

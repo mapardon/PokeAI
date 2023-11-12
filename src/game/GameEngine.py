@@ -123,7 +123,7 @@ class GameEngine:
                     network = players[0].network
                 lr = ui_input.lr if ui_input.mode == "train" else None
                 mvsel = ui_input.mvsel if ui_input.mode == "train" else "eps-greedy"
-                players.append(PlayerML(ui_input.mode, n, network, ls, lamb, act_f, ui_input.eps, lr, mvsel))
+                players.append(PlayerML(n, ui_input.mode, network, ls, lamb, act_f, ui_input.eps, lr, mvsel))
 
             elif p == "gt":
                 players.append(PlayerGT(n))
@@ -192,7 +192,7 @@ class GameEngine:
         # send final state
         game_state = self.game.get_player_view("p1")
         to_ui.put(game_state)
-        result = "player 1 victory" if self.game.first_player_won() else "player 2 victory"
+        result = "player 1 victory" if self.game.match_result()[0] else "player 2 victory"
         to_ui.put([result])
 
     def train_mode(self, players, ui_input, ui_communicate=None):
@@ -206,7 +206,6 @@ class GameEngine:
         """
 
         max_rounds = 50
-        p1_victories = int()
 
         for i in range(ui_input.nb):
             self.game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
@@ -225,18 +224,17 @@ class GameEngine:
                 if not game_finished and of1.cur_hp > 0 and of2.cur_hp > 0:
                     turn_nb += 1
 
-            p1_victories += game_finished and self.game.first_player_won()
-
             # UI communication
             if ui_communicate is not None:
                 ui_communicate["prog"] += 1
 
-            victory = bool(self.game.first_player_won())
+            p1_victory, p2_victory = bool(self.game.match_result())
+            # TODO: call backtracking directly
             if isinstance(players[0], PlayerML):
-                players[0].end_game(self.game, victory)
+                players[0].end_game(self.game, p1_victory)
                 update_ml_agent(self.ml_names[0], players[0].network)
             if isinstance(players[1], PlayerML):
-                players[1].end_game(self.game, not victory)
+                players[1].end_game(self.game, p2_victory)
                 update_ml_agent(self.ml_names[1], players[1].network)
 
     def test_mode(self, players, ui_input, ui_communicate=None):
@@ -269,7 +267,7 @@ class GameEngine:
                     # turn change once attacks have been applied and fainted Pokemon switched
                     turn_nb += 1
 
-            p1_victories += game_finished and self.game.first_player_won()
+            p1_victories += self.game.match_result()[0]
 
             # UI communication
             if ui_communicate is not None and not i % 10:

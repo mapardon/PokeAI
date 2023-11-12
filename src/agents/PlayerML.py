@@ -8,7 +8,6 @@ from src.game.PokeGame import PokeGame
 
 
 def sigmoid(x):
-    #print(x)
     return 1 / (1 + np.exp(-x))
 
 
@@ -37,20 +36,20 @@ def relu_gradient(x):
 
 class PlayerML(AbstractPlayer):
 
-    def __init__(self, mode: str, role: str, network: tuple, ls: str, lamb: float | None, act_f: str, eps: float,
-                 lr: float, mvsel: str):
+    def __init__(self, role: str, mode: str, network: tuple, ls: str, lamb: float | None, act_f: str, eps: float,
+                 lr: float, mv_sel: str = None):
         """
         ML agent for the game, using ML methods to play and learn the game.
 
-        :param mode: tells which mode is being played ('match', 'train' or 'compare')
         :param role: "p1" or "p2"
+        :param mode: tells which mode is being played ('match', 'train' or 'compare')
         :param network: in train mode, both agents must share same NN object, so weights are read from GameEngine
         :param ls: As ls is fixed with a NN, it is read from database with the network
         :param lamb: lambda parameter for TD-lambda and Q-lambda
         :param act_f: activation function for the network
         :param eps: random factor
         :param lr: learning rate
-        :param mvsel: mode of move selection (epsilon-greedy, softmax-exponential...)
+        :param mv_sel: "max_low" or "max_avg", rule to select a move
         """
 
         super().__init__(role)
@@ -66,15 +65,14 @@ class PlayerML(AbstractPlayer):
         if mode == "train":
             self.lamb = lamb
             self.lr = lr
-            self.move_selection = {"eps-greedy": self.eps_greedy_move,
-                                   "softmax-exp": self.softmax_move}[mvsel]
-            self.backpropagation = {"Q-learning": self.q_learning_backpropagation,
-                                    "SARSA": self.sarsa_backpropagation,
-                                    "TD-lambda": self.td_lambda_backpropagation,
-                                    "Q-lambda": self.q_lambda_backpropagation}[ls]
+            self.move_selection = self.move_selector
+            self.backpropagation = {"SARSA": self.sarsa_backpropagation,
+                                    "TD-lambda": self.td_lambda_backpropagation}[ls]
+            # save computed information to reuse for backtracking after receiving new state
+            self.cur_state = None
 
         else:  # test or match
-            self.move_selection = self.eps_greedy_move
+            self.move_selection = self.move_selector
             self.ls = self.lr = self.lamb = None
 
     # Communication with game loop #
@@ -84,77 +82,61 @@ class PlayerML(AbstractPlayer):
 
         :returns: Selected move """
 
-        if not game.player1_view.on_field2.cur_hp if self.role == "p1" else game.player2_view.on_field1.cur_hp:
+        # opponent down, must not move
+        if (not game.player1_view.on_field2.cur_hp and self.role == "p1" or
+                not game.player2_view.on_field1.cur_hp and self.role == "p2"):
             return None
 
-        options = list()
-        moves_name = dict()
-        for m1 in game.get_moves_from_state("p1", None):
-            for m2 in game.get_moves_from_state("p2", None):
-                num_state = game.get_numeric_repr(game.apply_player_moves(game.get_cur_state(), m1, m2))
-                options.append(num_state)
-                moves_name[tuple(num_state)] = (m1, m2)
-        cur_num_state = game.get_numeric_repr(state=None, player=self.role)
+        # ourselves or no one down, select a possible move using move selection strategy and save state for backtracking
+        move = self.move_selection(game)
+        self.cur_state = game.get_numeric_repr(player=self.role)
 
-        new_s, best_p_out = self.move_selection(options)
-        if self.mode == "train":  # Move + update weight matrices
-            self.backpropagation(game, cur_num_state, new_s, best_p_out)
-
-        new_s_name = moves_name[tuple(new_s)]
-        new_s_name = new_s_name[0] if self.role == "p1" else new_s_name[1]
-
-        return new_s_name
-
-    def end_game(self, game, player1_won):
-        """ Same as previous for the end of the game """
-
-        self.backpropagation(game, game.get_numeric_repr(None, self.role), None, player1_won if self.role == "1" else not player1_won)
+        return move
 
     # Moves ranking #
 
-    def best_moves(self, moves):
-        """ Returns the move evaluated as most promising
+    def move_selector(self, game: PokeGame) -> str:
+        """ Returns the move evaluated as most promising (or a random one at a frequency of self.eps)
 
-        :returns tuple containing:
-                * list of the moves evaluated as most promising by the network (in case several moves are equally best)
-                * the probability estimation. """
+        :returns: action of the player """
 
-        best_moves = list()
-        best_value = None
-        c = 1 if self.role == "p1" else -1  # game is viewed under 1st player pov
+        cur_move = None
 
-        for m in moves:
-            estimation = self.forward_pass(m)
-            if best_value is None or c * estimation > c * best_value:  # opponent move, invert inequality
-                best_moves = [m]
-                best_value = estimation
-            elif estimation == best_value:
-                best_moves.append(m)
+        # random move
+        if random.random() < self.eps:
+            options = list()
+            pl, opp = ["p1", "p2"][::(-1) ** (self.role == "p2")]
+            view = game.get_player_view(self.role)
+            for pmv in game.get_moves_from_state(pl, view):
+                for omv in game.get_moves_from_state(opp, view):
+                    options.append((pmv, omv))
+            cur_move = random.choice(options)[0]
 
-        random.shuffle(best_moves)
-        return best_moves, best_value
+        # best move
+        p2f = (-1) ** (self.role == "p2")  # if agent is player2, estimations are interpreted inversely
+        min_lines = list()  # worst outcome for each player option (depending on opponent options)
+        pl, opp = ["p1", "p2"][::(-1) ** (self.role == "p2")]
+        view = game.player1_view if self.role == "p1" else game.player2_view
 
-    def eps_greedy_move(self, moves):
-        """ Returns a move chosen via eps-greedy selection """
+        # iterate through possible options for the player and keep the "least bad"
+        for pmv in game.get_moves_from_state(pl, view):
+            min_lines += [(None, 1)]
+            for omv in game.get_moves_from_state(opp, view):
+                p1mv, p2mv = (pmv, omv) if self.role == "p1" else (omv, pmv)
+                s = game.get_numeric_repr(game.apply_player_moves(game.get_player_view(self.role), p1mv, p2mv))
+                p = p2f * self.forward_pass(s)
+                # TODO: average estimation
+                if p < min_lines[-1][1]:
+                    min_lines[-1] = (pmv, p)
 
-        best_moves, best_p_out = self.best_moves(moves)
-        if random.random() > self.eps:  # Choose move among highest evaluated
-            new_s = random.choice(best_moves)
-        else:
-            new_s = random.choice(moves)
-        return new_s, best_p_out
+        # TODO: random draw if several best values?
+        best_move = max(min_lines, key=lambda x: x[1])[0]
+        if cur_move is None:
+            cur_move = best_move
 
-    def softmax_move(self, moves):
-        """ Returns a move chosen via softmax-exponential selection. """
+        return cur_move
 
-        probs = np.array([self.forward_pass(m) for m in moves])
-
-        softmax_vals = np.exp(probs) / np.sum(np.exp(probs), axis=0)
-        new_s = moves[np.random.choice([i for i in range(len(moves))], p=softmax_vals)]
-        best_p_out = self.forward_pass(moves[np.argmax(softmax_vals)])
-        return new_s, best_p_out
-
-    # forward pass and backpropagations for different learning algorithms
+    # forward pass and backpropagation for different learning algorithms
 
     def forward_pass(self, state: list):
         """ Use the knowledge of the network to make an estimation of the victory probability of the first player
@@ -167,59 +149,28 @@ class PlayerML(AbstractPlayer):
 
         return p_out if self.act_f == sigmoid else sigmoid(p_out)
 
-    def q_learning_backpropagation(self, game: PokeGame, cur_state: list,
-                                   chosen_state: list, best_next_prob: float):
-        """
-        Apply backpropagation algorithm with Q-learning strategy
-
-        :param game: Reference to current game
-        :param cur_state: Numeric representation of current state
-        :param chosen_state: Numeric representation of state selected for next move. Can be None if cur_state
-            is an end state
-        :param best_next_prob: Victory estimation of the best possible option (from cur_state)
-        """
-
-        cur_prob = self.forward_pass(cur_state)
-        cmp_prob = best_next_prob
-        W_int = self.network[0]
-        delta = cur_prob - cmp_prob
-        W_out = self.network[1]
-        P_int = self.act_f(np.dot(W_int, cur_state))
-        p_out = self.act_f(P_int.dot(W_out))
-        grad_out = self.grad(p_out)
-        grad_int = self.grad(P_int)
-        Delta_int = grad_out * W_out * grad_int
-
-        W_int -= self.lr * delta * np.outer(Delta_int, cur_state)
-        W_out -= self.lr * delta * grad_out * P_int
-
-    def sarsa_backpropagation(self, game: PokeGame, cur_state: PokeGame.GameStruct, chosen_state: PokeGame.GameStruct,
-                              best_next_prob: float):
+    def sarsa_backpropagation(self, game_state: list[int], game_finished: bool, p1_victory: bool):
         """
         Apply backpropagation algorithm with SARSA strategy
 
-        :param game: Reference to current game
-        :param cur_state: GameStruct of current state
-        :param chosen_state: GameStruct of state selected for next move. Can be None if cur_state is an end state
-        :param best_next_prob: Victory estimation of the best possible option (from cur_state)
+        :param game_state: numeric representation of game state (after player moves)
+        :param game_finished: indicates if game_state is an end state
+        :param p1_victory: if game_state is an end state, indicates the victory of player 1
         """
 
-        cur_prob = self.forward_pass(game.get_numeric_repr(cur_state))
-        cmp_prob = self.forward_pass(game.get_numeric_repr(chosen_state)) if chosen_state is not None else best_next_prob
-        W_int = self.network[0]
+        cur_prob = self.forward_pass(self.cur_state)
+        cmp_prob = self.forward_pass(game_state) if not game_finished else p1_victory
         delta = cur_prob - cmp_prob
+        W_int = self.network[0]
         W_out = self.network[1]
-        P_int = self.act_f(np.dot(W_int, cur_state))
+        P_int = self.act_f(np.dot(W_int, self.cur_state))
         p_out = self.act_f(P_int.dot(W_out))
         grad_out = self.grad(p_out)
         grad_int = self.grad(P_int)
         Delta_int = grad_out * W_out * grad_int
 
-        W_int -= self.lr * delta * np.outer(Delta_int, cur_state)
+        W_int -= self.lr * delta * np.outer(Delta_int, self.cur_state)
         W_out -= self.lr * delta * grad_out * P_int
 
     def td_lambda_backpropagation(self, game, state, cur_prob, cmp_prob):
-        return
-
-    def q_lambda_backpropagation(self, game, state, cur_prob, cmp_prob):
         return

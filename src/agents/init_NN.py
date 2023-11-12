@@ -1,8 +1,4 @@
 import numpy as np
-from src.game.GameEngine import NB_MOVES, NB_POKEMON
-
-N_INPUT = (2 * NB_MOVES * NB_POKEMON + 6 * NB_POKEMON) * 2
-N_OUT = 1
 
 
 def init_normal(layer_prev, layer_next):
@@ -21,18 +17,12 @@ def init_he(layer_prev, layer_next):
     return np.random.normal(0, np.sqrt(2 / layer_prev), (layer_next, layer_prev))
 
 
-def initialize_NN(shape, init_mode):
+def initialize_nn(shape, init_mode):
     """
-    :param shape: list of integers indicating size of intermediate layers (input and output excluded)
+    :param shape: list of integers indicating size of intermediate layers (input and output included)
     :param init_mode: weights initialization algorithm
     :return: tuple of numpy nd-arrays initialized with specified algorithm
     """
-
-    if shape[0] != N_INPUT:
-        shape = [N_INPUT] + shape
-
-    if shape[-1] != N_OUT:
-        shape = shape + [N_OUT]
 
     if len(shape) != 3:
         print("NN init may have received incorrect shapes: {}".format(shape))

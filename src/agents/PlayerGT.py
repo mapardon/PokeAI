@@ -7,25 +7,10 @@ import numpy as np
 import nashpy as nash
 
 from src.agents.AbstractPlayer import AbstractPlayer
+from src.game.GameEstimation import fill_game_with_estimation
 from src.game.PokeGame import PokeGame
-from src.game.Pokemon import Move
-from src.game.constants import MIN_POW, MIN_STAT, MAX_STAT, MIN_HP, MAX_HP
 
 warnings.filterwarnings("ignore")
-
-team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100),
-                         (("light_psychic", "PSYCHIC", 50), ("light_fire", "FIRE", 50), ("light_bug", "BUG", 50))),
-                        (("p2", "ELECTRIC", 100, 100, 100, 100),
-                         (("light_grass", "GRASS", 50), ("light_electric", "ELECTRIC", 50),
-                          ("light_ghost", "GHOST", 50))),
-                        (("p3", "GRASS", 100, 100, 100, 100),
-                         (("light_grass", "GRASS", 50), ("light_ice", "ICE", 50), ("light_fighting", "FIGHTING", 50)))],
-                       [(("d1", "WATER", 100, 100, 100, 100),
-                         (("light_steel", "STEEL", 50), ("light_water", "WATER", 50), ("light_fairy", "FAIRY", 50))),
-                        (("d2", "DRAGON", 100, 100, 100, 100),
-                         (("light_bug", "BUG", 50), ("light_dragon", "DRAGON", 50), ("light_ground", "GROUND", 50))),
-                        (("d3", "BUG", 100, 100, 100, 100),
-                         (("light_bug", "BUG", 50), ("light_normal", "NORMAL", 50), ("light_dark", "DARK", 50)))]]
 
 
 class PlayerGT(AbstractPlayer):
@@ -40,87 +25,8 @@ class PlayerGT(AbstractPlayer):
         self.payoff_mat = None
         self.weights = weights
 
-    def fill_game_with_estimation(self):
-        """
-            Agent's copy of the game is filled with estimations. This is done to have a slightly better approximation
-            than simply discarding actions concerning unknown Pokémons and moves.
-        """
-
-        own_view, opp_view = [self.game.player1_view, self.game.player2_view][::(-1) ** (self.role == "p2")]
-        own_view_own_team, own_view_opp_team = [own_view.team1, own_view.team2][::(-1) ** (self.role == "p2")]
-        opp_view_own_team, opp_view_opp_team = [opp_view.team1, opp_view.team2][::(-1) ** (self.role == "p2")]
-
-        # Give names of one team to the other (this reveals no sensitive info and allows to be coherent in the switches)
-        plv_unknown_names = {p.name for p in opp_view_opp_team} - {p.name for p in own_view_opp_team}
-        opv_unknown_names = {p.name for p in own_view_own_team} - {p.name for p in opp_view_own_team}
-        for p, q in zip(own_view_opp_team, opp_view_own_team):
-            if p.name is None:
-                p.name = plv_unknown_names.pop()
-            if q.name is None:
-                q.name = opv_unknown_names.pop()
-
-        # Unknown opponent Pokémon are default "NOTYPE" + average stat
-        for p in own_view_opp_team:
-            if p.poke_type is None:
-                p.poke_type = "NOTYPE"
-
-            if p.hp is None:
-                p.cur_hp = p.hp = (MIN_HP + MAX_HP) // 2
-            if p.atk is None:
-                p.atk = (MIN_STAT + MAX_STAT) // 2
-            if p.des is None:
-                p.des = (MIN_STAT + MAX_STAT) // 2
-            if p.spe is None:
-                p.spe = (MIN_STAT + MAX_STAT) // 2
-
-            # All Pokémon have at least 1 STAB of MIN_POW
-            if p.poke_type not in (m.move_type for m in p.moves):
-                unknown_idx = [m.move_type for m in p.moves].index(None)
-                p.moves[unknown_idx] = Move("light_" + p.poke_type.lower(), p.poke_type, MIN_POW)
-
-            # Remaining unknown move: consider 1 neutral move
-            if "light_notype" not in (m.name for m in p.moves):
-                for i, m in enumerate(p.moves):
-                    if m.name is None:
-                        p.moves[i] = Move("light_notype", "NOTYPE", MIN_POW)
-                        break
-
-        # Own Pokémons unknown to opponent are set to default, real stats are provided for Pokémon already seen
-        for p in opp_view_own_team:
-            for q in own_view_own_team:
-                if p.name == q.name:
-                    if p.poke_type is None:
-                        p.poke_type = "NOTYPE"
-                        p.cur_hp, p.hp, p.atk, p.des, p.spe = ((MIN_HP + MAX_HP) // 2, (MIN_HP + MAX_HP) // 2,
-                                                               (MIN_STAT + MAX_STAT) // 2, (MIN_STAT + MAX_STAT) // 2,
-                                                               (MIN_STAT + MAX_STAT) // 2)
-
-                    else:
-                        p.cur_hp, p.hp, p.atk, p.des, p.spe = q.cur_hp, q.hp, q.atk, q.des, q.spe
-
-            # All Pokémon have at least 1 STAB of MIN_POW
-            if p.poke_type not in (m.move_type for m in p.moves):
-                unknown_idx = [m.move_type for m in p.moves].index(None)
-                p.moves[unknown_idx] = Move("light_" + p.poke_type.lower(), p.poke_type, MIN_POW)
-
-            # Remaining unknown moves: consider 1 neutral move
-            if "light_notype" not in (m.name for m in p.moves):
-                for i, m in enumerate(p.moves):
-                    if m.name is None:
-                        p.moves[i] = Move("light_notype", "NOTYPE", MIN_POW)
-                        break
-
-        # Team of the opponent is considered our view of it: we're not supposed to know its real choices and configs
-        if self.role == "p1":
-            opp_view.team2 = deepcopy(own_view.team2)
-            opp_view.on_field2 = opp_view.team2[[i for i, p in enumerate(opp_view.team2) if p.name == opp_view.on_field2.name][0]]
-        else:
-            opp_view.team1 = deepcopy(own_view.team1)
-            opp_view.on_field1 = opp_view.team1[
-                [i for i, p in enumerate(opp_view.team1) if p.name == opp_view.on_field1.name][0]]
-
     @staticmethod
-    def compute_player_payoffz(state: PokeGame.GameStruct, player: str):
+    def compute_player_payoffz(state: PokeGame.GameStruct, player: str):  # TODO review
         p1_hp, p2_hp = sum([p.cur_hp for p in state.team1]), sum([p.cur_hp for p in state.team2])
         p1_max, p2_max = sum([p.hp for p in state.team1]), sum([p.hp for p in state.team2])
         p1_alive, p2_alive = sum([p.is_alive() for p in state.team1]), sum([p.is_alive() for p in state.team2])
@@ -304,7 +210,7 @@ class PlayerGT(AbstractPlayer):
             Choose among moves currently available for the player (current payoff matrix)
         """
 
-        self.fill_game_with_estimation()
+        fill_game_with_estimation(self.role, self.game)
         self.build_payoff_matrix()
         self.remove_strictly_dominated_strategies()
         probs, po = self.nash_equilibrium_for_move()
@@ -333,7 +239,7 @@ class PlayerGT(AbstractPlayer):
         for m in self.game.get_moves_from_state(self.role, None):
             p1m, p2m = [m, None][::(-1) ** (self.role == "p2")]
             self.game.play_round(p1m, p2m, 0.95, None)
-            self.fill_game_with_estimation()
+            fill_game_with_estimation(self.role, self.game)
             self.build_payoff_matrix()
             self.remove_strictly_dominated_strategies()
 
