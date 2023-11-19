@@ -268,7 +268,7 @@ class MyTestCase(unittest.TestCase):
 
         test_view = game.get_player_view(test_player)
 
-        self.assertEqual(test_view, exp_view)
+        self.assertEqual(test_view, exp_view, msg="exp: {}\nact: {}".format(exp_view, test_view))
 
     @parameterized.expand([
         (False, 0.9,

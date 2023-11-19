@@ -6,12 +6,17 @@ from src.game.Pokemon import Pokemon, Move
 from src.game.constants import TYPES_INDEX, TYPE_CHART, MOVES, MIN_STAT, MAX_STAT
 
 
-class TeamSpecs:
-    def __init__(self):
-        self.on_field1_idx = int()
-        self.team1 = list()
-        self.on_field2_idx = int()
-        self.team2 = list()
+def gen_default_specs(n_pokemon, n_moves):
+    ret = list()
+    for _ in range(2):  # 2-players game
+        tmp_player = list()
+        for _ in range(n_pokemon):
+            mvs = list()
+            for _ in range(n_moves):
+                mvs.append((None, None, None))
+            tmp_player.append(((None, None, None, None, None, None), tuple(mvs)))
+        ret.append(tmp_player)
+    return ret
 
 
 class PokeGame:
@@ -46,6 +51,35 @@ class PokeGame:
             test &= self.on_field2.name == other.on_field2.name
 
             return test
+
+        def __copy__(self):
+            cp = PokeGame.GameStruct(gen_default_specs(len(self.team1), len(self.team1[0].moves)))
+
+            # copy atomic elements from original object
+            for p1_from, p2_from, p1_to, p2_to in zip(self.team1, self.team2, cp.team1, cp.team2):
+                p1_to.name, p2_to.name = p1_from.name, p2_from.name
+                p1_to.poke_type, p2_to.poke_type = p1_from.poke_type, p2_from.poke_type
+                p1_to.cur_hp, p2_to.cur_hp = p1_from.cur_hp, p2_from.cur_hp
+                p1_to.hp, p2_to.hp = p1_from.hp, p2_from.hp
+                p1_to.atk, p2_to.atk = p1_from.atk, p2_from.atk
+                p1_to.des, p2_to.des = p1_from.des, p2_from.des
+                p1_to.spe, p2_to.spe = p1_from.spe, p2_from.spe
+
+                for m1_from, m2_from, m1_to, m2_to in zip(p1_from.moves, p2_from.moves, p1_to.moves, p2_to.moves):
+                    m1_to.name, m2_to.name = m1_from.name, m2_from.name
+                    m1_to.move_type, m2_to.move_type = m1_from.move_type, m2_from.move_type
+                    m1_to.base_pow, m2_to.base_pow = m1_from.base_pow, m2_from.base_pow
+
+            for p1, p2 in zip(cp.team1, cp.team2):
+                if p1.name == self.on_field1.name:
+                    cp.on_field1 = p1
+                if p2.name == self.on_field2.name:
+                    cp.on_field2 = p2
+
+            return cp
+
+        def __deepcopy__(self, memodict={}):
+            return self.__copy__()
 
         def __str__(self):
             out = "~team1~\nof1: {}\n\n".format(self.on_field1)
@@ -88,6 +122,16 @@ class PokeGame:
     def __eq__(self, other):
         return self.game_state == other.game_state and self.player1_view == other.player1_view and self.player2_view == other.player2_view
 
+    def __copy__(self):
+        cp = PokeGame(gen_default_specs(len(self.game_state.team1), len(self.game_state.team1[0].moves)))
+        cp.game_state = copy.copy(self.game_state)
+        cp.player1_view = copy.copy(self.player1_view)
+        cp.player2_view = copy.copy(self.player2_view)
+        return cp
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
+
     def __str__(self):
         return " complete view:\n{}\n player1 view:\n{}\n player2 view\n{}".format(self.game_state, self.player1_view,
                                                                                    self.player2_view)
@@ -96,7 +140,7 @@ class PokeGame:
         """ Converts the provided state in binary vector
 
         :param state: GameStruct object to be converted. If None, use object attributes
-        :param player: "p1" or "p2", indicating which view must be converted
+        :param player: "p1" or "p2", indicating which view must be converted. If None, use self.game_state
         :return: list of int representing schematically the state
         """
 
@@ -128,6 +172,7 @@ class PokeGame:
         """
         Returns a copy of the complete game (self.game_state)
         """
+
         return copy.deepcopy(self.game_state)
 
     def get_player_view(self, player: str) -> GameStruct:
@@ -156,7 +201,10 @@ class PokeGame:
             # opponent faint but player not: only opponent moves (choosing replacement)
             return [None]
 
-        switches = ["switch " + p.name for p in team if p.cur_hp > 0 and p.name != on_field.name]
+        try:
+            switches = ["switch " + p.name for p in team if p.cur_hp > 0 and p.name != on_field.name]
+        except Exception as e:
+            print()
         if not on_field.is_alive():
             moves = switches
         else:
@@ -172,7 +220,7 @@ class PokeGame:
         """
 
         state = state if state is not None else self.game_state
-        return sum([p.is_alive() for p in state.team1]) == 0 or sum([p.is_alive() for p in state.team2]) == 0
+        return not (sum([p.is_alive() for p in state.team1]) and sum([p.is_alive() for p in state.team2]))
 
     def match_result(self, state: GameStruct = None) -> (bool, bool):
         """
@@ -190,7 +238,7 @@ class PokeGame:
     def swap_states(self, game_state: GameStruct):
         self.game_state = game_state
 
-    def play_round(self, p1_move: str, p2_move: str, force_dmg: float = 0.0, force_order: bool = None):
+    def play_round(self, p1_move: str | None, p2_move: str | None, force_dmg: float = 0.0, force_order: bool = None):
         """
         Call functions related to move application (apply_player_moves & get_info_from_state), change inner and return
         information about what happened (whether any side fainted & who moved).

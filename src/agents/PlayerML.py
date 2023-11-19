@@ -25,8 +25,6 @@ def h_tangent_gradient(x):
 
 def relu(x):
     tmp = np.amax(x)
-    if tmp > 10 ** 4:
-        print(tmp)
     return x * (x > 0)
 
 
@@ -55,7 +53,6 @@ class PlayerML(AbstractPlayer):
         super().__init__(role)
 
         # process game_parameters from gui and initialize adequate variables
-        self.mode = mode
         self.network = network
         self.eps = eps
         self.act_f, self.grad = {"sigmoid": (sigmoid, sigmoid_gradient),

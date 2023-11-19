@@ -1,3 +1,4 @@
+import copy
 import random
 import unittest
 
@@ -100,14 +101,19 @@ class TestCasePokeGame(unittest.TestCase):
         game = PokeGame(team_specs_for_game)
         if down_team == "team1":
             for p in game.game_state.team1:
-                p.cur_hp = 0
+                p.cur_hp *= 0
         elif down_team == "team2":
             for p in game.game_state.team2:
-                p.cur_hp = 0
+                p.cur_hp *= 0
         else:  # not whole team down
-            game.game_state.team1[0].cur_hp = 0
-            game.game_state.team2[0].cur_hp = 0
-        self.assertEqual(game.is_end_state(game.get_cur_state()), expected_output)
+            game.game_state.team1[0].cur_hp *= 0
+            game.game_state.team2[0].cur_hp *= 0
+
+        test = None
+        test = game.get_cur_state()
+        test = test
+
+        self.assertEqual(expected_output, game.is_end_state(test))
 
     @parameterized.expand([
         (True, False, (True, False)),
@@ -405,6 +411,28 @@ class TestCasePokeGame(unittest.TestCase):
             out = game.get_numeric_repr(game.player2_view)
 
         self.assertListEqual(out, exp)
+
+    def test_deepcopy_game(self):
+        exp, game = PokeGame(team_specs_for_game), PokeGame(team_specs_for_game)
+        game_cp = copy.deepcopy(game)
+
+        # change values of original game
+        for gs in [game.game_state, game.player1_view, game.player2_view]:
+            for t in [gs.team1, gs.team2]:
+                for p in t:
+                    p.poke_type = "DARK"
+                    p.cur_hp = 99
+                    p.hp = 99
+                    p.atk = 99
+                    p.des = 99
+                    p.spe = 97
+
+                    for m in p.moves:
+                        m.name = "light_dark"
+                        m.move_type = "DARK"
+                        m.base_pow = 55
+
+        self.assertEqual(exp, game_cp)
 
 
 if __name__ == '__main__':

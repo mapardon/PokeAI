@@ -1,3 +1,4 @@
+import copy
 import random
 import unittest
 
@@ -96,6 +97,29 @@ class TestCaseGameStruct(unittest.TestCase):
         else:
             gs = PokeGame.GameStruct([team_specs[1], team_specs[0]])
             self.assertNotEqual(gs, exp_struct)
+
+    def test_copy_game_struct(self):
+        exp, gs = PokeGame.GameStruct(team_specs_for_game), PokeGame.GameStruct(team_specs_for_game)
+        gs.on_field1 = gs.team1[1]
+        exp.on_field1 = exp.team1[1]
+        gs_cp = copy.deepcopy(gs)
+
+        # change values of original object
+        for t in [gs.team1, gs.team2]:
+            for p in t:
+                p.poke_type = "DARK"
+                p.cur_hp = round(p.cur_hp * 0.95, 0)
+                p.hp = round(p.cur_hp * 0.95, 0)
+                p.atk = round(p.cur_hp * 0.95, 0)
+                p.des = round(p.cur_hp * 0.95, 0)
+                p.spe = round(p.cur_hp * 0.95, 0)
+
+                for m in p.moves:
+                    m.name = "light_dark"
+                    m.move_type = "DARK"
+                    m.base_pow = 55
+
+        self.assertEqual(exp, gs_cp)
 
 
 if __name__ == '__main__':

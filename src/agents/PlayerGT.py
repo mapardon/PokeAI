@@ -236,7 +236,7 @@ class PlayerGT(AbstractPlayer):
         mvs_and_expo = list()
 
         # generate games induced by possible switches
-        for m in self.game.get_moves_from_state(self.role, None):
+        for m in self.game.get_moves_from_state(self.role, self.game.get_player_view(self.role)):
             p1m, p2m = [m, None][::(-1) ** (self.role == "p2")]
             self.game.play_round(p1m, p2m, 0.95, None)
             fill_game_with_estimation(self.role, self.game)

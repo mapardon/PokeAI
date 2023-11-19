@@ -158,7 +158,7 @@ class GameEngine:
         while not game_finished:
             # send game to ui for display
             game_state = self.game.get_player_view("p1")
-            playable_moves = self.game.get_moves_from_state("p1", None)
+            playable_moves = self.game.get_moves_from_state("p1", self.game.get_cur_state())
 
             to_ui.put(game_state)
             to_ui.put(playable_moves)

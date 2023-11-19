@@ -80,22 +80,32 @@ class TestCasePokemon(unittest.TestCase):
         moves = [Move("heavy_fire", "FIRE", 100), Move("light_grass", "GRASS", 50)]
         p = Pokemon("p", "FIRE", (100, 100, 100, 100), moves)
 
-        test = [p.name, p.poke_type, p.cur_hp, p.hp, p.atk, p.des, p.spe, p.moves[0].name, p.moves[0].move_type, p.moves[0].base_pow, p.moves[1].name, p.moves[1].move_type, p.moves[1].base_pow]
+        test = [p.name, p.poke_type, p.cur_hp, p.hp, p.atk, p.des, p.spe,
+                p.moves[0].name, p.moves[0].move_type, p.moves[0].base_pow,
+                p.moves[1].name, p.moves[1].move_type, p.moves[1].base_pow]
         exp = ["p", "FIRE", 100, 100, 100, 100, 100, "heavy_fire", "FIRE", 100, "light_grass", "GRASS", 50]
 
         self.assertEqual(test, exp)
 
-    def test_copy_Pokemon(self):
+    def test_copy_Pokemon_1(self):
+        """
+            Test if copy operator transmits values correctly and if copied object is independent of the original
+        """
+
         moves = [Move("heavy_fire", "FIRE", 100), Move("light_grass", "GRASS", 50)]
         p = Pokemon("p", "FIRE", (100, 100, 100, 100), moves)
 
         p_cp = copy.copy(p)
 
+        # change values of original Pokémon
         p.name, p.atk, p.des, p.spe, p.poke_type = "m", 120, 80, 110, "DRAGON"
         p.moves[0].name, p.moves[0].poke_type, p.moves[0].base_pow = "heavy_dragon", "DRAGON", 120
         p.moves[1].name, p.moves[1].poke_type, p.moves[1].base_pow = "light_dragon", "DRAGON", 50
 
-        test = [p_cp.name, p_cp.poke_type, p_cp.cur_hp, p_cp.hp, p_cp.atk, p_cp.des, p_cp.spe, p_cp.moves[0].name, p_cp.moves[0].move_type, p_cp.moves[0].base_pow, p_cp.moves[1].name, p_cp.moves[1].move_type, p_cp.moves[1].base_pow]
+        # values that should be retrieved in copied object
+        test = [p_cp.name, p_cp.poke_type, p_cp.cur_hp, p_cp.hp, p_cp.atk, p_cp.des, p_cp.spe,
+                p_cp.moves[0].name, p_cp.moves[0].move_type, p_cp.moves[0].base_pow,
+                p_cp.moves[1].name, p_cp.moves[1].move_type, p_cp.moves[1].base_pow]
         exp = ["p", "FIRE", 100, 100, 100, 100, 100, "heavy_fire", "FIRE", 100, "light_grass", "GRASS", 50]
 
         self.assertEqual(test, exp)

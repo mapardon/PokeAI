@@ -13,4 +13,4 @@ class PlayerRandom(AbstractPlayer):
 
     def make_move(self, game):
 
-        return random.choice(game.get_moves_from_state(self.role, None))
+        return random.choice(game.get_moves_from_state(self.role, game.get_cur_state()))

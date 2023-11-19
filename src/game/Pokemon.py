@@ -1,9 +1,13 @@
+import copy
+
+
 class Pokemon:
     def __init__(self, name, poke_type, stats, moves):
         self.name = name  # names must be unique inside a team
 
         # off-game parameters
         self.poke_type = poke_type
+        self.cur_hp = stats[0]
         self.hp = stats[0]
         self.atk = stats[1]
         self.des = stats[2]
@@ -11,9 +15,6 @@ class Pokemon:
 
         # moves
         self.moves = moves
-
-        # in-game parameters (current hp, stats modifiers, conditions...)
-        self.cur_hp = stats[0]
 
     def is_alive(self):
         return self.cur_hp > 0
@@ -35,8 +36,13 @@ class Pokemon:
 
     def __copy__(self):
         cp_stats = [self.hp, self.atk, self.des, self.spe]
-        cp_moves = [Move(m.name, m.move_type, m.base_pow) for m in self.moves]
-        return Pokemon(self.name, self.poke_type, cp_stats, cp_moves)
+        cp_moves = [copy.deepcopy(m) for m in self.moves]
+        cp = Pokemon(self.name, self.poke_type, cp_stats, cp_moves)
+        cp.cur_hp = self.cur_hp
+        return cp
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
 
     def __repr__(self):
         mvs = " - ".join(["({})".format(str(m)) for m in self.moves])
@@ -55,6 +61,12 @@ class Move:
 
     def __eq__(self, other):
         return self.name == other.name and self.move_type == other.move_type and self.base_pow == other.base_pow
+
+    def __copy__(self):
+        return Move(self.name, self.move_type, self.base_pow)
+
+    def __deepcopy__(self, memodict={}):
+        return self.__copy__()
 
     def __str__(self):
         return "|{}, {}, {}|".format(self.name, self.move_type, self.base_pow)
