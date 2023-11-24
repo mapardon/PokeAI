@@ -1,6 +1,6 @@
 import os
 
-from src.agents.init_NN import initialize_nn
+from src.agents.nn_utils import initialize_nn
 from src.db.dbmanager import available_ml_agents, remove_ml_agent, save_new_agent
 from src.view.util.UIparameters import ManageUIParams
 

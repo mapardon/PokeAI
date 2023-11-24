@@ -3,7 +3,22 @@ import random
 from math import floor, ceil
 
 from src.game.Pokemon import Pokemon, Move
-from src.game.constants import TYPES_INDEX, TYPE_CHART, MOVES, MIN_STAT, MAX_STAT
+from src.game.constants import (TYPES, TYPES_INDEX, TYPE_CHART, MOVES, MIN_HP, MAX_HP, MIN_STAT, MAX_STAT, MIN_POW,
+                                MAX_POW)
+
+DEF_SPECS = [[((None, None, None, None, None, None),
+               ((None, None, None), (None, None, None), (None, None, None))),
+              ((None, None, None, None, None, None),
+               ((None, None, None), (None, None, None),
+                (None, None, None))),
+              ((None, None, None, None, None, None),
+               ((None, None, None), (None, None, None), (None, None, None)))],
+             [((None, None, None, None, None, None),
+               ((None, None, None), (None, None, None), (None, None, None))),
+              ((None, None, None, None, None, None),
+               ((None, None, None), (None, None, None), (None, None, None))),
+              ((None, None, None, None, None, None),
+               ((None, None, None), (None, None, None), (None, None, None)))]]
 
 
 def gen_default_specs(n_pokemon, n_moves):
@@ -17,6 +32,50 @@ def gen_default_specs(n_pokemon, n_moves):
             tmp_player.append(((None, None, None, None, None, None), tuple(mvs)))
         ret.append(tmp_player)
     return ret
+
+
+def gen_random_specs(n_pokemon, n_moves):
+    """
+        Generate random specs for 1 team for game construction
+
+        team_specs have the following shape:
+        [[( (t1_p1_name, t1_p1_type, p1_hp, p1_atk, ...), ((a1_name, a1_type, a1_pow), ...) ), (t1_p2_hp, ...), ...],
+         [( (t2_p1_name, ...), ... ), ...]]
+    """
+
+    out, names = list(), list()
+
+    while len(names) < n_pokemon:
+        p_name = ''.join([chr(random.randint(ord('a'), ord('z'))) for _ in range(3)])
+        if p_name not in names:  # can't have duplicates names
+            names.append(p_name)
+
+    for _, p_name in zip(range(n_pokemon), names):
+        # Pokemon
+        p_type = random.choice(TYPES)
+        p_stats = [random.randint(MIN_HP, MAX_HP)] + [random.randint(MIN_STAT, MAX_STAT) for _ in range(3)]
+        poke = [tuple([p_name, p_type] + p_stats)]
+
+        # Attacks
+        temp_mv = list()
+        stab = poke[0][1]
+        cp_types = [t for t in TYPES if t != stab]
+
+        # STAB
+        a_type = stab
+        a_power = MIN_POW
+        a_name = "light_" + a_type.lower()
+        temp_mv.append((a_name, a_type, a_power))
+
+        for _ in range(n_moves - 1):
+            a_type = cp_types.pop(random.randrange(len(cp_types)))
+            a_power = random.choice([MIN_POW, MAX_POW])
+            a_name = ("light_" if a_power == 50 else "heavy_") + a_type.lower()
+            temp_mv.append((a_name, a_type, a_power))
+        poke.append(tuple(temp_mv))
+        out.append(tuple(poke))
+
+    return out
 
 
 class PokeGame:
@@ -54,6 +113,7 @@ class PokeGame:
 
         def __copy__(self):
             cp = PokeGame.GameStruct(gen_default_specs(len(self.team1), len(self.team1[0].moves)))
+            #cp = PokeGame.GameStruct(DEF_SPECS)
 
             # copy atomic elements from original object
             for p1_from, p2_from, p1_to, p2_to in zip(self.team1, self.team2, cp.team1, cp.team2):
@@ -93,18 +153,15 @@ class PokeGame:
             return out
 
     def __init__(self, teams_specs):
-        """
-            'team_specs' has the following shape:
-
-            [[( (t1_p1_name, t1_p1_type, p1_hp, p1_atk, ...), ((a1_name, a1_type, a1_pow), ...) ), (t1_p2_hp, ...), ...],
-             [( (t2_p1_name, ...), ... ), ...]]
-        """
 
         self.game_state: PokeGame.GameStruct = PokeGame.GameStruct(teams_specs)
         # For player pov, opponent team unknown (NB: suppose all Pokémon have same # of attacks)
-        unknown_specs = [(tuple([None for _ in range(6)]), tuple([(None, None, None) for _ in range(len(teams_specs[0][0][1]))]))]
-        self.player1_view: PokeGame.GameStruct = PokeGame.GameStruct([teams_specs[0]] + [unknown_specs * len(teams_specs[1])])
-        self.player2_view: PokeGame.GameStruct = PokeGame.GameStruct([unknown_specs * len(teams_specs[0])] + [teams_specs[1]])
+        unknown_specs = [
+            (tuple([None for _ in range(6)]), tuple([(None, None, None) for _ in range(len(teams_specs[0][0][1]))]))]
+        self.player1_view: PokeGame.GameStruct = PokeGame.GameStruct(
+            [teams_specs[0]] + [unknown_specs * len(teams_specs[1])])
+        self.player2_view: PokeGame.GameStruct = PokeGame.GameStruct(
+            [unknown_specs * len(teams_specs[0])] + [teams_specs[1]])
 
         # Players witness name, type and hp of first opponent Pokémon (+ know they have a light power STAB)
         p2_lead_view, p2_lead_src = self.player1_view.team2[0], self.game_state.on_field2
@@ -124,6 +181,7 @@ class PokeGame:
 
     def __copy__(self):
         cp = PokeGame(gen_default_specs(len(self.game_state.team1), len(self.game_state.team1[0].moves)))
+        #cp = PokeGame(DEF_SPECS)
         cp.game_state = copy.copy(self.game_state)
         cp.player1_view = copy.copy(self.player1_view)
         cp.player2_view = copy.copy(self.player2_view)
@@ -201,10 +259,8 @@ class PokeGame:
             # opponent faint but player not: only opponent moves (choosing replacement)
             return [None]
 
-        try:
-            switches = ["switch " + p.name for p in team if p.cur_hp > 0 and p.name != on_field.name]
-        except Exception as e:
-            print()
+        switches = ["switch " + p.name for p in team if p.cur_hp > 0 and p.name != on_field.name]
+
         if not on_field.is_alive():
             moves = switches
         else:
@@ -287,7 +343,7 @@ class PokeGame:
         # test if any side has fainted & which side moved (opponent lost hp or player switched) & who moved first
         p1_moved = False
         if p1_move is not None:
-            p1_moved |= p1_move is not None and "switch" not in p1_move and\
+            p1_moved |= p1_move is not None and "switch" not in p1_move and \
                         (self.game_state.on_field1.cur_hp > 0 or
                          self.game_state.on_field1.spe > self.game_state.on_field2.spe or
                          self.game_state.on_field1.spe == self.game_state.on_field2.spe and order)
@@ -295,7 +351,7 @@ class PokeGame:
 
         p2_moved = False
         if p2_move is not None:
-            p2_moved |= p2_move is not None and "switch" not in p2_move and\
+            p2_moved |= p2_move is not None and "switch" not in p2_move and \
                         (self.game_state.on_field2.cur_hp > 0 or
                          self.game_state.on_field2.spe > self.game_state.on_field1.spe or
                          self.game_state.on_field1.spe == self.game_state.on_field2.spe and not order)
@@ -353,7 +409,8 @@ class PokeGame:
 
         return floor(dmg)
 
-    def apply_player_moves(self, game_state: GameStruct, p1_move: str | None, p2_move: str | None, force_dmg: float = 0.0,
+    def apply_player_moves(self, game_state: GameStruct, p1_move: str | None, p2_move: str | None,
+                           force_dmg: float = 0.0,
                            force_order: bool = None):
         """
         Execute player choices with regard to game rules to the game_state passed as parameter. This function applies
@@ -493,7 +550,7 @@ class PokeGame:
         lo_num, lo_den = (50 * target.des * ceil(hp_loss / (1 * stab * type_aff) - 2)), (42 * move.base_pow)
         hi_num, hi_den = (50 * target.des * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2)), (42 * move.base_pow)
         if 0 in (lo_den, hi_den):
-            # if hp_loss is very small, denom ends up in 2 - 2, but such case gives no useful info & it's just ignored
+            # if hp_loss is very small, denom ends up in 2 - 2, but such case gives no useful info & is just ignored
             return None, None
 
         lo, hi = ceil(lo_num / lo_den), floor(hi_num / hi_den)
@@ -522,7 +579,7 @@ class PokeGame:
         lo_num, lo_den = (42 * move.base_pow * attacker.atk), (50 * ceil((hp_loss + 1) / (0.85 * stab * type_aff) - 2))
         hi_num, hi_den = (42 * move.base_pow * attacker.atk), (50 * ceil(hp_loss / (1 * stab * type_aff) - 2))
         if 0 in (lo_den, hi_den):
-            # if hp_loss is very small, denom ends up in 2 - 2, but such case gives no useful info & it's just ignored
+            # if hp_loss is very small, denom ends up in 2 - 2, but such case gives no useful info & is just ignored
             return None, None
 
         lo, hi = ceil(lo_num / lo_den), floor(hi_num / hi_den)

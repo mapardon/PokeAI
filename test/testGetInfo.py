@@ -3,6 +3,7 @@ import unittest
 
 from parameterized import parameterized
 
+from src.game.GameEstimation import fill_game_with_estimation
 from src.game.PokeGame import PokeGame
 from src.game.Pokemon import Pokemon, Move
 from src.game.constants import MIN_STAT, MAX_STAT
@@ -192,10 +193,8 @@ class MyTestCase(unittest.TestCase):
          [[(("p1", "FIRE", 100, None, None, None),
             (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
            ((None, None, None, None, None, None), ((None, None, None), (None, None, None)))],
-          [(("d1", "WATER", 100, 100, 100, 100),
-            (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
-           (("d2", "DRAGON", 100, 80, 100, 80),
-            (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
+          [(("d1", "WATER", 100, 100, 100, 100), (("light_steel", "STEEL", 50), ("heavy_water", "WATER", 100))),
+           (("d2", "DRAGON", 100, 80, 100, 80), (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
         ("p1", ("switch p2", "switch p1"), ("light_steel", "light_steel"),
          [[(("p1", "FIRE", 100, 100, 100, 100),
             (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100))),
@@ -215,9 +214,10 @@ class MyTestCase(unittest.TestCase):
             (("light_bug", "BUG", 50), ("heavy_dragon", "DRAGON", 100)))]]),
         ("p1", ["heavy_fire"], ["light_steel"],
          [[(("p1z", "FIRE", 100, 100, 100, 100), (("light_psychic", "PSYCHIC", 50), ("heavy_fire", "FIRE", 100)))],
-          [(("d1", "ICE", 100, None, None, None), ((None, None, None), (None, None, None)))]])
+          [(("d1", "ICE", 100, None, None, None), ((None, None, None), (None, None, None)))]], team_specs3)
     ])
-    def test_directly_available_info(self, test_player, player1_moves, player2_moves, exp_specs):
+    def test_directly_available_info(self, test_player, player1_moves, player2_moves, exp_specs,
+                                     specs=team_specs_for_game, run_estimation=False):
         """ Try to cover as much as possible different case that could occur during a game
 
         :param test_player: 'p1' or 'p2', indicating tested player
@@ -227,7 +227,9 @@ class MyTestCase(unittest.TestCase):
             reached by tested function
         """
 
-        game = PokeGame(team_specs3 if exp_specs[0][0][0][0] == "p1z" else team_specs_for_game)
+        game = PokeGame(specs)
+        if run_estimation:
+            fill_game_with_estimation(test_player, game)
 
         for player1_move, player2_move in zip(player1_moves, player2_moves):
             game.apply_player_moves(game.game_state, player1_move, player2_move, 0.85, True)
@@ -241,7 +243,8 @@ class MyTestCase(unittest.TestCase):
             p2_moved = (player1_move is not None and "switch" in player1_move) or (
                     player2_move is not None and "switch" in player2_move) or \
                        (player2_move is not None and "switch" not in player2_move and
-                        (game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
+                        (
+                                    game.game_state.on_field2.cur_hp > 0 or game.game_state.on_field2.spe > game.game_state.on_field1.spe))
             game.directly_available_info(test_player, player2_move if test_player == "p1" else player1_move,
                                          {"p1_moved": p1_moved, "p2_moved": p2_moved})
 

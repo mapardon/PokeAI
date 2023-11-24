@@ -1,0 +1,59 @@
+from abc import ABC
+
+import numpy as np
+
+from src.agents.AbstractPlayer import AbstractPlayer
+from src.agents.nn_utils import sigmoid, sigmoid_gradient, hyperbolic_tangent, h_tangent_gradient, relu, relu_gradient
+from src.game.PokeGame import PokeGame
+
+
+class PlayerNN(AbstractPlayer, ABC):
+    """
+        Base class for strategies using neural network (reinforcement learning agent and genetic algorithm agent)
+    """
+    def __init__(self, role, network: tuple[np.array], act_f: str):
+        super().__init__(role)
+
+        self.network = network
+        self.act_f, self.grad = {"sigmoid": (sigmoid, sigmoid_gradient),
+                                 "hyperbolic tangent": (hyperbolic_tangent, h_tangent_gradient),
+                                 "ReLU": (relu, relu_gradient)}[act_f]
+
+    def forward_pass(self, state: list):
+        """ Use the knowledge of the network to make an estimation of the victory probability of the first player
+        of a provided game state. """
+
+        W_int = self.network[0]
+        W_out = self.network[1]
+        P_int = self.act_f(np.dot(W_int, state))
+        p_out = self.act_f(P_int.dot(W_out))
+
+        return p_out if self.act_f == sigmoid else sigmoid(p_out)
+
+    # Moves ranking #
+
+    def move_selector(self, game: PokeGame) -> str:
+        """ Returns the move evaluated as most promising
+
+        :returns: action of the player """
+
+        p2f = (-1) ** (self.role == "p2")  # if agent is player2, estimations are interpreted inversely
+        min_lines = list()  # worst outcome for each player option (depending on opponent options)
+        pl, opp = ["p1", "p2"][::(-1) ** (self.role == "p2")]
+        view = game.player1_view if self.role == "p1" else game.player2_view
+
+        # iterate through possible options for the player and keep the "least bad"
+        for pmv in game.get_moves_from_state(pl, view):
+            min_lines += [(None, 1)]
+            for omv in game.get_moves_from_state(opp, view):
+                p1mv, p2mv = (pmv, omv) if self.role == "p1" else (omv, pmv)
+                s = game.get_numeric_repr(game.apply_player_moves(game.get_player_view(self.role), p1mv, p2mv))
+                p = p2f * self.forward_pass(s)
+                # TODO: average estimation
+                if p < min_lines[-1][1]:
+                    min_lines[-1] = (pmv, p)
+
+        # TODO: random draw if several best values?
+        best_move = max(min_lines, key=lambda x: x[1])[0]
+
+        return best_move

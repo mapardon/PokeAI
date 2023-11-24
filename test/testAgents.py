@@ -8,8 +8,8 @@ from src.agents.PlayerBM import PlayerBM
 from src.agents.PlayerGT import PlayerGT
 from src.agents.PlayerMDM import PlayerMDM
 from src.agents.PlayerRandom import PlayerRandom
-from src.agents.init_NN import initialize_nn, N_INPUT
-from src.agents.PlayerML import PlayerML
+from src.agents.nn_utils import initialize_nn, N_INPUT
+from src.agents.PlayerRL import PlayerRL
 from src.game.PokeGame import PokeGame
 from src.game.constants import MIN_POW
 
@@ -61,7 +61,7 @@ class MyTestCase(unittest.TestCase):
         nstate = [random.randint(0, 1) for _ in range(N_INPUT)]
 
         try:
-            player_ml = PlayerML("p1", "train", network, "Q-learning", None, "sigmoid", 0.3, 0.15, "eps-greedy")
+            player_ml = PlayerRL("p1", "train", network, "Q-learning", None, "sigmoid", 0.3, 0.15, "eps-greedy")
             pre = player_ml.forward_pass(pstate)
             player_ml.backpropagation(PokeGame(team_specs_for_game), pstate, nstate, 0.75)
             post = player_ml.forward_pass(pstate)

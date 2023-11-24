@@ -1,25 +1,25 @@
-import random
+import copy
+import os
+from math import ceil
 from queue import Queue
-from typing import Union
 
-from src.agents import AbstractPlayer
 from src.agents.PlayerBM import PlayerBM
+from src.agents.PlayerGA import PlayerGA
 from src.agents.PlayerGT import PlayerGT
 from src.agents.PlayerHuman import PlayerHuman
 from src.agents.PlayerMDM import PlayerMDM
-from src.agents.PlayerML import PlayerML
+from src.agents.PlayerNN import PlayerNN
+from src.agents.PlayerRL import PlayerRL
 from src.agents.PlayerRandom import PlayerRandom
 from src.db.dbmanager import retrieve_team, load_ml_agent, update_ml_agent
-from src.game.PokeGame import PokeGame
-from src.game.constants import TYPES, MIN_HP, MAX_HP, MIN_STAT, MAX_STAT, MIN_POW, MAX_POW
+from src.game.GameEstimation import fill_game_with_estimation
+from src.game.PokeGame import PokeGame, gen_random_specs
+from src.game.constants import NB_POKEMON, NB_MOVES, MAX_ROUNDS
 from src.view.util.UIparameters import FightUIParams, TestUIParams, TrainUIParams
-
-NB_POKEMON = 3
-NB_MOVES = 3
 
 
 class GameEngine:
-    def __init__(self, ui_input: Union[FightUIParams, TestUIParams, TrainUIParams], from_ui: Queue = None,
+    def __init__(self, ui_input: FightUIParams | TestUIParams | TrainUIParams, from_ui: Queue = None,
                  to_ui: Queue = None):
         """
 
@@ -28,19 +28,16 @@ class GameEngine:
         :param to_ui: Shared object to communicate with UI
         """
 
-        # retrieve specified teams specs from database to initialize game
-        self.game = None
-        players = self.init_players(ui_input)
         self.ml_names = [ui_input.ml1, ui_input.ml2]
 
         if ui_input.mode == "fight":
-            self.fight_mode(players, ui_input, from_ui, to_ui)
+            self.fight_mode(ui_input, from_ui, to_ui)
 
         elif ui_input.mode == "train":
-            self.train_mode(players, ui_input, to_ui)
+            self.train_mode(ui_input, to_ui)
 
         elif ui_input.mode == "test":
-            self.test_mode(players, ui_input, to_ui)
+            self.test_mode(ui_input, to_ui)
 
     # init team and players
 
@@ -53,39 +50,8 @@ class GameEngine:
         :return: specifications of the team (cf. PokeGame to see the shape)
         """
 
-        out = list()
         if team_src == "random":
-            names = list()
-
-            while len(names) < NB_POKEMON:
-                p_name = ''.join([chr(random.randint(ord('a'), ord('z'))) for _ in range(3)])
-                if p_name not in names:  # can't have duplicates names
-                    names.append(p_name)
-
-            for _, p_name in zip(range(NB_POKEMON), names):
-                # Pokemon
-                p_type = random.choice(TYPES)
-                p_stats = [random.randint(MIN_HP, MAX_HP)] + [random.randint(MIN_STAT, MAX_STAT) for _ in range(3)]
-                poke = [tuple([p_name, p_type] + p_stats)]
-
-                # Attacks
-                temp_mv = list()
-                stab = poke[0][1]
-                cp_types = [t for t in TYPES if t != stab]
-
-                # STAB
-                a_type = stab
-                a_power = MIN_POW
-                a_name = "light_" + a_type.lower()
-                temp_mv.append((a_name, a_type, a_power))
-
-                for _ in range(NB_MOVES - 1):
-                    a_type = cp_types.pop(random.randrange(len(cp_types)))
-                    a_power = random.choice([MIN_POW, MAX_POW])
-                    a_name = ("light_" if a_power == 50 else "heavy_") + a_type.lower()
-                    temp_mv.append((a_name, a_type, a_power))
-                poke.append(tuple(temp_mv))
-                out.append(tuple(poke))
+            out = gen_random_specs(NB_POKEMON, NB_MOVES)
 
         else:
             out = retrieve_team(team_src)
@@ -123,10 +89,13 @@ class GameEngine:
                     network = players[0].network
                 lr = ui_input.lr if ui_input.mode == "train" else None
                 mvsel = ui_input.mvsel if ui_input.mode == "train" else "eps-greedy"
-                players.append(PlayerML(n, ui_input.mode, network, ls, lamb, act_f, ui_input.eps, lr, mvsel))
+                players.append(PlayerRL(n, ui_input.mode, network, ls, lamb, act_f, ui_input.eps, lr, mvsel))
 
             elif p == "gt":
                 players.append(PlayerGT(n))
+
+            elif p == "ga":
+                players.append(PlayerGA(n, ui_input.ml1 if n == "p1" else ui_input.ml2, ui_input.ml1 if n == "p2" else ui_input.ml2))
 
             else:
                 players.append(None)
@@ -135,18 +104,17 @@ class GameEngine:
 
     # game loops
 
-    def fight_mode(self, players: list[AbstractPlayer, AbstractPlayer],
-                   ui_input: Union[FightUIParams, TestUIParams, TrainUIParams], from_ui: Queue, to_ui: Queue):
+    def fight_mode(self, ui_input: FightUIParams | TestUIParams | TrainUIParams, from_ui: Queue, to_ui: Queue):
         """
         Game loop for game in terminal, (human vs computer or computer vs computer)
 
-        :param players: List of two initialized Player objects
         :param ui_input: FightUIParams object containing inputs retrieved from UI
         :param from_ui: Queue object used to receive messages sent by the controller
         :param to_ui: Queue object used to send messages to the controller
         """
 
-        self.game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
+        game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
+        players = self.init_players(ui_input)
         turn_nb = 1
 
         player1_human = isinstance(players[0], PlayerHuman)
@@ -157,8 +125,8 @@ class GameEngine:
 
         while not game_finished:
             # send game to ui for display
-            game_state = self.game.get_player_view("p1")
-            playable_moves = self.game.get_moves_from_state("p1", self.game.get_cur_state())
+            game_state = game.get_player_view("p1")
+            playable_moves = game.get_moves_from_state("p1", game.get_cur_state())
 
             to_ui.put(game_state)
             to_ui.put(playable_moves)
@@ -168,13 +136,13 @@ class GameEngine:
             if player1_human:
                 player1_move = from_ui.get()
             else:
-                player1_move = players[0].make_move(self.game)
+                player1_move = players[0].make_move(game)
 
             # player 2 move
-            player2_move = players[1].make_move(self.game)
+            player2_move = players[1].make_move(game)
 
             # send to game
-            turn_res = self.game.play_round(player1_move, player2_move)
+            turn_res = game.play_round(player1_move, player2_move)
             input(turn_res)
             player1_move = "None" if player1_move is None else player1_move
             player2_move = "None" if player2_move is None else player2_move
@@ -182,44 +150,44 @@ class GameEngine:
             to_ui.put(last_moves)
             to_ui.put(turn_res)
 
-            game_finished = self.game.is_end_state(None)
+            game_finished = game.is_end_state(None)
             to_ui.put(game_finished)
 
-            if not game_finished and self.game.game_state.on_field1.cur_hp > 0 and self.game.game_state.on_field2.cur_hp > 0:
+            if not game_finished and game.game_state.on_field1.cur_hp > 0 and game.game_state.on_field2.cur_hp > 0:
                 # turn change once attacks have been applied and fainted Pokemon switched
                 turn_nb += 1
 
         # send final state
-        game_state = self.game.get_player_view("p1")
+        game_state = game.get_player_view("p1")
         to_ui.put(game_state)
-        result = "player 1 victory" if self.game.match_result()[0] else "player 2 victory"
+        result = "player 1 victory" if game.match_result()[0] else "player 2 victory"
         to_ui.put([result])
 
-    def train_mode(self, players, ui_input, ui_communicate=None):
+    def train_mode(self, ui_input, ui_communicate=None):
         """
 
-        :param players: 2-tuple with Player objects that will run "make_move" function
         :param ui_input: UIParams object for the communication from the menu
         :param ui_communicate: shared object with master thread to communicate progression to UI (unused if not called
             from UI)
         :return: None
         """
 
-        max_rounds = 50
+        max_rounds = MAX_ROUNDS
+        players = self.init_players(ui_input)
 
         for i in range(ui_input.nb):
-            self.game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
+            game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
             turn_nb = 1
             game_finished = False
 
             # game loop
             while not game_finished and turn_nb < max_rounds:
-                of1, of2 = self.game.game_state.on_field1, self.game.game_state.on_field2
-                player1_move = players[0].make_move(self.game) if of1.cur_hp and of2.cur_hp or not of1.cur_hp else None
-                player2_move = players[1].make_move(self.game) if of1.cur_hp and of2.cur_hp or not of2.cur_hp else None
+                of1, of2 = game.game_state.on_field1, game.game_state.on_field2
+                player1_move = players[0].make_move(game) if of1.cur_hp and of2.cur_hp or not of1.cur_hp else None
+                player2_move = players[1].make_move(game) if of1.cur_hp and of2.cur_hp or not of2.cur_hp else None
 
-                turn_res = self.game.play_round(player1_move, player2_move)
-                game_finished = self.game.is_end_state(None)
+                _ = game.play_round(player1_move, player2_move)
+                game_finished = game.is_end_state(None)
 
                 if not game_finished and of1.cur_hp > 0 and of2.cur_hp > 0:
                     turn_nb += 1
@@ -228,51 +196,70 @@ class GameEngine:
             if ui_communicate is not None:
                 ui_communicate["prog"] += 1
 
-            p1_victory, p2_victory = bool(self.game.match_result())
+            p1_victory, p2_victory = bool(game.match_result())
             # TODO: call backtracking directly
-            if isinstance(players[0], PlayerML):
-                players[0].end_game(self.game, p1_victory)
+            if isinstance(players[0], PlayerRL):
+                players[0].end_game(game, p1_victory)
                 update_ml_agent(self.ml_names[0], players[0].network)
-            if isinstance(players[1], PlayerML):
-                players[1].end_game(self.game, p2_victory)
+            if isinstance(players[1], PlayerRL):
+                players[1].end_game(game, p2_victory)
                 update_ml_agent(self.ml_names[1], players[1].network)
 
-    def test_mode(self, players, ui_input, ui_communicate=None):
+    def test_mode(self, ui_input, ui_communicate=None):
         """
 
-        :param players: 2-tuple with Player objects that will run "make_move" function
         :param ui_input: UIParams object for the communication from the menu
         :param ui_communicate: shared object with master thread to communicate progression to UI
-        :return: None
+        :return: Victory rate of player 1
         """
 
-        max_rounds = 50
+        players = self.init_players(ui_input)
         p1_victories = int()
 
         for i in range(ui_input.nb):
-            self.game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
+            game = PokeGame([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
             turn_nb = 1
             game_finished = False
 
             # game loop
-            while not game_finished and turn_nb < max_rounds:
-                of1, of2 = self.game.game_state.on_field1, self.game.game_state.on_field2
-                player1_move = players[0].make_move(self.game) if of1.cur_hp and of2.cur_hp or not of1.cur_hp else None
-                player2_move = players[1].make_move(self.game) if of1.cur_hp and of2.cur_hp or not of2.cur_hp else None
+            while not game_finished and turn_nb < MAX_ROUNDS:
 
-                self.game.play_round(player1_move, player2_move)
-                game_finished = self.game.is_end_state(None)
+                if isinstance(players[0], PlayerNN) or isinstance(players[0], PlayerGT):
+                    game_p1 = copy.deepcopy(game)
+                    fill_game_with_estimation("p1", game_p1)
+                else:
+                    game_p1 = game
+
+                if isinstance(players[1], PlayerNN) or isinstance(players[1], PlayerGT):
+                    game_p2 = copy.deepcopy(game)
+                    fill_game_with_estimation("p2", game)
+                else:
+                    game_p2 = game
+
+                of1, of2 = game.game_state.on_field1, game.game_state.on_field2
+                player1_move = players[0].make_move(game_p1) if of1.cur_hp and of2.cur_hp or not of1.cur_hp else None
+                player2_move = players[1].make_move(game_p2) if of1.cur_hp and of2.cur_hp or not of2.cur_hp else None
+
+                game.play_round(player1_move, player2_move)
+                game_finished = game.is_end_state(None)
 
                 if not game_finished and of1.cur_hp > 0 and of2.cur_hp > 0:
                     # turn change once attacks have been applied and fainted Pokemon switched
                     turn_nb += 1
 
-            p1_victories += self.game.match_result()[0]
+            p1_victories += game.match_result()[0]
 
             # UI communication
-            if ui_communicate is not None and not i % 10:
-                ui_communicate.put(i)
+            if not i % 10:
+                if ui_communicate is not None:
+                    ui_communicate.put(i)
+                elif None:
+                    os.system("clear" if os.name == "posix" else "cls")
+                    n_syms = ceil(20 * i / ui_input.nb)
+                    print("Progression ({}): {}".format(i, "#" * n_syms + "_" * (20 - n_syms)))
 
         if ui_communicate is not None:
             ui_communicate.put("testing ended")
             ui_communicate.put(p1_victories / ui_input.nb)
+
+        return round(p1_victories / ui_input.nb, 4)

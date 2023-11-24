@@ -1,38 +1,10 @@
 import random
 import numpy as np
-from src.agents.AbstractPlayer import AbstractPlayer
-
-
-# Activation functions #
+from src.agents.PlayerNN import PlayerNN
 from src.game.PokeGame import PokeGame
 
 
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
-
-
-def sigmoid_gradient(x):
-    return x * (1 - x)
-
-
-def hyperbolic_tangent(x):
-    return np.tanh(x)
-
-
-def h_tangent_gradient(x):
-    return 1 / np.power(np.cosh(x), 2)
-
-
-def relu(x):
-    tmp = np.amax(x)
-    return x * (x > 0)
-
-
-def relu_gradient(x):
-    return 1 * (x > 0)
-
-
-class PlayerML(AbstractPlayer):
+class PlayerRL(PlayerNN):
 
     def __init__(self, role: str, mode: str, network: tuple, ls: str, lamb: float | None, act_f: str, eps: float,
                  lr: float, mv_sel: str = None):
@@ -50,14 +22,10 @@ class PlayerML(AbstractPlayer):
         :param mv_sel: "max_low" or "max_avg", rule to select a move
         """
 
-        super().__init__(role)
+        super().__init__(role, network, act_f)
 
         # process game_parameters from gui and initialize adequate variables
-        self.network = network
         self.eps = eps
-        self.act_f, self.grad = {"sigmoid": (sigmoid, sigmoid_gradient),
-                                 "hyperbolic tangent": (hyperbolic_tangent, h_tangent_gradient),
-                                 "ReLU": (relu, relu_gradient)}[act_f]
 
         if mode == "train":
             self.lamb = lamb
@@ -93,11 +61,9 @@ class PlayerML(AbstractPlayer):
     # Moves ranking #
 
     def move_selector(self, game: PokeGame) -> str:
-        """ Returns the move evaluated as most promising (or a random one at a frequency of self.eps)
+        """ Returns the move evaluated as most promising or a random one at a frequency of self.eps
 
         :returns: action of the player """
-
-        cur_move = None
 
         # random move
         if random.random() < self.eps:
@@ -107,44 +73,14 @@ class PlayerML(AbstractPlayer):
             for pmv in game.get_moves_from_state(pl, view):
                 for omv in game.get_moves_from_state(opp, view):
                     options.append((pmv, omv))
-            cur_move = random.choice(options)[0]
+            move = random.choice(options)[0]
 
-        # best move
-        p2f = (-1) ** (self.role == "p2")  # if agent is player2, estimations are interpreted inversely
-        min_lines = list()  # worst outcome for each player option (depending on opponent options)
-        pl, opp = ["p1", "p2"][::(-1) ** (self.role == "p2")]
-        view = game.player1_view if self.role == "p1" else game.player2_view
+        else:
+            move = super().move_selector(game)
 
-        # iterate through possible options for the player and keep the "least bad"
-        for pmv in game.get_moves_from_state(pl, view):
-            min_lines += [(None, 1)]
-            for omv in game.get_moves_from_state(opp, view):
-                p1mv, p2mv = (pmv, omv) if self.role == "p1" else (omv, pmv)
-                s = game.get_numeric_repr(game.apply_player_moves(game.get_player_view(self.role), p1mv, p2mv))
-                p = p2f * self.forward_pass(s)
-                # TODO: average estimation
-                if p < min_lines[-1][1]:
-                    min_lines[-1] = (pmv, p)
+        return move
 
-        # TODO: random draw if several best values?
-        best_move = max(min_lines, key=lambda x: x[1])[0]
-        if cur_move is None:
-            cur_move = best_move
-
-        return cur_move
-
-    # forward pass and backpropagation for different learning algorithms
-
-    def forward_pass(self, state: list):
-        """ Use the knowledge of the network to make an estimation of the victory probability of the first player
-        of a provided game state. """
-
-        W_int = self.network[0]
-        W_out = self.network[1]
-        P_int = self.act_f(np.dot(W_int, state))
-        p_out = self.act_f(P_int.dot(W_out))
-
-        return p_out if self.act_f == sigmoid else sigmoid(p_out)
+    # Learning algorithms #
 
     def sarsa_backpropagation(self, game_state: list[int], game_finished: bool, p1_victory: bool):
         """
