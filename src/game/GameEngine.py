@@ -11,7 +11,7 @@ from src.agents.PlayerMDM import PlayerMDM
 from src.agents.PlayerNN import PlayerNN
 from src.agents.PlayerRL import PlayerRL
 from src.agents.PlayerRandom import PlayerRandom
-from src.db.dbmanager import retrieve_team, load_ml_agent, update_ml_agent
+from src.db.dbmanager import load_rl_agent, update_ga_agent
 from src.game.GameEstimation import fill_game_with_estimation
 from src.game.PokeGame import PokeGame, gen_random_specs
 from src.game.constants import NB_POKEMON, NB_MOVES, MAX_ROUNDS
@@ -42,19 +42,19 @@ class GameEngine:
     # init team and players
 
     @staticmethod
-    def get_team_specs(team_src):
+    def get_team_specs(team_src: list | str):
         """
-        Retrieves specifications to build Pokémon team. Team is either taken from database or generated randomly.
+        Retrieves specifications to build Pokémon team (NB: specs are retrieved for 1 team, not both players)
 
-        :param team_src: name of the team in database or 'random' to generate a team
-        :return: specifications of the team (cf. PokeGame to see the shape)
+        :param team_src: Actual team specs or 'random' to call random team specs generator
+        :return: Specifications of the team (cf. PokeGame to see the shape)
         """
 
         if team_src == "random":
             out = gen_random_specs(NB_POKEMON, NB_MOVES)
 
         else:
-            out = retrieve_team(team_src)
+            out = team_src
 
         return out
 
@@ -81,21 +81,29 @@ class GameEngine:
             elif p == "bm":
                 players.append(PlayerBM(n))
 
-            elif p == "ml":
-                network, ls, lamb, act_f = load_ml_agent(ui_input.ml1 if n == "p1" else ui_input.ml2)
+            elif p == "rl":
                 uip = ui_input
+                if n == "p1":
+                    network, ls, act_f = load_rl_agent(uip.ml1) if type(uip.ml1) == str else uip.ml1
+                elif n == "p2":
+                    network, ls, act_f = load_rl_agent(uip.ml2) if type(uip.ml2) == str else uip.ml2
+
                 if uip.agent1type == "ml" and uip.agent2type == "ml" and uip.ml1 == uip.ml2 and p == "p2" and uip.mode == "train":
                     # train mode, both player in ML and same NN -> share object
                     network = players[0].network
                 lr = ui_input.lr if ui_input.mode == "train" else None
-                mvsel = ui_input.mvsel if ui_input.mode == "train" else "eps-greedy"
-                players.append(PlayerRL(n, ui_input.mode, network, ls, lamb, act_f, ui_input.eps, lr, mvsel))
+                players.append(PlayerRL(n, ui_input.mode, network, ls, act_f, ui_input.eps, lr))
 
             elif p == "gt":
                 players.append(PlayerGT(n))
 
             elif p == "ga":
-                players.append(PlayerGA(n, ui_input.ml1 if n == "p1" else ui_input.ml2, ui_input.ml1 if n == "p2" else ui_input.ml2))
+                uip = ui_input
+                if n == "p1":
+                    network, act_f = load_rl_agent(uip.ml1) if type(uip.ml1) == str else uip.ml1
+                elif n == "p2":
+                    network, act_f = load_rl_agent(uip.ml2) if type(uip.ml2) == str else uip.ml2
+                players.append(PlayerGA(n, network, act_f))
 
             else:
                 players.append(None)
@@ -172,7 +180,6 @@ class GameEngine:
         :return: None
         """
 
-        max_rounds = MAX_ROUNDS
         players = self.init_players(ui_input)
 
         for i in range(ui_input.nb):
@@ -181,13 +188,34 @@ class GameEngine:
             game_finished = False
 
             # game loop
-            while not game_finished and turn_nb < max_rounds:
+            while not game_finished and turn_nb < MAX_ROUNDS:
+
+                # Some agents require None values to be estimated
+                if isinstance(players[0], PlayerNN) or isinstance(players[0], PlayerGT):
+                    game_p1 = copy.deepcopy(game)
+                    fill_game_with_estimation("p1", game_p1)
+                else:
+                    game_p1 = game
+
+                if isinstance(players[1], PlayerNN) or isinstance(players[1], PlayerGT):
+                    game_p2 = copy.deepcopy(game)
+                    fill_game_with_estimation("p2", game_p2)
+                else:
+                    game_p2 = game
+
                 of1, of2 = game.game_state.on_field1, game.game_state.on_field2
-                player1_move = players[0].make_move(game) if of1.cur_hp and of2.cur_hp or not of1.cur_hp else None
-                player2_move = players[1].make_move(game) if of1.cur_hp and of2.cur_hp or not of2.cur_hp else None
+                player1_move = players[0].make_move(game_p1) if of1.cur_hp and of2.cur_hp or not of1.cur_hp else None
+                player2_move = players[1].make_move(game_p2) if of1.cur_hp and of2.cur_hp or not of2.cur_hp else None
 
                 _ = game.play_round(player1_move, player2_move)
                 game_finished = game.is_end_state(None)
+
+                # turn weights update
+                if not game_finished:
+                    if isinstance(players[0], PlayerRL):
+                        players[0].backpropagation(game.get_numeric_repr(player="p1"), False, None)
+                    if isinstance(players[1], PlayerRL):
+                        players[1].backpropagation(game.get_numeric_repr(player="p2"), False, None)
 
                 if not game_finished and of1.cur_hp > 0 and of2.cur_hp > 0:
                     turn_nb += 1
@@ -196,14 +224,15 @@ class GameEngine:
             if ui_communicate is not None:
                 ui_communicate["prog"] += 1
 
-            p1_victory, p2_victory = bool(game.match_result())
-            # TODO: call backtracking directly
+            p1_victory, p2_victory = game.match_result()
             if isinstance(players[0], PlayerRL):
-                players[0].end_game(game, p1_victory)
-                update_ml_agent(self.ml_names[0], players[0].network)
+                players[0].backpropagation(game.get_numeric_repr(player="p1"), True, p1_victory)
+                if type(self.ml_names[0]) == str:
+                    update_ga_agent(self.ml_names[0], players[0].network)
             if isinstance(players[1], PlayerRL):
-                players[1].end_game(game, p2_victory)
-                update_ml_agent(self.ml_names[1], players[1].network)
+                players[0].backpropagation(game.get_numeric_repr(player="p2"), True, p1_victory)
+                if type(self.ml_names[1]) == str:
+                    update_ga_agent(self.ml_names[1], players[1].network)
 
     def test_mode(self, ui_input, ui_communicate=None):
         """
@@ -224,6 +253,7 @@ class GameEngine:
             # game loop
             while not game_finished and turn_nb < MAX_ROUNDS:
 
+                # Some agents require None values to be estimated
                 if isinstance(players[0], PlayerNN) or isinstance(players[0], PlayerGT):
                     game_p1 = copy.deepcopy(game)
                     fill_game_with_estimation("p1", game_p1)
@@ -232,7 +262,7 @@ class GameEngine:
 
                 if isinstance(players[1], PlayerNN) or isinstance(players[1], PlayerGT):
                     game_p2 = copy.deepcopy(game)
-                    fill_game_with_estimation("p2", game)
+                    fill_game_with_estimation("p2", game_p2)
                 else:
                     game_p2 = game
 

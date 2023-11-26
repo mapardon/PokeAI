@@ -19,31 +19,19 @@ class PlayerGT(AbstractPlayer):
         dominated strategies elimination, Nash equilibrium search) to select most promising move
     """
 
-    def __init__(self, role: str, weights=(5, 5, 5, 5)):
+    def __init__(self, role: str):
         super().__init__(role)
         self.game = None
         self.payoff_mat = None
-        self.weights = weights
 
     @staticmethod
-    def compute_player_payoffz(state: PokeGame.GameStruct, player: str):  # TODO review
+    def compute_player_payoff(state: PokeGame.GameStruct, player: str):
         p1_hp, p2_hp = sum([p.cur_hp for p in state.team1]), sum([p.cur_hp for p in state.team2])
         p1_max, p2_max = sum([p.hp for p in state.team1]), sum([p.hp for p in state.team2])
         p1_alive, p2_alive = sum([p.is_alive() for p in state.team1]), sum([p.is_alive() for p in state.team2])
 
         payoff = (-1) ** (player == "p2") * ((5 * p1_hp / p1_max) + (5 * p1_alive / len(state.team1))) + \
                  (-1) ** (player == "p1") * ((5 * p2_hp / p2_max) + (5 * p2_alive / len(state.team2)))
-
-        return payoff
-
-    def compute_player_payoff(self, state: PokeGame.GameStruct, player: str):
-        p1_hp, p2_hp = sum([p.cur_hp for p in state.team1]), sum([p.cur_hp for p in state.team2])
-        p1_max, p2_max = sum([p.hp for p in state.team1]), sum([p.hp for p in state.team2])
-        p1_alive, p2_alive = sum([p.is_alive() for p in state.team1]), sum([p.is_alive() for p in state.team2])
-
-        w = self.weights
-        payoff = (-1) ** (player == "p2") * ((w[0] * p1_hp / p1_max) + (w[1] * p1_alive / len(state.team1))) + \
-                 (-1) ** (player == "p1") * ((w[2] * p2_hp / p2_max) + (w[3] * p2_alive / len(state.team2)))
 
         return payoff
 

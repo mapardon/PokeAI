@@ -1,7 +1,7 @@
 import os
 
 from src.agents.nn_utils import initialize_nn
-from src.db.dbmanager import available_ml_agents, remove_ml_agent, save_new_agent
+from src.db.dbmanager import available_ml_agents, remove_ml_agent, save_new_rl_agent
 from src.view.util.UIparameters import ManageUIParams
 
 LS = ["Q-learning",
@@ -47,7 +47,7 @@ class ManageController:
         input("creating new agent: {}, {}, {}, {}, {}, {}".format(self.ui_input.newfname, self.ui_input.newshape,
                                                                   self.ui_input.newls, self.ui_input.newlamb,
                                                                   self.ui_input.newactf, self.ui_input.newinit))
-        save_new_agent(uip.newfname, network, uip.newls, uip.newlamb, uip.newactf)
+        save_new_rl_agent(uip.newfname, network, uip.newls, uip.newlamb, uip.newactf)
 
         # reset input params
         uip = self.ui_input

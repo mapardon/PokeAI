@@ -6,8 +6,7 @@ from src.game.PokeGame import PokeGame
 
 class PlayerRL(PlayerNN):
 
-    def __init__(self, role: str, mode: str, network: tuple, ls: str, lamb: float | None, act_f: str, eps: float,
-                 lr: float, mv_sel: str = None):
+    def __init__(self, role: str, mode: str, network: tuple, ls: str, act_f: str, eps: float, lr: float):
         """
         ML agent for the game, using ML methods to play and learn the game.
 
@@ -15,30 +14,24 @@ class PlayerRL(PlayerNN):
         :param mode: tells which mode is being played ('match', 'train' or 'compare')
         :param network: in train mode, both agents must share same NN object, so weights are read from GameEngine
         :param ls: As ls is fixed with a NN, it is read from database with the network
-        :param lamb: lambda parameter for TD-lambda and Q-lambda
         :param act_f: activation function for the network
         :param eps: random factor
         :param lr: learning rate
-        :param mv_sel: "max_low" or "max_avg", rule to select a move
         """
 
         super().__init__(role, network, act_f)
 
-        # process game_parameters from gui and initialize adequate variables
         self.eps = eps
+        self.move_selection = self.move_selector
 
         if mode == "train":
-            self.lamb = lamb
             self.lr = lr
-            self.move_selection = self.move_selector
-            self.backpropagation = {"SARSA": self.sarsa_backpropagation,
-                                    "TD-lambda": self.td_lambda_backpropagation}[ls]
+            self.backpropagation = {"SARSA": self.sarsa_backpropagation}[ls]
             # save computed information to reuse for backtracking after receiving new state
             self.cur_state = None
 
         else:  # test or match
-            self.move_selection = self.move_selector
-            self.ls = self.lr = self.lamb = None
+            self.ls = self.lr = None
 
     # Communication with game loop #
 
@@ -61,7 +54,7 @@ class PlayerRL(PlayerNN):
     # Moves ranking #
 
     def move_selector(self, game: PokeGame) -> str:
-        """ Returns the move evaluated as most promising or a random one at a frequency of self.eps
+        """ Returns the move evaluated as most promising or a random one at a frequency of self.eps (epsilon-greedy)
 
         :returns: action of the player """
 
@@ -104,6 +97,3 @@ class PlayerRL(PlayerNN):
 
         W_int -= self.lr * delta * np.outer(Delta_int, self.cur_state)
         W_out -= self.lr * delta * grad_out * P_int
-
-    def td_lambda_backpropagation(self, game, state, cur_prob, cmp_prob):
-        return

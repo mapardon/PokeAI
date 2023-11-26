@@ -50,7 +50,7 @@ def gen_random_specs(n_pokemon, n_moves):
         if p_name not in names:  # can't have duplicates names
             names.append(p_name)
 
-    for _, p_name in zip(range(n_pokemon), names):
+    for p_name in names:
         # Pokemon
         p_type = random.choice(TYPES)
         p_stats = [random.randint(MIN_HP, MAX_HP)] + [random.randint(MIN_STAT, MAX_STAT) for _ in range(3)]
@@ -59,7 +59,7 @@ def gen_random_specs(n_pokemon, n_moves):
         # Attacks
         temp_mv = list()
         stab = poke[0][1]
-        cp_types = [t for t in TYPES if t != stab]
+        tmp_types = [t for t in TYPES if t != stab]
 
         # STAB
         a_type = stab
@@ -68,7 +68,7 @@ def gen_random_specs(n_pokemon, n_moves):
         temp_mv.append((a_name, a_type, a_power))
 
         for _ in range(n_moves - 1):
-            a_type = cp_types.pop(random.randrange(len(cp_types)))
+            a_type = tmp_types.pop(random.randrange(len(tmp_types)))
             a_power = random.choice([MIN_POW, MAX_POW])
             a_name = ("light_" if a_power == 50 else "heavy_") + a_type.lower()
             temp_mv.append((a_name, a_type, a_power))
@@ -179,23 +179,33 @@ class PokeGame:
     def __eq__(self, other):
         return self.game_state == other.game_state and self.player1_view == other.player1_view and self.player2_view == other.player2_view
 
-    def __copy__(self):
-        cp = PokeGame(gen_default_specs(len(self.game_state.team1), len(self.game_state.team1[0].moves)))
+    @staticmethod
+    def cp(obj):
+        """
+            Necessary workaround to have the deepcopy of derived classes returns object of derived type and not object
+            of this (base) type.
+        """
+
+        cp = obj.__new__(type(obj))
+        cp.__init__(gen_default_specs(len(obj.game_state.team1), len(obj.game_state.team1[0].moves)))
         #cp = PokeGame(DEF_SPECS)
-        cp.game_state = copy.copy(self.game_state)
-        cp.player1_view = copy.copy(self.player1_view)
-        cp.player2_view = copy.copy(self.player2_view)
+        cp.game_state = copy.copy(obj.game_state)
+        cp.player1_view = copy.copy(obj.player1_view)
+        cp.player2_view = copy.copy(obj.player2_view)
         return cp
 
+    def __copy__(self):
+        return PokeGame.cp(self)
+
     def __deepcopy__(self, memodict={}):
-        return self.__copy__()
+        return PokeGame.cp(self)
 
     def __str__(self):
         return " complete view:\n{}\n player1 view:\n{}\n player2 view\n{}".format(self.game_state, self.player1_view,
                                                                                    self.player2_view)
 
     def get_numeric_repr(self, state: GameStruct = None, player: str = None) -> list[int]:
-        """ Converts the provided state in binary vector
+        """ Converts the provided state in numeric vector
 
         :param state: GameStruct object to be converted. If None, use object attributes
         :param player: "p1" or "p2", indicating which view must be converted. If None, use self.game_state
@@ -219,10 +229,11 @@ class PokeGame:
                         mvs += [None, None]
                     else:
                         mvs += [TYPES_INDEX[m.move_type], m.base_pow]
+
                 if p.name is None:
-                    num_state += [None, None, None, None, None, None] + mvs
+                    num_state += [None, None, None, None, None] + mvs
                 else:
-                    num_state += [TYPES_INDEX[p.poke_type], p.cur_hp, p.hp, p.atk, p.des, p.spe] + mvs
+                    num_state += [TYPES_INDEX[p.poke_type], p.cur_hp, p.atk, p.des, p.spe] + mvs
 
         return [i if i is not None else 0 for i in num_state]
 

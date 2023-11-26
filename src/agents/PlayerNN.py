@@ -11,7 +11,7 @@ class PlayerNN(AbstractPlayer, ABC):
     """
         Base class for strategies using neural network (reinforcement learning agent and genetic algorithm agent)
     """
-    def __init__(self, role, network: tuple[np.array], act_f: str):
+    def __init__(self, role, network: tuple[np.array] | list[np.array], act_f: str):
         super().__init__(role)
 
         self.network = network
@@ -49,11 +49,9 @@ class PlayerNN(AbstractPlayer, ABC):
                 p1mv, p2mv = (pmv, omv) if self.role == "p1" else (omv, pmv)
                 s = game.get_numeric_repr(game.apply_player_moves(game.get_player_view(self.role), p1mv, p2mv))
                 p = p2f * self.forward_pass(s)
-                # TODO: average estimation
                 if p < min_lines[-1][1]:
                     min_lines[-1] = (pmv, p)
 
-        # TODO: random draw if several best values?
         best_move = max(min_lines, key=lambda x: x[1])[0]
 
         return best_move

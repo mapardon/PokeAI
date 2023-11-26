@@ -1,7 +1,8 @@
 import random
-from typing import Callable
+from typing import Callable, Any
 
 import numpy as np
+from line_profiler import profile
 
 from src.agents.PlayerNN import PlayerNN
 from src.game.PokeGame import PokeGame
@@ -9,7 +10,7 @@ from src.agents.nn_utils import initialize_nn, init_mutation_nn
 
 
 class PlayerGA(PlayerNN):
-    def __init__(self, role, network: tuple[np.array], act_f: str):
+    def __init__(self, role, network: tuple[np.array] | list[np.array], act_f: str):
         super().__init__(role, network, act_f)
 
     # Communication with game loop #
@@ -21,7 +22,7 @@ class PlayerGA(PlayerNN):
 
     @staticmethod
     def evolution(pop_size: int, init_mode: str, net_shape: list[int], n_gen: int, elite_prop: float,
-                  stop_criterion: float, fitness_f: Callable):
+                  stop_criterion: float, fitness_f: Callable, fitness_f_args: tuple, display: bool = False) -> tuple[list[np.array], float]:
         """
             Train the neural network with a genetic algorithm
 
@@ -33,23 +34,27 @@ class PlayerGA(PlayerNN):
             :param stop_criterion: Victory rate of a testing phase (compared with the value returned by fitness_f)
             :param fitness_f: Function running a bunch of matches where one of the player is the currently trained
                 PlayerGA and returning the victory rate of it
+            :param fitness_f_args: Parameters for the fitness function
+            :param display: Print progression
+            :return: Network having achieved the best performance on the fitness function during the training and the
+                performance
         """
 
         # init population
         population = list()
         for _ in range(pop_size):
-            population.append([initialize_nn(net_shape, init_mode), -1])
+            population.append([initialize_nn(net_shape, init_mode), -1.0])
 
         # evolution phase
         c = int()
         while c < n_gen:
             # fitness computation and selection
             for indiv in population:
-                if indiv[-1] == -1:
-                    indiv[1] = fitness_f(indiv[0])
+                if indiv[-1] < 0:
+                    indiv[1] = fitness_f(indiv[0], *fitness_f_args)
 
             population = sorted(population, key=lambda x: x[1], reverse=True)[:round(len(population) * elite_prop)]
-            if not c % (n_gen // 10):
+            if not c % max((n_gen // 10), 1) and display:
                 print("gen {}, score: {}".format(c, population[0][1]))
 
             # mutation
@@ -61,3 +66,5 @@ class PlayerGA(PlayerNN):
                 population.append([new, -1])
 
             c += 1
+
+        return population[0]

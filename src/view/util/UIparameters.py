@@ -4,15 +4,18 @@ class AbstractUIParams:
     """ Contain the parameters gathered from menus and forwarded to controllers. Bound to behave as a struct so
     members will be accessed directly. """
 
-    def __init__(self):
-        self.mode = str()
-        self.eps = 0.1
-        self.agent1type = None
-        self.agent2type = None
-        self.ml1 = None
-        self.ml2 = None
-        self.team1 = "random"
-        self.team2 = "random"
+    def __init__(self, mode, agent1type, agent2type, eps=0.1, ml1=None, ml2=None, team1="random", team2="random"):
+        """
+            :param ml1/ml2: Either the name of the network in the database or a tuple with the network and act_f/ls
+        """
+        self.mode = mode
+        self.agent1type = agent1type
+        self.agent2type = agent2type
+        self.eps = eps
+        self.ml1 = ml1
+        self.ml2 = ml2
+        self.team1 = team1
+        self.team2 = team2
 
     def set_eps(self, val):
         test = round(float(val), 2)
@@ -23,23 +26,24 @@ class AbstractUIParams:
 
 
 class TestUIParams(AbstractUIParams):
-    def __init__(self):
-        super().__init__()
-        self.nb = 1000
+    def __init__(self, mode, agent1type, agent2type, eps=0.1, ml1=None, ml2=None, team1="random", team2="random",
+                 nb=1000):
+        super().__init__(mode, agent1type, agent2type, eps, ml1, ml2, team1, team2)
+        self.nb = nb
 
     def set_nb(self, val):
         self.nb = abs(int(val))
 
 
 class TrainUIParams(AbstractUIParams):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, mode, lr, agent1type='ml', agent2type='ml', eps=0.1, ml1=None, ml2=None, team1="random",
+                 team2="random", nb=1000):
+        super().__init__(mode, agent1type, agent2type, eps, ml1, ml2, team1, team2)
         # train agent
-        self.agent1type = "ml"
-        self.agent2type = "ml"
-        self.nb = 1000
-        self.mvsel = "eps-greedy"
-        self.lr = 0.3
+        self.agent1type = agent1type
+        self.agent2type = agent2type
+        self.nb = nb
+        self.lr = lr
 
     def set_nb(self, val):
         self.nb = abs(int(val))
@@ -55,9 +59,8 @@ class ManageUIParams:
         self.newshape = None
         self.newinit = None
         self.newactf = None
-        self.newlamb = None
 
 
 class FightUIParams(AbstractUIParams):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, mode, agent1type, agent2type, eps=0.1, ml1=None, ml2=None, team1="random", team2="random"):
+        super().__init__(mode, agent1type, agent2type, eps, ml1, ml2, team1, team2)
