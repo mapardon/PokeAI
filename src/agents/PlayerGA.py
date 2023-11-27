@@ -59,13 +59,14 @@ class PlayerGA(PlayerNN):
                 if indiv[-1] < 0:
                     indiv[1] = fitness_f(indiv[0], *fitness_f_args)
 
-            population = sorted(population, key=lambda x: x[1], reverse=True)[:round(len(population) * elite_prop)]
+            elite_idx = max(round(len(population) * elite_prop), 1)
+            population = sorted(population, key=lambda x: x[1], reverse=True)[:elite_idx]
             if not c % max((n_gen // 10), 1) and display:
                 print("gen {}, score: {}".format(c, population[0][1]))
 
             # mutation
             softmax_vals = [np.exp(ind1[1]) / sum([np.exp(ind2[1]) for ind2 in population]) for ind1 in population]
-            for indiv in random.choices(population[:round(pop_size * elite_prop)], softmax_vals):
+            for indiv in random.choices(population[:elite_idx], softmax_vals, k=(pop_size - elite_idx)):
                 new = list()
                 for l1, l2 in zip([np.copy(indiv[0][0]), np.copy(indiv[0][1])], init_mutation_nn(net_shape, mu_mean, mu_std)):
                     new.append(l1 + l2)

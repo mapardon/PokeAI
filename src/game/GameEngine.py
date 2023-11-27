@@ -184,8 +184,6 @@ class GameEngine:
             :param display: Indicates whether a display of the progression is required
         """
 
-        print("train mode")
-
         pars = self.ge_params
         players = self.init_players(pars)
 

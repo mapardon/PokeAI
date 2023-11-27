@@ -14,7 +14,7 @@ from src.experiments.AltImplementations import GameEngineAlt, PokeGameAlt1, Poke
 from src.game.PokeGame import PokeGame
 from src.game.GameEngineParams import TestParams, TrainParams
 
-SHORT = True
+SHORT = False
 if SHORT:
     # Run tests with small repetitions to check if everything goes right
     GT_STATE_EVAL = 10
@@ -26,6 +26,7 @@ if SHORT:
     GA_N_GEN = 2
     GA_STATE_VEC_TEST = 10
     GA_STATE_VEC_LOOPS = 1
+    GA_TRAIN_PARS = 2, "xavier", [66, 132, 1], 1, 1/3, 0.0, 0.00001
 else:
     # Run complete tests
     GT_STATE_EVAL = 1000
@@ -37,6 +38,7 @@ else:
     GA_N_GEN = 10
     GA_STATE_VEC_TEST = 1000
     GA_STATE_VEC_LOOPS = 10
+    GA_TRAIN_PARS = 10, "xavier", [66, 132, 1], 10, 1/3, 0.0, 0.00001
 
 
 class Experiments:
@@ -47,26 +49,35 @@ class Experiments:
 
     @staticmethod
     def run_all_tests():
-        Experiments.weights_for_gt_state_eval()
-        Experiments.training_rl_agent()
-        Experiments.training_ga_agent()
-        Experiments.state_vector_for_ga()
-        Experiments.training_params_for_ga()
+
+        ts = [threading.Thread(target=Experiments.weights_for_gt_state_eval, args=()),
+              threading.Thread(target=Experiments.training_rl_agent, args=()),
+              threading.Thread(target=Experiments.training_ga_agent, args=()),
+              #threading.Thread(target=Experiments.state_vector_for_ga, args=()),
+              threading.Thread(target=Experiments.training_params_for_ga, args=())]
+
+        for t in ts:
+            t.start()
+
+        for t in ts:
+            t.join()
 
     @staticmethod
     def weights_for_gt_state_eval():
         """
             Test performance of PlayerGT agent with different weights for the parameters of payoff computation
         """
-        print("\nExperiment: weights for GT\n")
 
         def tune_weights(test_weights):
+            out = "\nExperiment: weights for GT\n\n"
             for weights in test_weights:
                 pars = TestParamsAlt("test", "gtalt", "random", 0.1, None, None, "random", "random", GT_STATE_EVAL, weights)
                 ge = GameEngineAlt(pars, PokeGame)
 
                 res = ge.test_mode(False)
-                print("Config: {}, res={}%".format(weights, 100 * res))
+                out += "Config: {}, res={}%\n".format(weights, 100 * res)
+
+            print(out)
 
         test_weights = [(i, j, k, l) for i in range(2) for j in range(2) for k in range(2) for l in range(2)] + \
             [(i, j, k, l) for i in [2, 5] for j in [2, 5] for k in [2, 5] for l in [2, 5]]
@@ -103,14 +114,14 @@ class Experiments:
                     else:
                         s = game_cp.get_player_view("p1")
                     out += "({})   {} - {}: {}\n".format(p, m, n, round(agent.forward_pass(g.get_numeric_repr(s, "p1")), 5))
-        print(out)
+        return out
 
     @staticmethod
     def training_rl_agent():
         """
             Test the performance of an agent using a neural network trained with gradient descent
         """
-        print("\nExperiment: RL training\n")
+        out = "\nExperiment: RL training\n\n"
 
         # First, test with a simplified game (1 vs 1 w/ 2 attacks, one attack has no effect, which should be noticed
         # by the agent). The team compositions never change so the agent must not deal with generalization
@@ -119,20 +130,20 @@ class Experiments:
                 [(("d1", "STEEL", 500, 100, 100, 100),
                   (("light_steel", "STEEL", 50), ("light_bug", "BUG", 50)))]]
 
-        print("Simple game")
+        out += "Simple game\n"
         for i in range(ML_TRAIN_LOOPS):
             nn = initialize_nn([18, 60, 1], "xavier")
 
             # train
-            pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "SARSA", "sigmoid"), (nn, "SARSA", "sigmoid"), ts_1[0], ts_1[1], RL_N_TRAIN)
+            pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"), (nn, "sigmoid", "SARSA"), ts_1[0], ts_1[1], RL_N_TRAIN)
             ge = GameEngine(pars)
             ge.train_mode(False)
 
             # test
-            pars = TestParams("test", "rl", "random", 0.0, (nn, "SARSA", "sigmoid"), None, ts_1[0], ts_1[1], RL_N_TEST)
+            pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, ts_1[0], ts_1[1], RL_N_TEST)
             ge = GameEngine(pars, None, None)
-            print("Loop {}, score: {}".format(i, ge.test_mode()))
-            Experiments.agent_estimations(ts_1, PlayerRL("p1", "test", nn, "SARSA", "sigmoid", 0.0, 0.0))
+            out += "Loop {}, score: {}\n".format(i, ge.test_mode())
+            out += Experiments.agent_estimations(ts_1, PlayerRL("p1", "test", nn, "SARSA", "sigmoid", 0.0, 0.0))
 
         # Slightly more complicated game
         ts_2 = [[(("p1", "FIRE", 200, 100, 100, 100),
@@ -144,42 +155,44 @@ class Experiments:
                  (("d2", "BUG", 200, 80, 100, 100),
                   (("heavy_bug", "BUG", 100), ("light_fire", "FIRE", 100)))]]
 
-        print("More complicated game")
+        out += "More complicated game\n"
         for i in range(ML_TRAIN_LOOPS):
             nn = initialize_nn([36, 72, 1], "xavier")
 
             # train
-            pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "SARSA", "sigmoid"), (nn, "SARSA", "sigmoid"), ts_2[0], ts_2[1], RL_N_TRAIN)
+            pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"), (nn, "sigmoid", "SARSA"), ts_2[0], ts_2[1], RL_N_TRAIN)
             ge = GameEngine(pars)
             ge.train_mode(False)
 
             # test
-            pars = TestParams("test", "rl", "random", 0.0, (nn, "SARSA", "sigmoid"), None, ts_2[0], ts_2[1], RL_N_TEST)
+            pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, ts_2[0], ts_2[1], RL_N_TEST)
             ge = GameEngine(pars, None, None)
-            print("Loop {}, score: {}".format(i, ge.test_mode()))
-            Experiments.agent_estimations(ts_2, PlayerRL("p1", "test", nn, "SARSA", "sigmoid", 0.0, 0.0))
+            out += "Loop {}, score: {}\n".format(i, ge.test_mode())
+            out += Experiments.agent_estimations(ts_2, PlayerRL("p1", "test", nn, "SARSA", "sigmoid", 0.0, 0.0))
 
         # Complete game 3 vs 3 with random teams
-        print("Full game")
+        out += "Full game\n"
         for i in range(ML_TRAIN_LOOPS):
             nn = initialize_nn([66, 132, 1], "xavier")
 
             # train
-            pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "SARSA", "sigmoid"), (nn, "SARSA", "sigmoid"), "random", "random", RL_N_TRAIN)
+            pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"), (nn, "sigmoid", "SARSA"), "random", "random", RL_N_TRAIN)
             ge = GameEngine(pars, None, None)
             ge.train_mode(False)
 
             # test
-            pars = TestParams("test", "rl", "random", 0.0, (nn, "SARSA", "sigmoid"), None, "random", "random", RL_N_TEST)
+            pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, "random", "random", RL_N_TEST)
             ge = GameEngine(pars, None, None)
-            print("Loop {}, score: {}".format(i, ge.test_mode()))
+            out += "Loop {}, score: {}\n".format(i, ge.test_mode())
+
+        print(out)
 
     @staticmethod
     def training_ga_agent():
         """
             Test the performance of an agent using a neural network trained with a genetic algorithm
         """
-        print("\nExperiment: GA training\n")
+        out = "\nExperiment: GA training\n\n"
 
         def fitness_eval(network, act_f, ts_p1, ts_p2):
             """
@@ -197,13 +210,13 @@ class Experiments:
                 [(("d1", "STEEL", 500, 100, 100, 100),
                   (("light_steel", "STEEL", 50), ("light_bug", "BUG", 50)))]]
 
-        print("Simple game")
+        out += "Simple game\n"
         for i in range(ML_TRAIN_LOOPS):
             # train (& test)
             res = PlayerGA.evolution(GA_POP_SIZE, "xavier", [18, 60, 1], GA_N_GEN, 1 / 3, fitness_eval,
                                      ("sigmoid", ts_1[0], ts_1[1]))
-            print("Loop {}, score: {}".format(i, res[1]))
-            Experiments.agent_estimations(ts_1, PlayerGA("p1", res[0], "sigmoid"))
+            out += "Loop {}, score: {}\n".format(i, res[1])
+            out += Experiments.agent_estimations(ts_1, PlayerGA("p1", res[0], "sigmoid"))
 
         # Slightly more complicated game
         ts_2 = [[(("p1", "FIRE", 200, 100, 100, 100),
@@ -215,21 +228,23 @@ class Experiments:
                  (("d2", "BUG", 200, 80, 100, 100),
                   (("heavy_bug", "BUG", 100), ("light_fire", "FIRE", 100)))]]
 
-        print("More complicated game")
+        out += "More complicated game\n"
         for i in range(ML_TRAIN_LOOPS):
             # train (& test)
             res = PlayerGA.evolution(GA_POP_SIZE, "xavier", [36, 72, 1], GA_N_GEN, 1 / 3, fitness_eval,
                                      ("sigmoid", ts_2[0], ts_2[1]))
-            print("Loop {}, score: {}".format(i, res[1]))
-            Experiments.agent_estimations(ts_2, PlayerGA("p1", res[0], "sigmoid"))
+            out += "Loop {}, score: {}\n".format(i, res[1])
+            out += Experiments.agent_estimations(ts_2, PlayerGA("p1", res[0], "sigmoid"))
 
         # Complete game
-        print("Complete game")
+        out += "Complete game\n"
         for i in range(ML_TRAIN_LOOPS):
             # train (& test)
             res = PlayerGA.evolution(GA_POP_SIZE, "xavier", [66, 132, 1], GA_N_GEN, 1 / 3, fitness_eval,
                                      ("sigmoid", "random", "random"))
-            print("Loop {}, score: {}".format(i, res[1]))
+            out += "Loop {}, score: {}\n".format(i, res[1])
+
+        print(out)
 
     @staticmethod
     def state_vector_for_ga():
@@ -264,14 +279,75 @@ class Experiments:
             Test the performance of neural networks trained with different parameters for the GA
         """
 
-        print("\nExperiment: training parameters for GA\n")
+        def fitness_eval(network, act_f, ts_p1, ts_p2):
+            """
+                Fitness function for the GA
+            """
+            pars = TestParams("test", "ga", "random", 0.0, (network, act_f), None, ts_p1, ts_p2, GA_N_TEST)
+            ge = GameEngine(pars)
+            ret = ge.test_mode()
+            return ret
 
-        print("Population size")
-        print("Init mode")
-        print("# of generations")
-        print("Elite proportion")
-        print("Mu std")
+        # Base parameters
+        pop_size, init_mode, net_shape, n_gen, elite_pro, mu_mean, mu_std = GA_TRAIN_PARS
+        fitness_f, fitness_f_args = fitness_eval, ("sigmoid", "random", "random")
 
+        def exp_pop_size():
+            out = "\nExperiment: training parameters for GA\n\n"
+            out += "Population size\n"
+            for ps in [5, 10, 15, 20, 30]:
+                res = PlayerGA.evolution(ps, init_mode, net_shape, n_gen, elite_pro, fitness_f, fitness_f_args,
+                                         mu_mean, mu_std)
+                out += "pop size {}, score: {}\n".format(ps, res[1])
+            print(out)
+
+        def exp_init_mode():
+            out = "\nExperiment: training parameters for GA\n\n"
+            out += "Init mode\n"
+            for im in ["xavier", "normalized-xavier", "normal", "He"]:
+                res = PlayerGA.evolution(pop_size, im, net_shape, n_gen, elite_pro, fitness_f, fitness_f_args,
+                                         mu_mean, mu_std)
+                out += "init mode {}, score: {}\n".format(im, res[1])
+            print(out)
+
+        def exp_nb_gens():
+            out = "\nExperiment: training parameters for GA\n\n"
+            out += "# of generations\n"
+            for ng in [5, 10, 15, 20, 30]:
+                res = PlayerGA.evolution(pop_size, init_mode, net_shape, ng, elite_pro, fitness_f, fitness_f_args,
+                                         mu_mean, mu_std)
+                out += "# gens {}, score: {}\n".format(ng, res[1])
+            print(out)
+
+        def exp_elite_prop():
+            out = "\nExperiment: training parameters for GA\n\n"
+            out += "Elite proportion\n"
+            for ep in [1/10, 1/5, 1/3, 1/2]:
+                res = PlayerGA.evolution(pop_size, init_mode, net_shape, n_gen, ep, fitness_f, fitness_f_args,
+                                         mu_mean, mu_std)
+                out += "elite prop {}, score: {}\n".format(ep, res[1])
+            print(out)
+
+        def exp_mu_pars():
+            out = "\nExperiment: training parameters for GA\n\n"
+            out += "Mu std\n"
+            for mu, std in [(0.0, 0.00001), (0.0, 0.0001), (0.0, 0.000001), (0.0001, 0.00001), (-0.0001, 0.00001)]:
+                res = PlayerGA.evolution(pop_size, init_mode, net_shape, n_gen, elite_pro, fitness_f, fitness_f_args,
+                                         mu, std)
+                out += "mu/std ({}, {}), score: {}\n".format(mu, std, res[1])
+            print(out)
+
+        ts = [threading.Thread(target=exp_pop_size, args=()),
+              threading.Thread(target=exp_init_mode, args=()),
+              threading.Thread(target=exp_nb_gens, args=()),
+              threading.Thread(target=exp_elite_prop, args=()),
+              threading.Thread(target=exp_mu_pars, args=())]
+
+        for t in ts:
+            t.start()
+
+        for t in ts:
+            t.join()
 
     @staticmethod
     def perf_hybrid_agent():
@@ -284,5 +360,4 @@ class Experiments:
 
 if __name__ == '__main__':
 
-    Experiments.training_rl_agent()
-    Experiments.training_ga_agent()
+    Experiments.run_all_tests()
