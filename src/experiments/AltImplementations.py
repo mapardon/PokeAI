@@ -14,12 +14,12 @@ from src.agents.PlayerMDM import PlayerMDM
 from src.agents.PlayerNN import PlayerNN
 from src.agents.PlayerRL import PlayerRL
 from src.agents.PlayerRandom import PlayerRandom
-from src.db.dbmanager import load_rl_agent
+from src.db.dbmanager import load_ml_agent
 from src.game.GameEngine import GameEngine
 from src.game.GameEstimation import fill_game_with_estimation
 from src.game.PokeGame import PokeGame
 from src.game.constants import TYPES, TYPES_INDEX, MAX_HP, MAX_STAT, MIN_STAT, MAX_ROUNDS
-from src.view.util.UIparameters import TestUIParams
+from src.game.GameEngineParams import TestParams
 
 
 class PokeGameAlt1(PokeGame):
@@ -125,13 +125,13 @@ class PokeGameAlt2(PokeGame):
         return num_state
 
 
-class TestUIParamsAlt(TestUIParams):
+class TestParamsAlt(TestParams):
     """
     self, mode, agent1type, agent2type, eps=0.1, ml1=None, ml2=None, team1="random", team2="random", nb=1000
     """
     def __init__(self, mode, agent1type, agent2type, eps=0.1, ml1=None, ml2=None, team1="random", team2="random",
-                 nb=1000, player_gt_alt_weights=[1, 1, 1, 1]):
-        super().__init__(mode, agent1type, agent2type, float, ml1, ml2, team1, team2, nb)
+                 nb=1000, player_gt_alt_weights=(1, 1, 1, 1)):
+        super().__init__(mode, agent1type, agent2type, eps, ml1, ml2, team1, team2, nb)
         self.player_gt_alt_weights = player_gt_alt_weights
 
 
@@ -144,16 +144,16 @@ class GameEngineAlt(GameEngine):
         self.poke_game_type = poke_game_type
 
     @staticmethod
-    def init_players(ui_input):
+    def init_players(ge_params):
         """
         Initialize Player objects that will be used as agents to play the game.
 
-        :param ui_input: UIParams object containing information to initialize game
+        :param ge_params: UIParams object containing information to initialize game
         :return: List of two Player objects
         """
 
         players = list()
-        for p, n in zip([ui_input.agent1type, ui_input.agent2type], ["p1", "p2"]):
+        for p, n in zip([ge_params.agent1type, ge_params.agent2type], ["p1", "p2"]):
             if p == "random":
                 players.append(PlayerRandom(n))
 
@@ -167,47 +167,45 @@ class GameEngineAlt(GameEngine):
                 players.append(PlayerBM(n))
 
             elif p == "ml":
-                network, ls, act_f = load_rl_agent(ui_input.ml1 if n == "p1" else ui_input.ml2)
-                uip = ui_input
+                network, act_f, ls = load_ml_agent(ge_params.ml1 if n == "p1" else ge_params.ml2)
+                uip = ge_params
                 if uip.agent1type == "ml" and uip.agent2type == "ml" and uip.ml1 == uip.ml2 and p == "p2" and uip.mode == "train":
                     # train mode, both player in ML and same NN -> share object
                     network = players[0].network
-                lr = ui_input.lr if ui_input.mode == "train" else None
-                mvsel = ui_input.mvsel if ui_input.mode == "train" else "eps-greedy"
-                players.append(PlayerRL(n, ui_input.mode, network, ls, act_f, ui_input.eps, lr, mvsel))
+                lr = ge_params.lr if ge_params.mode == "train" else None
+                players.append(PlayerRL(n, ge_params.mode, network, ls, act_f, ge_params.eps, lr))
 
             elif p == "gt":
                 players.append(PlayerGT(n))
 
             elif p == "ga":
-                uip = ui_input
+                uip = ge_params
                 if n == "p1":
-                    network, act_f = load_rl_agent(uip.ml1) if type(uip.ml1) == str else uip.ml1
+                    network, act_f, _ = load_ml_agent(uip.ml1) if type(uip.ml1) == str else uip.ml1
                 elif n == "p2":
-                    network, act_f = load_rl_agent(uip.ml2) if type(uip.ml2) == str else uip.ml2
+                    network, act_f, _ = load_ml_agent(uip.ml2) if type(uip.ml2) == str else uip.ml2
                 players.append(PlayerGA(n, network, act_f))
 
             elif p == "gtalt":
-                players.append(PlayerGTAlt(n, ui_input.player_gt_alt_weights))
+                players.append(PlayerGTAlt(n, ge_params.player_gt_alt_weights))
 
             else:
                 players.append(None)
 
         return players
 
-    def test_mode(self, ui_input, ui_communicate=None):
+    def test_mode(self, display: bool = False):
         """
-
-        :param ui_input: UIParams object for the communication from the menu
-        :param ui_communicate: shared object with master thread to communicate progression to UI
+        :param display: Indicates whether a display of the progression is required
         :return: Victory rate of player 1
         """
 
-        players = self.init_players(ui_input)
+        pars = self.ge_params
+        players = self.init_players(pars)
         p1_victories = int()
 
-        for i in range(ui_input.nb):
-            game = self.poke_game_type([self.get_team_specs(ui_input.team1), self.get_team_specs(ui_input.team2)])
+        for i in range(pars.nb):
+            game = self.poke_game_type([self.get_team_specs(pars.team1), self.get_team_specs(pars.team2)])
             turn_nb = 1
             game_finished = False
 
@@ -241,18 +239,20 @@ class GameEngineAlt(GameEngine):
 
             # UI communication
             if not i % 10:
-                if ui_communicate is not None:
-                    ui_communicate.put(i)
-                elif None:
+                if self.to_ui is not None:
+                    self.to_ui.put(i)
+                elif display:
                     os.system("clear" if os.name == "posix" else "cls")
-                    n_syms = ceil(20 * i / ui_input.nb)
+                    n_syms = ceil(20 * i / pars.nb)
                     print("Progression ({}): {}".format(i, "#" * n_syms + "_" * (20 - n_syms)))
 
-        if ui_communicate is not None:
-            ui_communicate.put("testing ended")
-            ui_communicate.put(p1_victories / ui_input.nb)
+        if self.to_ui is not None:
+            self.to_ui.put("testing ended")
+            self.to_ui.put(p1_victories / pars.nb)
+        elif display:
+            print("testing ended\np1 victories: {}".format(p1_victories / pars.nb))
 
-        return round(p1_victories / ui_input.nb, 4)
+        return round(p1_victories / pars.nb, 4)
 
 
 class PlayerGTAlt(PlayerGT):

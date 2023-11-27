@@ -1,8 +1,7 @@
 import random
-from typing import Callable, Any
+from typing import Callable
 
 import numpy as np
-from line_profiler import profile
 
 from src.agents.PlayerNN import PlayerNN
 from src.game.PokeGame import PokeGame
@@ -16,13 +15,19 @@ class PlayerGA(PlayerNN):
     # Communication with game loop #
 
     def make_move(self, game: PokeGame):
-        return super().move_selector(game)
+        """
+            This method performs the same actions as its mother's, but for the sake of clarity in certain situations
+            (e.g., comparison of the performance of this agent against other neural networks-based agents) a version of
+            this method is kept in this class.
+        """
+        return super().make_move(game)
 
     # Learning algorithms #
 
     @staticmethod
     def evolution(pop_size: int, init_mode: str, net_shape: list[int], n_gen: int, elite_prop: float,
-                  stop_criterion: float, fitness_f: Callable, fitness_f_args: tuple, display: bool = False) -> tuple[list[np.array], float]:
+                  fitness_f: Callable, fitness_f_args: tuple, mu_mean: float = 0, mu_std: float = 0.00001,
+                  display: bool = False) -> list[list[np.array], float]:
         """
             Train the neural network with a genetic algorithm
 
@@ -31,11 +36,12 @@ class PlayerGA(PlayerNN):
             :param net_shape: Size of the network layers
             :param n_gen: Number of generations for the training loop
             :param elite_prop: Proportion of the population considered as best performing
-            :param stop_criterion: Victory rate of a testing phase (compared with the value returned by fitness_f)
             :param fitness_f: Function running a bunch of matches where one of the player is the currently trained
                 PlayerGA and returning the victory rate of it
             :param fitness_f_args: Parameters for the fitness function
-            :param display: Print progression
+            :param mu_mean: Mean of normal random distribution used for mutation term
+            :param mu_std: Standard deviation of normal random distribution used for mutation term
+            :param display: Display of progression
             :return: Network having achieved the best performance on the fitness function during the training and the
                 performance
         """
@@ -61,7 +67,7 @@ class PlayerGA(PlayerNN):
             softmax_vals = [np.exp(ind1[1]) / sum([np.exp(ind2[1]) for ind2 in population]) for ind1 in population]
             for indiv in random.choices(population[:round(pop_size * elite_prop)], softmax_vals):
                 new = list()
-                for l1, l2 in zip([np.copy(indiv[0][0]), np.copy(indiv[0][1])], init_mutation_nn(net_shape, 0, 0.00001)):
+                for l1, l2 in zip([np.copy(indiv[0][0]), np.copy(indiv[0][1])], init_mutation_nn(net_shape, mu_mean, mu_std)):
                     new.append(l1 + l2)
                 population.append([new, -1])
 

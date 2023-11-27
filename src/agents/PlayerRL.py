@@ -35,7 +35,7 @@ class PlayerRL(PlayerNN):
 
     # Communication with game loop #
 
-    def make_move(self, game: PokeGame):
+    def make_move(self, game: PokeGame) -> str | None:
         """ Generate all states reachable from current state and convert in numeric representation to choose a move
 
         :returns: Selected move """

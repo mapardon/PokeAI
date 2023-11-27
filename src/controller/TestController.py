@@ -1,15 +1,13 @@
 import sys
-import time
 from queue import Queue
 
 sys.path.append('/home/mathieu/PycharmProjects/PokeAI')
 
 import os
-import sys
 from math import ceil
 from threading import Thread
 
-from src.view.util.UIparameters import TestUIParams
+from src.game.GameEngineParams import TestParams
 from src.game.GameEngine import GameEngine
 from src.view.TestMenu import TestMenu
 
@@ -19,7 +17,7 @@ class TestController:
 
     def __init__(self):
 
-        self.ui_input = TestUIParams()
+        self.ui_input = TestParams(None, None, None)
         self.menu = TestMenu(self.ui_input)
         self.menu_loop()
 
@@ -40,8 +38,8 @@ class TestController:
         """ Run test loop. Exit condition test whether win rate is received (indicate games are all finished) """
 
         from_backend_to_ui = Queue()
-
-        t_ge = Thread(target=GameEngine, args=(self.ui_input, None, from_backend_to_ui,))
+        ge = GameEngine(self.ui_input, None, from_backend_to_ui)
+        t_ge = Thread(target=ge.test_mode, args=())
         t_fl = Thread(target=self.test_loop, args=(from_backend_to_ui,))
 
         t_ge.start()

@@ -1,7 +1,7 @@
 import sys
 from queue import Queue
 
-from src.view.util.UIparameters import FightUIParams
+from src.game.GameEngineParams import FightParams
 
 sys.path.append('/home/mathieu/PycharmProjects/PokeAI')
 
@@ -15,7 +15,7 @@ from src.view.FightView import FightView
 class FightController:
     def __init__(self):
 
-        self.ui_input = FightUIParams()
+        self.ui_input = FightParams(None, None, None)
         self.ui_input.player1 = "random"
         self.ui_input.player2 = "random"
         self.menu = FightMenu(self.ui_input)
@@ -43,7 +43,8 @@ class FightController:
     def fight_phase(self):
         from_backend_to_ui = Queue()
         from_ui_to_backend = Queue()
-        t_ge = Thread(target=GameEngine, args=(self.ui_input, from_ui_to_backend, from_backend_to_ui,))
+        ge = GameEngine(self.ui_input, from_ui_to_backend, from_backend_to_ui)
+        t_ge = Thread(target=ge.fight_mode, args=())
         t_fl = Thread(target=self.fight_loop, args=(from_backend_to_ui, from_ui_to_backend,))
 
         t_ge.start()
@@ -74,8 +75,8 @@ class FightController:
                                                          turn_res, turn_nb, False)
                 to_backend.put(user_move)
             else:  # no input required, only send for display purposes
-                user_move = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves,
-                                                         turn_res, turn_nb, False)
+                _ = self.fight_view.display_game(game_state, player1_human, playable_moves, last_moves, turn_res,
+                                                 turn_nb, False)
 
             # outcome of turn
             last_moves = from_backend.get()

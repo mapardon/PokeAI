@@ -1,7 +1,10 @@
 import os
+
+import numpy as np
+
 from src.db.Storage import Storage
 
-STORAGE_PATH = "stored-networks" if os.name == "posix" else "stored-networks"
+STORAGE_PATH = "src.db.stored-networks"
 
 
 # ML agents management
@@ -17,52 +20,32 @@ def available_ml_agents() -> list[str]:
     return networks
 
 
-def save_new_rl_agent(network_name: str, network: list, ls: str, act_f: str):
+def save_new_ml_agent(network_name: str, network: list[np.array], act_f: str, ls: str | None = None) -> None:
     """ Receive initialized network and identifier in order to store it in the database. Network is stored with
-    its strategy and activation function
+    its strategy and activation function. Learning strategy is only required for Rl agent.
 
     :param network_name: Identifier for the network
     :param network: List of numpy arrays (variable lengths for deep learning)
+    :param act_f: Name of activation function used with the network
     :param ls: Learning strategy
-    :param act_f: Name of activation function used with the network
     """
 
     db = Storage(STORAGE_PATH)
-    db[network_name] = {"network": network, "ls": ls, "act_f": act_f}
+    db[network_name] = {"network": network, "act_f": act_f, "ls": ls}
 
 
-def load_rl_agent(network_name: str) -> tuple[list, str, str]:
-    """ Retrieve stored weights and associated parameters of RL-trained network"""
-
-    db = Storage(STORAGE_PATH)
-    network, ls, act_f = db[network_name]["network"], db[network_name]["ls"], db[network_name]["act_f"]
-
-    return network, ls, act_f
-
-
-def save_new_ga_agent(network_name: str, network: list, act_f: str):
-    """ Receive GA-trained network and identifier in order to store it in the database. Network is stored with
-    its activation function
-
-    :param network_name: Identifier for the network
-    :param network: List of numpy arrays (variable lengths for deep learning)
-    :param act_f: Name of activation function used with the network
+def load_ml_agent(network_name: str) -> tuple[list[np.array], str, str | None]:
+    """
+        Retrieve stored weights and associated parameters. Learning strategy can be None for agents not requiring it.
     """
 
     db = Storage(STORAGE_PATH)
-    db[network_name] = {"network": network, "act_f": act_f}
+    network, act_f, ls = db[network_name]["network"], db[network_name]["act_f"], db[network_name]["ls"]
+
+    return network, act_f, ls
 
 
-def load_ga_agent(network_name: str) -> tuple[list, str, str]:
-    """ Retrieve stored weights and associated parameters of GA-trained network """
-
-    db = Storage(STORAGE_PATH)
-    network, ls, act_f = db[network_name]["network"], db[network_name]["ls"], db[network_name]["act_f"]
-
-    return network, ls, act_f
-
-
-def update_ga_agent(network_name: str, network: list | tuple):
+def update_ml_agent(network_name: str, network: list[np.array]) -> None:
     """ Update weight matrices of a stored network
 
     :param network_name: Identifier for the network, identifying key inside the storage

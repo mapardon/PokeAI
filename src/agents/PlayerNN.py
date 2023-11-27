@@ -1,5 +1,3 @@
-from abc import ABC
-
 import numpy as np
 
 from src.agents.AbstractPlayer import AbstractPlayer
@@ -7,9 +5,10 @@ from src.agents.nn_utils import sigmoid, sigmoid_gradient, hyperbolic_tangent, h
 from src.game.PokeGame import PokeGame
 
 
-class PlayerNN(AbstractPlayer, ABC):
+class PlayerNN(AbstractPlayer):
     """
-        Base class for strategies using neural network (reinforcement learning agent and genetic algorithm agent)
+        Base class for strategies using neural network (reinforcement learning and genetic algorithm agents). Also
+        allows to exploit the knowledge of a neural network in a greedy strategy.
     """
     def __init__(self, role, network: tuple[np.array] | list[np.array], act_f: str):
         super().__init__(role)
@@ -19,9 +18,27 @@ class PlayerNN(AbstractPlayer, ABC):
                                  "hyperbolic tangent": (hyperbolic_tangent, h_tangent_gradient),
                                  "ReLU": (relu, relu_gradient)}[act_f]
 
+    # Communication with game loop #
+    def make_move(self, game: PokeGame) -> str | None:
+        """
+            Use knowledge of the network to select a move in a greedy strategy.
+        """
+
+        # opponent down, must not move
+        if (not game.player1_view.on_field2.cur_hp and self.role == "p1" or
+                not game.player2_view.on_field1.cur_hp and self.role == "p2"):
+            return None
+
+        # ourselves or no one down, select a possible move using move selection strategy and save state for backtracking
+        move = self.move_selector(game)
+
+        return move
+
+    # Moves ranking #
+
     def forward_pass(self, state: list):
         """ Use the knowledge of the network to make an estimation of the victory probability of the first player
-        of a provided game state. """
+        for a provided game state. """
 
         W_int = self.network[0]
         W_out = self.network[1]
@@ -29,8 +46,6 @@ class PlayerNN(AbstractPlayer, ABC):
         p_out = self.act_f(P_int.dot(W_out))
 
         return p_out if self.act_f == sigmoid else sigmoid(p_out)
-
-    # Moves ranking #
 
     def move_selector(self, game: PokeGame) -> str:
         """ Returns the move evaluated as most promising

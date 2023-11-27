@@ -77,7 +77,6 @@ def h_tangent_gradient(x):
 
 
 def relu(x):
-    tmp = np.amax(x)
     return x * (x > 0)
 
 

@@ -2,10 +2,9 @@ import os
 import unittest
 
 import numpy as np
-from parameterized import parameterized
 
 from src.db.Storage import Storage
-from src.db.dbmanager import STORAGE_PATH, save_new_rl_agent, available_ml_agents, update_ga_agent, load_rl_agent, \
+from src.db.dbmanager import STORAGE_PATH, save_new_ml_agent, available_ml_agents, update_ml_agent, load_ml_agent, \
     remove_ml_agent
 
 
@@ -77,7 +76,7 @@ class MyTestCase(unittest.TestCase):
         ls = "strategy"
         act_f = "act_f"
 
-        save_new_rl_agent(network_name, network, ls, act_f)
+        save_new_ml_agent(network_name, network, act_f, ls)
 
         buf = Storage(STORAGE_PATH)[network_name]
         self.assertDictEqual(buf, {"network": network, "ls": ls, "act_f": act_f})
@@ -103,7 +102,7 @@ class MyTestCase(unittest.TestCase):
         act_f = "activator"
         db = Storage(STORAGE_PATH)
         db[network_name] = {"network": nn_old, "ls": ls, "lamb": lamb, "act_f": act_f}
-        update_ga_agent(network_name, nn_new)
+        update_ml_agent(network_name, nn_new)
         self.assertEqual(db[network_name]["network"], nn_new)
 
     def test_load_ml_agent(self):
@@ -115,7 +114,7 @@ class MyTestCase(unittest.TestCase):
         act_f = "activator"
         db = Storage(STORAGE_PATH)
         db[network_name] = {"network": network, "ls": ls, "act_f": act_f}
-        self.assertEqual(load_rl_agent(network_name), (network, ls, act_f))
+        self.assertEqual(load_ml_agent(network_name), (network, ls, act_f))
 
     def test_remove_ml_agent(self):
         reset_storage()

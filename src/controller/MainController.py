@@ -1,7 +1,5 @@
 from src.controller.FightController import FightController
-from src.controller.TrainController import TrainController
 from src.controller.TestController import TestController
-from src.controller.ManageController import ManageController
 from src.view.MainMenu import MainMenu
 
 
@@ -25,11 +23,5 @@ class MainController:
             elif ui_input["mode"] == "fight":
                 FightController()
 
-            elif ui_input["mode"] == "train":
-                TrainController()
-
             elif ui_input["mode"] == "test":
                 TestController()
-
-            elif ui_input["mode"] == "manage":
-                ManageController()

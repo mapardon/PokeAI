@@ -1,7 +1,10 @@
 import os
 
-from src.db.dbmanager import available_ml_agents, available_teams
-from src.view.util.InputFieldsValues import PLAYER_TYPES
+from src.db.dbmanager import available_ml_agents
+from src.view.InputFieldsValues import PLAYER_TYPES
+
+PLAYER1_TYPES = ["human"] + PLAYER_TYPES
+PLAYER2_TYPES = PLAYER_TYPES
 
 
 class FightMenu:
@@ -42,7 +45,7 @@ class FightMenu:
             elif inputted[0] in ("player1", "player2") and len(inputted) == 2:
                 if inputted[0] == "player2" and inputted[1] == "human":
                     warning = "Player 2 can only be artificial player"
-                elif inputted[1] in PLAYER_TYPES + ["human"]:
+                elif inputted[1] in PLAYER1_TYPES:
                     if inputted[0] == "player1":
                         pars.agent1type = inputted[1]
                     else:
@@ -70,25 +73,14 @@ class FightMenu:
                 else:
                     warning = "Please provide existing agent name"
 
-            elif inputted[0] in ("team1", "team2") and len(inputted) == 2:
-                if inputted[1] in available_teams() + ["random"]:
-                    if inputted[0] == "team1":
-                        pars.team1 = inputted[1]
-                    else:
-                        pars.team2 = inputted[1]
-                else:
-                    warning = "Unrecognized team"
-
     def display_parameters(self):
         pars = self.params
         contexts = [
-            "player1 type          : {}".format(pars.agent1type),
-            "player2 type          : {}".format(pars.agent2type),
-            "Testing random factor : {}".format(self.params.eps),
-            "ML player 1           : {}".format(pars.ml1),
-            "ML player 2           : {}".format(pars.ml2),
-            "team1                 : {}".format(pars.team1),
-            "team2                 : {}".format(pars.team2)
+            "player1 type           : {}".format(pars.agent1type),
+            "player2 type           : {}".format(pars.agent2type),
+            "Random move frequency  : {}".format(self.params.eps),
+            "ML player 1            : {}".format(pars.ml1),
+            "ML player 2            : {}".format(pars.ml2)
         ]
 
         print(" * Current parameters:\n")
@@ -97,14 +89,14 @@ class FightMenu:
 
     def display_instructions(self):
         instructions = [
-            "player1 t  # type of agent for player 1 {}".format(' - '.join(PLAYER_TYPES)),
-            "player2 t  # type of agent for player 2 {}".format(' - '.join(PLAYER_TYPES[1:])),
+            "player1 t  # type of agent for player 1 ({})".format(' - '.join(PLAYER1_TYPES)),
+            "player2 t  # type of agent for player 2 ({})".format(' - '.join(PLAYER2_TYPES)),
             "eps f      # set epsilon greedy to f",
-            "ml1 z      # load AI named z from database for agent1",
-            "ml2 z      # load AI named z from database for agent2",
-            "team1/2 t  # give team t to player1/2",
+            "ml1 z      # load AI named z from database for agent1 ({})".format(' - '.join(available_ml_agents())),
+            "ml2 z      # load AI named z from database for agent2 ({})".format(' - '.join(available_ml_agents())),
             "fight      # launch match",
-            "leave      # exit program"]
+            "leave      # exit program",
+            ""]
 
         print("\n * Settings:\n")
         for i in instructions:

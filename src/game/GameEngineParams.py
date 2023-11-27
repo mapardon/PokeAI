@@ -1,6 +1,6 @@
 
 
-class AbstractUIParams:
+class AbstractParams:
     """ Contain the parameters gathered from menus and forwarded to controllers. Bound to behave as a struct so
     members will be accessed directly. """
 
@@ -25,7 +25,7 @@ class AbstractUIParams:
             raise ValueError
 
 
-class TestUIParams(AbstractUIParams):
+class TestParams(AbstractParams):
     def __init__(self, mode, agent1type, agent2type, eps=0.1, ml1=None, ml2=None, team1="random", team2="random",
                  nb=1000):
         super().__init__(mode, agent1type, agent2type, eps, ml1, ml2, team1, team2)
@@ -35,7 +35,7 @@ class TestUIParams(AbstractUIParams):
         self.nb = abs(int(val))
 
 
-class TrainUIParams(AbstractUIParams):
+class TrainParams(AbstractParams):
     def __init__(self, mode, lr, agent1type='ml', agent2type='ml', eps=0.1, ml1=None, ml2=None, team1="random",
                  team2="random", nb=1000):
         super().__init__(mode, agent1type, agent2type, eps, ml1, ml2, team1, team2)
@@ -49,18 +49,6 @@ class TrainUIParams(AbstractUIParams):
         self.nb = abs(int(val))
 
 
-class ManageUIParams:
-    def __init__(self):
-        # create new agent
-        self.mode = str()
-        self.newfname = None
-        self.newmltype = None
-        self.newls = None  # ls will be fixed with a NN
-        self.newshape = None
-        self.newinit = None
-        self.newactf = None
-
-
-class FightUIParams(AbstractUIParams):
+class FightParams(AbstractParams):
     def __init__(self, mode, agent1type, agent2type, eps=0.1, ml1=None, ml2=None, team1="random", team2="random"):
         super().__init__(mode, agent1type, agent2type, eps, ml1, ml2, team1, team2)
