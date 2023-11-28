@@ -1,9 +1,11 @@
-import copy
 import os, sys
-import threading
 
 sys.path.append(
     '/home/mathieu/PycharmProjects/PokeAI' if os.name == 'posix' else 'C:\\Users\\mathi\\PycharmProjects\\PokeAI')
+
+import copy
+import multiprocessing
+import time
 
 from src.agents.nn_utils import initialize_nn
 from src.agents.PlayerRL import PlayerRL
@@ -17,7 +19,7 @@ from src.game.GameEngineParams import TestParams, TrainParams
 SHORT = False
 if SHORT:
     # Run tests with small repetitions to check if everything goes right
-    GT_STATE_EVAL = 10
+    GT_STATE_EVAL = 5
     ML_TRAIN_LOOPS = 1
     RL_N_TRAIN = 10
     RL_N_TEST = 10
@@ -50,11 +52,11 @@ class Experiments:
     @staticmethod
     def run_all_tests():
 
-        ts = [threading.Thread(target=Experiments.weights_for_gt_state_eval, args=()),
-              threading.Thread(target=Experiments.training_rl_agent, args=()),
-              threading.Thread(target=Experiments.training_ga_agent, args=()),
-              #threading.Thread(target=Experiments.state_vector_for_ga, args=()),
-              threading.Thread(target=Experiments.training_params_for_ga, args=())]
+        ts = [multiprocessing.Process(target=Experiments.weights_for_gt_state_eval, args=()),
+              multiprocessing.Process(target=Experiments.training_rl_agent, args=()),
+              #multiprocessing.Process(target=Experiments.training_ga_agent, args=()),  # finished
+              #multiprocessing.Process(target=Experiments.state_vector_for_ga, args=()),  # finished
+              multiprocessing.Process(target=Experiments.training_params_for_ga, args=())]
 
         for t in ts:
             t.start()
@@ -83,10 +85,10 @@ class Experiments:
             [(i, j, k, l) for i in [2, 5] for j in [2, 5] for k in [2, 5] for l in [2, 5]]
 
         l = len(test_weights)
-        t1 = threading.Thread(target=tune_weights, args=(test_weights[:l // 4],))
-        t2 = threading.Thread(target=tune_weights, args=(test_weights[l // 4:l // 2],))
-        t3 = threading.Thread(target=tune_weights, args=(test_weights[l // 2:3 * l // 4],))
-        t4 = threading.Thread(target=tune_weights, args=(test_weights[3 * l // 4:],))
+        t1 = multiprocessing.Process(target=tune_weights, args=(test_weights[:l // 4],))
+        t2 = multiprocessing.Process(target=tune_weights, args=(test_weights[l // 4:l // 2],))
+        t3 = multiprocessing.Process(target=tune_weights, args=(test_weights[l // 2:3 * l // 4],))
+        t4 = multiprocessing.Process(target=tune_weights, args=(test_weights[3 * l // 4:],))
 
         for t in [t1, t2, t3, t4]:
             t.start()
@@ -121,78 +123,94 @@ class Experiments:
         """
             Test the performance of an agent using a neural network trained with gradient descent
         """
-        out = "\nExperiment: RL training\n\n"
 
-        # First, test with a simplified game (1 vs 1 w/ 2 attacks, one attack has no effect, which should be noticed
-        # by the agent). The team compositions never change so the agent must not deal with generalization
-        ts_1 = [[(("p1", "POISON", 500, 100, 100, 101),
-                  (("light_poison", "POISON", 50), ("light_fighting", "FIGHTING", 50)))],
-                [(("d1", "STEEL", 500, 100, 100, 100),
-                  (("light_steel", "STEEL", 50), ("light_bug", "BUG", 50)))]]
+        def simple_game():
+            out = "\nExperiment: RL training\n\n"
+            # First, test with a simplified game (1 vs 1 w/ 2 attacks, one attack has no effect, which should be noticed
+            # by the agent). The team compositions never change so the agent must not deal with generalization
+            ts_1 = [[(("p1", "POISON", 500, 100, 100, 101),
+                      (("light_poison", "POISON", 50), ("light_fighting", "FIGHTING", 50)))],
+                    [(("d1", "STEEL", 500, 100, 100, 100),
+                      (("light_steel", "STEEL", 50), ("light_bug", "BUG", 50)))]]
 
-        out += "Simple game\n"
-        for i in range(ML_TRAIN_LOOPS):
-            nn = initialize_nn([18, 60, 1], "xavier")
+            out += "Simple game\n"
+            for i in range(ML_TRAIN_LOOPS):
+                nn = initialize_nn([18, 60, 1], "xavier")
 
-            # train
-            pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"), (nn, "sigmoid", "SARSA"), ts_1[0], ts_1[1], RL_N_TRAIN)
-            ge = GameEngine(pars)
-            ge.train_mode(False)
+                # train
+                pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"), (nn, "sigmoid", "SARSA"), ts_1[0], ts_1[1], RL_N_TRAIN)
+                ge = GameEngine(pars)
+                ge.train_mode(False)
 
-            # test
-            pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, ts_1[0], ts_1[1], RL_N_TEST)
-            ge = GameEngine(pars, None, None)
-            out += "Loop {}, score: {}\n".format(i, ge.test_mode())
-            out += Experiments.agent_estimations(ts_1, PlayerRL("p1", "test", nn, "SARSA", "sigmoid", 0.0, 0.0))
+                # test
+                pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, ts_1[0], ts_1[1], RL_N_TEST)
+                ge = GameEngine(pars, None, None)
+                out += "Loop {}, score: {}\n".format(i, ge.test_mode())
+                out += Experiments.agent_estimations(ts_1, PlayerRL("p1", "test", nn, "SARSA", "sigmoid", 0.0, 0.0))
+            print(out)
 
-        # Slightly more complicated game
-        ts_2 = [[(("p1", "FIRE", 200, 100, 100, 100),
-                  (("heavy_fire", "FIRE", 100), ("light_steel", "STEEL", 100))),
-                 (("p2", "GRASS", 200, 100, 100, 100),
-                  (("heavy_grass", "GRASS", 100), ("light_electric", "ELECTRIC", 100)))],
-                [(("d1", "WATER", 200, 100, 100, 100),
-                  (("heavy_water", "WATER", 100), ("light_ground", "GROUND", 100))),
-                 (("d2", "BUG", 200, 80, 100, 100),
-                  (("heavy_bug", "BUG", 100), ("light_fire", "FIRE", 100)))]]
+        def more_complicated_game():
+            out = "\nExperiment: RL training\n\n"
+            # Slightly more complicated game
+            ts_2 = [[(("p1", "FIRE", 200, 100, 100, 100),
+                      (("heavy_fire", "FIRE", 100), ("light_steel", "STEEL", 100))),
+                     (("p2", "GRASS", 200, 100, 100, 100),
+                      (("heavy_grass", "GRASS", 100), ("light_electric", "ELECTRIC", 100)))],
+                    [(("d1", "WATER", 200, 100, 100, 100),
+                      (("heavy_water", "WATER", 100), ("light_ground", "GROUND", 100))),
+                     (("d2", "BUG", 200, 80, 100, 100),
+                      (("heavy_bug", "BUG", 100), ("light_fire", "FIRE", 100)))]]
 
-        out += "More complicated game\n"
-        for i in range(ML_TRAIN_LOOPS):
-            nn = initialize_nn([36, 72, 1], "xavier")
+            out += "More complicated game\n"
+            for i in range(ML_TRAIN_LOOPS):
+                nn = initialize_nn([36, 72, 1], "xavier")
 
-            # train
-            pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"), (nn, "sigmoid", "SARSA"), ts_2[0], ts_2[1], RL_N_TRAIN)
-            ge = GameEngine(pars)
-            ge.train_mode(False)
+                # train
+                pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"), (nn, "sigmoid", "SARSA"), ts_2[0], ts_2[1], RL_N_TRAIN)
+                ge = GameEngine(pars)
+                ge.train_mode(False)
 
-            # test
-            pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, ts_2[0], ts_2[1], RL_N_TEST)
-            ge = GameEngine(pars, None, None)
-            out += "Loop {}, score: {}\n".format(i, ge.test_mode())
-            out += Experiments.agent_estimations(ts_2, PlayerRL("p1", "test", nn, "SARSA", "sigmoid", 0.0, 0.0))
+                # test
+                pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, ts_2[0], ts_2[1], RL_N_TEST)
+                ge = GameEngine(pars, None, None)
+                out += "Loop {}, score: {}\n".format(i, ge.test_mode())
+                out += Experiments.agent_estimations(ts_2, PlayerRL("p1", "test", nn, "SARSA", "sigmoid", 0.0, 0.0))
+            print(out)
 
-        # Complete game 3 vs 3 with random teams
-        out += "Full game\n"
-        for i in range(ML_TRAIN_LOOPS):
-            nn = initialize_nn([66, 132, 1], "xavier")
+        def full_game():
+            out = "\nExperiment: RL training\n\n"
+            # Complete game 3 vs 3 with random teams
+            out += "Full game\n"
+            for i in range(ML_TRAIN_LOOPS):
+                nn = initialize_nn([66, 132, 1], "xavier")
 
-            # train
-            pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"), (nn, "sigmoid", "SARSA"), "random", "random", RL_N_TRAIN)
-            ge = GameEngine(pars, None, None)
-            ge.train_mode(False)
+                # train
+                pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"), (nn, "sigmoid", "SARSA"), "random", "random", RL_N_TRAIN)
+                ge = GameEngine(pars, None, None)
+                ge.train_mode(False)
 
-            # test
-            pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, "random", "random", RL_N_TEST)
-            ge = GameEngine(pars, None, None)
-            out += "Loop {}, score: {}\n".format(i, ge.test_mode())
+                # test
+                pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, "random", "random", RL_N_TEST)
+                ge = GameEngine(pars, None, None)
+                out += "Loop {}, score: {}\n".format(i, ge.test_mode())
+            print(out)
 
-        print(out)
+        processes = [multiprocessing.Process(target=simple_game, args=()),
+                     multiprocessing.Process(target=more_complicated_game(), args=()),
+                     multiprocessing.Process(target=full_game(), args=())]
+
+        for p in processes:
+            p.start()
+
+        for p in processes:
+            p.join()
+
 
     @staticmethod
     def training_ga_agent():
         """
             Test the performance of an agent using a neural network trained with a genetic algorithm
         """
-        out = "\nExperiment: GA training\n\n"
 
         def fitness_eval(network, act_f, ts_p1, ts_p2):
             """
@@ -203,48 +221,65 @@ class Experiments:
             ret = ge.test_mode()
             return ret
 
-        # First, test with a simplified game (1 vs 1 w/ 2 attacks, one attack has no effect, which should be noticed
-        # by the agent). The team compositions never change so the agent must not deal with generalization
-        ts_1 = [[(("p1", "POISON", 500, 100, 100, 101),
-                  (("light_poison", "POISON", 50), ("light_fighting", "FIGHTING", 50)))],
-                [(("d1", "STEEL", 500, 100, 100, 100),
-                  (("light_steel", "STEEL", 50), ("light_bug", "BUG", 50)))]]
+        def simple_game():
+            out = "\nExperiment: GA training\n\n"
+            # First, test with a simplified game (1 vs 1 w/ 2 attacks, one attack has no effect, which should be noticed
+            # by the agent). The team compositions never change so the agent must not deal with generalization
+            ts_1 = [[(("p1", "POISON", 500, 100, 100, 101),
+                      (("light_poison", "POISON", 50), ("light_fighting", "FIGHTING", 50)))],
+                    [(("d1", "STEEL", 500, 100, 100, 100),
+                      (("light_steel", "STEEL", 50), ("light_bug", "BUG", 50)))]]
 
-        out += "Simple game\n"
-        for i in range(ML_TRAIN_LOOPS):
-            # train (& test)
-            res = PlayerGA.evolution(GA_POP_SIZE, "xavier", [18, 60, 1], GA_N_GEN, 1 / 3, fitness_eval,
-                                     ("sigmoid", ts_1[0], ts_1[1]))
-            out += "Loop {}, score: {}\n".format(i, res[1])
-            out += Experiments.agent_estimations(ts_1, PlayerGA("p1", res[0], "sigmoid"))
+            out += "Simple game\n"
+            for i in range(ML_TRAIN_LOOPS):
+                # train (& test)
+                res = PlayerGA.evolution(GA_POP_SIZE, "xavier", [18, 60, 1], GA_N_GEN, 1 / 3, fitness_eval,
+                                         ("sigmoid", ts_1[0], ts_1[1]))
+                out += "Loop {}, score: {}\n".format(i, res[1])
+                out += Experiments.agent_estimations(ts_1, PlayerGA("p1", res[0], "sigmoid"))
+            print(out)
 
-        # Slightly more complicated game
-        ts_2 = [[(("p1", "FIRE", 200, 100, 100, 100),
-                  (("heavy_fire", "FIRE", 100), ("light_steel", "STEEL", 100))),
-                 (("p2", "GRASS", 200, 100, 100, 100),
-                  (("heavy_grass", "GRASS", 100), ("light_electric", "ELECTRIC", 100)))],
-                [(("d1", "WATER", 200, 100, 100, 100),
-                  (("heavy_water", "WATER", 100), ("light_ground", "GROUND", 100))),
-                 (("d2", "BUG", 200, 80, 100, 100),
-                  (("heavy_bug", "BUG", 100), ("light_fire", "FIRE", 100)))]]
+        def more_complicated_game():
+            out = "\nExperiment: GA training\n\n"
+            # Slightly more complicated game
+            ts_2 = [[(("p1", "FIRE", 200, 100, 100, 100),
+                      (("heavy_fire", "FIRE", 100), ("light_steel", "STEEL", 100))),
+                     (("p2", "GRASS", 200, 100, 100, 100),
+                      (("heavy_grass", "GRASS", 100), ("light_electric", "ELECTRIC", 100)))],
+                    [(("d1", "WATER", 200, 100, 100, 100),
+                      (("heavy_water", "WATER", 100), ("light_ground", "GROUND", 100))),
+                     (("d2", "BUG", 200, 80, 100, 100),
+                      (("heavy_bug", "BUG", 100), ("light_fire", "FIRE", 100)))]]
 
-        out += "More complicated game\n"
-        for i in range(ML_TRAIN_LOOPS):
-            # train (& test)
-            res = PlayerGA.evolution(GA_POP_SIZE, "xavier", [36, 72, 1], GA_N_GEN, 1 / 3, fitness_eval,
-                                     ("sigmoid", ts_2[0], ts_2[1]))
-            out += "Loop {}, score: {}\n".format(i, res[1])
-            out += Experiments.agent_estimations(ts_2, PlayerGA("p1", res[0], "sigmoid"))
+            out += "More complicated game\n"
+            for i in range(ML_TRAIN_LOOPS):
+                # train (& test)
+                res = PlayerGA.evolution(GA_POP_SIZE, "xavier", [36, 72, 1], GA_N_GEN, 1 / 3, fitness_eval,
+                                         ("sigmoid", ts_2[0], ts_2[1]))
+                out += "Loop {}, score: {}\n".format(i, res[1])
+                out += Experiments.agent_estimations(ts_2, PlayerGA("p1", res[0], "sigmoid"))
+            print(out)
 
-        # Complete game
-        out += "Complete game\n"
-        for i in range(ML_TRAIN_LOOPS):
-            # train (& test)
-            res = PlayerGA.evolution(GA_POP_SIZE, "xavier", [66, 132, 1], GA_N_GEN, 1 / 3, fitness_eval,
-                                     ("sigmoid", "random", "random"))
-            out += "Loop {}, score: {}\n".format(i, res[1])
+        def full_game():
+            out = "\nExperiment: GA training\n\n"
+            # Complete game
+            out += "Complete game\n"
+            for i in range(ML_TRAIN_LOOPS):
+                # train (& test)
+                res = PlayerGA.evolution(GA_POP_SIZE, "xavier", [66, 132, 1], GA_N_GEN, 1 / 3, fitness_eval,
+                                         ("sigmoid", "random", "random"))
+                out += "Loop {}, score: {}\n".format(i, res[1])
+            print(out)
 
-        print(out)
+        processes = [multiprocessing.Process(target=simple_game, args=()),
+                     multiprocessing.Process(target=more_complicated_game, args=()),
+                     multiprocessing.Process(target=full_game, args=())]
+
+        for p in processes:
+            p.start()
+
+        for p in processes:
+            p.join()
 
     @staticmethod
     def state_vector_for_ga():
@@ -264,14 +299,25 @@ class Experiments:
                 ret = ge.test_mode(False)
                 return ret
 
-        print("\nExperiment: state vector for GA\n")
+        def run_exp(s, pg_type, dims):
+            out = "\nExperiment: state vector for GA\n"
 
-        for s, pg_type, dims in (("Regular PokeGame", PokeGame, [66, 75, 1]), ("Full ohe", PokeGameAlt1, [678, 338, 1]), ("Types ohe", PokeGameAlt2, [492, 246, 1])):
             fitness_eval = FitnessEval(pg_type)
-            print(s)
+            out += s
             for _ in range(GA_STATE_VEC_LOOPS):
                 res = PlayerGA.evolution(GA_POP_SIZE, "xavier", dims, GA_N_GEN, 1 / 3, fitness_eval, tuple())
-                print(res[1])
+                out += str(res[1])
+            print(out)
+
+        ps = [multiprocessing.Process(target=run_exp, args=("Regular PokeGame", PokeGame, [66, 75, 1])),
+              multiprocessing.Process(target=run_exp, args=("Full ohe", PokeGameAlt1, [678, 338, 1])),
+              multiprocessing.Process(target=run_exp, args=("Types ohe", PokeGameAlt2, [492, 246, 1]))]
+
+        for p in ps:
+            p.start()
+
+        for p in ps:
+            p.join()
 
     @staticmethod
     def training_params_for_ga():
@@ -337,17 +383,17 @@ class Experiments:
                 out += "mu/std ({}, {}), score: {}\n".format(mu, std, res[1])
             print(out)
 
-        ts = [threading.Thread(target=exp_pop_size, args=()),
-              threading.Thread(target=exp_init_mode, args=()),
-              threading.Thread(target=exp_nb_gens, args=()),
-              threading.Thread(target=exp_elite_prop, args=()),
-              threading.Thread(target=exp_mu_pars, args=())]
+        ps = [multiprocessing.Process(target=exp_pop_size, args=()),
+              multiprocessing.Process(target=exp_init_mode, args=()),
+              multiprocessing.Process(target=exp_nb_gens, args=()),
+              multiprocessing.Process(target=exp_elite_prop, args=()),
+              multiprocessing.Process(target=exp_mu_pars, args=())]
 
-        for t in ts:
-            t.start()
+        for p in ps:
+            p.start()
 
-        for t in ts:
-            t.join()
+        for p in ps:
+            p.join()
 
     @staticmethod
     def perf_hybrid_agent():
@@ -360,4 +406,33 @@ class Experiments:
 
 if __name__ == '__main__':
 
+    t = time.perf_counter()
     Experiments.run_all_tests()
+    print(time.perf_counter() - t)
+
+    """
+    times = list()
+
+    t = time.perf_counter()
+    Experiments.weights_for_gt_state_eval()
+    times.append("Weights for gt state: {}".format(time.perf_counter() - t))
+
+    t = time.perf_counter()
+    Experiments.training_rl_agent()
+    times.append("Training RL agent: {}".format(time.perf_counter() - t))
+
+    t = time.perf_counter()
+    Experiments.training_ga_agent()
+    times.append("Training GA agent: {}".format(time.perf_counter() - t))
+
+    t = time.perf_counter()
+    Experiments.state_vector_for_ga()
+    times.append("State vector for GA: {}".format(time.perf_counter() - t))
+
+    t = time.perf_counter()
+    Experiments.training_params_for_ga()
+    times.append("Training params for GA: {}".format(time.perf_counter() - t))
+
+    for t in times:
+        print(t)
+    """

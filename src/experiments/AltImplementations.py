@@ -181,9 +181,9 @@ class GameEngineAlt(GameEngine):
             elif p == "ga":
                 uip = ge_params
                 if n == "p1":
-                    network, act_f, _ = load_ml_agent(uip.ml1) if type(uip.ml1) == str else uip.ml1
+                    network, act_f = load_ml_agent(uip.ml1) if type(uip.ml1) == str else uip.ml1
                 elif n == "p2":
-                    network, act_f, _ = load_ml_agent(uip.ml2) if type(uip.ml2) == str else uip.ml2
+                    network, act_f = load_ml_agent(uip.ml2) if type(uip.ml2) == str else uip.ml2
                 players.append(PlayerGA(n, network, act_f))
 
             elif p == "gtalt":
