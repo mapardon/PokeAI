@@ -16,7 +16,7 @@ from src.experiments.AltImplementations import GameEngineAlt, PokeGameAlt1, Poke
 from src.game.PokeGame import PokeGame
 from src.game.GameEngineParams import TestParams, TrainParams
 
-SHORT = False
+SHORT = True
 if SHORT:
     # Run tests with small repetitions to check if everything goes right
     GT_STATE_EVAL = 5
@@ -52,17 +52,28 @@ class Experiments:
     @staticmethod
     def run_all_tests():
 
-        ts = [multiprocessing.Process(target=Experiments.weights_for_gt_state_eval, args=()),
-              multiprocessing.Process(target=Experiments.training_rl_agent, args=()),
-              #multiprocessing.Process(target=Experiments.training_ga_agent, args=()),  # finished
-              #multiprocessing.Process(target=Experiments.state_vector_for_ga, args=()),  # finished
-              multiprocessing.Process(target=Experiments.training_params_for_ga, args=())]
+        ts = [
+              multiprocessing.Process(target=Experiments.weights_for_gt_state_eval, args=()),  # finished
+              multiprocessing.Process(target=Experiments.training_rl_agent, args=()),  # finished
+              multiprocessing.Process(target=Experiments.training_ga_agent, args=()),  # finished
+              multiprocessing.Process(target=Experiments.training_params_for_rl, args=()),
+              multiprocessing.Process(target=Experiments.state_vector_with_ga, args=()),  # finished
+              multiprocessing.Process(target=Experiments.training_params_for_ga, args=()),  # finished
+              multiprocessing.Process(target=Experiments.full_game_rl_perf, args=()),
+              multiprocessing.Process(target=Experiments.full_game_ga_perf, args=())
+              ]
 
         for t in ts:
             t.start()
 
         for t in ts:
             t.join()
+
+    """
+        *
+        * Game theory
+        *
+    """
 
     @staticmethod
     def weights_for_gt_state_eval():
@@ -96,11 +107,19 @@ class Experiments:
         for t in [t1, t2, t3, t4]:
             t.join()
 
+    """
+        *
+        * NN training on simple games
+        *
+    """
+
     @staticmethod
     def agent_estimations(ts, agent):
         """
-            See the estimation that an agent using a neural network makes for its possible choices under different
-            points of view.
+            Show the estimation that an agent using a neural network makes for its possible moves.
+
+            :param ts: Team specs to build the game
+            :param agent: Agent to evaluate (PlayerNN, PlayerRL or PlayerGA)
         """
 
         out = str()
@@ -177,34 +196,14 @@ class Experiments:
                 out += Experiments.agent_estimations(ts_2, PlayerRL("p1", "test", nn, "SARSA", "sigmoid", 0.0, 0.0))
             print(out)
 
-        def full_game():
-            out = "\nExperiment: RL training\n\n"
-            # Complete game 3 vs 3 with random teams
-            out += "RL - Complete game\n"
-            for i in range(ML_TRAIN_LOOPS):
-                nn = initialize_nn([66, 132, 1], "xavier")
-
-                # train
-                pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"), (nn, "sigmoid", "SARSA"), "random", "random", RL_N_TRAIN)
-                ge = GameEngine(pars, None, None)
-                ge.train_mode(False)
-
-                # test
-                pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, "random", "random", RL_N_TEST)
-                ge = GameEngine(pars, None, None)
-                out += "Loop {}, score: {}\n".format(i, ge.test_mode())
-            print(out)
-
         processes = [multiprocessing.Process(target=simple_game, args=()),
-                     multiprocessing.Process(target=more_complicated_game(), args=()),
-                     multiprocessing.Process(target=full_game(), args=())]
+                     multiprocessing.Process(target=more_complicated_game(), args=())]
 
         for p in processes:
             p.start()
 
         for p in processes:
             p.join()
-
 
     @staticmethod
     def training_ga_agent():
@@ -260,20 +259,8 @@ class Experiments:
                 out += Experiments.agent_estimations(ts_2, PlayerGA("p1", res[0], "sigmoid"))
             print(out)
 
-        def full_game():
-            out = "\nExperiment: GA training\n\n"
-            # Complete game
-            out += "GA - Complete game\n"
-            for i in range(ML_TRAIN_LOOPS):
-                # train (& test)
-                res = PlayerGA.evolution(GA_POP_SIZE, "xavier", [66, 132, 1], GA_N_GEN, 1 / 3, fitness_eval,
-                                         ("sigmoid", "random", "random"))
-                out += "Loop {}, score: {}\n".format(i, res[1])
-            print(out)
-
         processes = [multiprocessing.Process(target=simple_game, args=()),
-                     multiprocessing.Process(target=more_complicated_game, args=()),
-                     multiprocessing.Process(target=full_game, args=())]
+                     multiprocessing.Process(target=more_complicated_game, args=())]
 
         for p in processes:
             p.start()
@@ -281,8 +268,115 @@ class Experiments:
         for p in processes:
             p.join()
 
+    """
+        *
+        * Training parameters
+        *
+    """
+
     @staticmethod
-    def state_vector_for_ga():
+    def training_params_for_rl():
+        """
+            Test the performance of neural networks trained with the Rl algorithm and varying parameter values
+        """
+
+        def exp_init_mode():
+            out = "\nExperiment: training parameters for RL\n\n"
+            out += "Init mode\n"
+
+            for im in ["xavier", "normalized-xavier", "normal", "He"]:
+                nn = initialize_nn([66, 75, 1], im)
+
+                # train
+                pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"),
+                                   (nn, "sigmoid", "SARSA"), "random", "random", RL_N_TRAIN)
+                ge = GameEngine(pars, None, None)
+                ge.train_mode(False)
+
+                # test
+                pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, "random", "random",
+                                  RL_N_TEST)
+                ge = GameEngine(pars, None, None)
+                out += "Init mode {}, score: {}\n".format(im, ge.test_mode())
+
+            print(out)
+
+        def exp_hidden_layer_size():
+            out = "\nExperiment: training parameters for RL\n\n"
+            out += "Hidden layer size\n"
+
+            for hl_size in [33, 66, 132, 198, 264]:
+                nn = initialize_nn([66, hl_size, 1], "xavier")
+
+                # train
+                pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"),
+                                   (nn, "sigmoid", "SARSA"), "random", "random", RL_N_TRAIN)
+                ge = GameEngine(pars, None, None)
+                ge.train_mode(False)
+
+                # test
+                pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, "random", "random",
+                                  RL_N_TEST)
+                ge = GameEngine(pars, None, None)
+                out += "Hidden layer size {}, score: {}\n".format(hl_size, ge.test_mode())
+
+            print(out)
+
+        def exp_eps_greedy_value():
+            out = "\nExperiment: training parameters for RL\n\n"
+            out += "EPS-greedy\n"
+
+            for eps in [0.05, 0.1, 0.15, 0.25, 0.4]:
+                nn = initialize_nn([66, 75, 1], "xavier")
+
+                # train
+                pars = TrainParams("train", 0.0015, "rl", "rl", eps, (nn, "sigmoid", "SARSA"),
+                                   (nn, "sigmoid", "SARSA"), "random", "random", RL_N_TRAIN)
+                ge = GameEngine(pars, None, None)
+                ge.train_mode(False)
+
+                # test
+                pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, "random", "random",
+                                  RL_N_TEST)
+                ge = GameEngine(pars, None, None)
+                out += "Eps-greedy {}, score: {}\n".format(eps, ge.test_mode())
+
+            print(out)
+
+        def exp_lr_value():
+            out = "\nExperiment: training parameters for RL\n\n"
+            out += "LR value\n"
+
+            for lr in [0.0015, 0.005, 0.0075, 0.01]:
+                nn = initialize_nn([66, 75, 1], "xavier")
+
+                # train
+                pars = TrainParams("train", lr, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"),
+                                   (nn, "sigmoid", "SARSA"), "random", "random", RL_N_TRAIN)
+                ge = GameEngine(pars, None, None)
+                ge.train_mode(False)
+
+                # test
+                pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, "random", "random",
+                                  RL_N_TEST)
+                ge = GameEngine(pars, None, None)
+                out += "Lr value {}, score: {}\n".format(lr, ge.test_mode())
+
+            print(out)
+
+        ps = [multiprocessing.Process(target=exp_init_mode, args=()),
+              multiprocessing.Process(target=exp_hidden_layer_size, args=()),
+              multiprocessing.Process(target=exp_eps_greedy_value, args=()),
+              multiprocessing.Process(target=exp_lr_value, args=())]
+
+        for p in ps:
+            p.start()
+
+        for p in ps:
+            p.join()
+
+    @staticmethod
+    def state_vector_with_ga():
         """
             Test performance of neural networks using different numeric representation of the game while training with
             the genetic algorithm (10 generations of populations of 10 individuals). NB: complete run takes quite a
@@ -310,8 +404,8 @@ class Experiments:
             print(out)
 
         ps = [multiprocessing.Process(target=run_exp, args=("Regular PokeGame", PokeGame, [66, 75, 1])),
-              multiprocessing.Process(target=run_exp, args=("Full ohe", PokeGameAlt1, [678, 338, 1])),
-              multiprocessing.Process(target=run_exp, args=("Types ohe", PokeGameAlt2, [492, 246, 1]))]
+              multiprocessing.Process(target=run_exp, args=("Types ohe", PokeGameAlt2, [492, 246, 1])),
+              multiprocessing.Process(target=run_exp, args=("Full ohe", PokeGameAlt1, [678, 338, 1]))]
 
         for p in ps:
             p.start()
@@ -322,7 +416,7 @@ class Experiments:
     @staticmethod
     def training_params_for_ga():
         """
-            Test the performance of neural networks trained with different parameters for the GA
+            Test the performance of neural networks trained with the GA algorithm and varying parameter values
         """
 
         def fitness_eval(network, act_f, ts_p1, ts_p2):
@@ -337,6 +431,15 @@ class Experiments:
         # Base parameters
         pop_size, init_mode, net_shape, n_gen, elite_pro, mu_mean, mu_std = GA_TRAIN_PARS
         fitness_f, fitness_f_args = fitness_eval, ("sigmoid", "random", "random")
+
+        def exp_hidden_layer_size():
+            out = "\nExperiment: training parameters for GA\n\n"
+            out += "Hidden layer size\n"
+            for hl_size in [33, 66, 132, 198, 264]:
+                res = PlayerGA.evolution(10, init_mode, [66, hl_size, 1], n_gen, elite_pro, fitness_f,
+                                         fitness_f_args, mu_mean, mu_std)
+                out += "pop size {}, score: {}\n".format(ps, res[1])
+            print(out)
 
         def exp_pop_size():
             out = "\nExperiment: training parameters for GA\n\n"
@@ -394,6 +497,62 @@ class Experiments:
 
         for p in ps:
             p.join()
+
+    """
+        *
+        * Final performance
+        *
+    """
+
+    @staticmethod
+    def full_game_rl_perf():
+        """
+            Test performance of network trained with RL with best values of parameters (determined in previous test)
+            over longer training.
+        """
+
+        out = "\nExperiment: RL training\n\n"
+        # Complete game 3 vs 3 with random teams
+        out += "RL - Complete game\n"
+        for i in range(ML_TRAIN_LOOPS):
+            nn = initialize_nn([66, 132, 1], "xavier")
+
+            # train
+            pars = TrainParams("train", 0.0015, "rl", "rl", 0.1, (nn, "sigmoid", "SARSA"), (nn, "sigmoid", "SARSA"), "random", "random", RL_N_TRAIN)
+            ge = GameEngine(pars, None, None)
+            ge.train_mode(False)
+
+            # test
+            pars = TestParams("test", "rl", "random", 0.0, (nn, "sigmoid", "SARSA"), None, "random", "random", RL_N_TEST)
+            ge = GameEngine(pars, None, None)
+            out += "Loop {}, score: {}\n".format(i, ge.test_mode())
+        print(out)
+
+    @staticmethod
+    def full_game_ga_perf():
+        """
+            Test performance of network trained with GA with best values of parameters (determined in previous test)
+            over longer training.
+        """
+
+        def fitness_eval(network, act_f, ts_p1, ts_p2):
+            """
+                Fitness function for the GA
+            """
+            pars = TestParams("test", "ga", "random", 0.0, (network, act_f), None, ts_p1, ts_p2, GA_N_TEST)
+            ge = GameEngine(pars)
+            ret = ge.test_mode()
+            return ret
+
+        out = "\nExperiment: GA training\n\n"
+        # Complete game
+        out += "GA - Complete game\n"
+        for i in range(ML_TRAIN_LOOPS):
+            # train (& test)
+            res = PlayerGA.evolution(30, "normal", [66, 132, 1], GA_N_GEN, 1 / 3,
+                                     fitness_eval, ("sigmoid", "random", "random"))
+            out += "Loop {}, score: {}\n".format(i, res[1])
+        print(out)
 
     @staticmethod
     def perf_hybrid_agent():

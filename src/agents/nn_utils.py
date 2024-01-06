@@ -21,7 +21,8 @@ def init_he(n_lin: int, n_col: int):
 
 def initialize_nn(shape: list[int], init_mode: str):
     """
-    :param shape: list of integers indicating size of intermediate layers (input and output included)
+    :param shape: list of integers indicating size of intermediate layers (input and output included). As an indication,
+        the size of the different inputs are: 66 (full integer), 492 (type ont-hot), 678 (full one-hot)
     :param init_mode: weights initialization algorithm
     :return: tuple of numpy nd-arrays initialized with specified algorithm
     """

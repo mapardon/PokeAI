@@ -45,10 +45,7 @@ class PlayerGT(AbstractPlayer):
     def build_payoff_matrix(self):
         """
             Build a payoff matrix with payoffs related to possible actions of the player
-            Matrix format: dict[p1 action][p2 action]: (p1 payoff, p2 payoff)
-
-            NB: this function only considers situations where both players choose an action. The post-faint move
-            (replacement switch, where only one player acts) is managed in another function.
+            Matrix format: dict[p1 action][p2 action]: (p1 payoff, p2 payoff).
         """
 
         p1_view, p2_view = self.game.player1_view, self.game.player2_view
@@ -170,15 +167,8 @@ class PlayerGT(AbstractPlayer):
             players' expected payoffs. The stdev is used to favor strategies where payoffs are similar for both
             players to strategies where one of them has significantly larger payoff than the other. Ex.: if the NE are
             (1, 0), (0, 1), (0.5, 0.5), they all have same arithmetic mean but only the last one has null stdev,
-            and it is precisely reasonable to consider that last choice as a good compromise between the
-            individually best and worst possible outcomes (more justification in the pdf). Finally, a tie at
-            the geometric average level is solved with a random draw.
-
-            NB: 1. The function computing NE can return a warning in case of even number of equilibria found, which is
-            usually caused by weak dominance between strategies. In this situation, it is not problematic: it
-            simply means that at least one player has exact same interest in several choices (more details in the pdf).
-            2. This function can also return no equilibrium. Despite Nash's theorem, this algorithm may fail to identify
-            equilibria for degenerate games (more details in the pdf).
+            and it is reasonable to consider that last choice as a good compromise between the individually best and
+            worst possible outcomes. Finally, if several NE still remain, a random selection is performed.
 
             :return: probability distribution over the choices of each player corresponding to the NE and the related
                 expected payoffs
@@ -252,7 +242,10 @@ class PlayerGT(AbstractPlayer):
 
     def regular_move(self):
         """
-            Choose among moves currently available for the player (current payoff matrix)
+            Considering the current payoff matrix, choose an action for the player normal condition (not a post-faint
+            replacement)
+
+            :return: Selected move
         """
 
         fill_game_with_estimation(self.role, self.game)
@@ -272,9 +265,11 @@ class PlayerGT(AbstractPlayer):
 
     def post_faint_move(self):
         """
-            Choose a move (more specifically, a switch) after current on-field fainted. The games induced by the
-            different possible switches are evaluated and the one offering the most promising situation determines
-            the switch.
+            Considering the current payoff matrix, choose a post-faint replacement for the player. The selection is
+            performed based on games induced by the different possible switches (the one offering the most promising
+            situation determines the switch).
+
+            :return: Selected move
         """
 
         save_game = deepcopy(self.game)

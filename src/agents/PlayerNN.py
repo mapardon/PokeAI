@@ -8,8 +8,9 @@ from src.game.PokeGame import PokeGame
 class PlayerNN(AbstractPlayer):
     """
         Base class for strategies using neural network (reinforcement learning and genetic algorithm agents). Also
-        allows to exploit the knowledge of a neural network in a greedy strategy.
+        implements a greedy move selection algorithm.
     """
+
     def __init__(self, role, network: tuple[np.array] | list[np.array], act_f: str):
         super().__init__(role)
 
