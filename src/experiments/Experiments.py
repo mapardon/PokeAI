@@ -180,7 +180,7 @@ class Experiments:
         def full_game():
             out = "\nExperiment: RL training\n\n"
             # Complete game 3 vs 3 with random teams
-            out += "Full game\n"
+            out += "RL - Complete game\n"
             for i in range(ML_TRAIN_LOOPS):
                 nn = initialize_nn([66, 132, 1], "xavier")
 
@@ -263,7 +263,7 @@ class Experiments:
         def full_game():
             out = "\nExperiment: GA training\n\n"
             # Complete game
-            out += "Complete game\n"
+            out += "GA - Complete game\n"
             for i in range(ML_TRAIN_LOOPS):
                 # train (& test)
                 res = PlayerGA.evolution(GA_POP_SIZE, "xavier", [66, 132, 1], GA_N_GEN, 1 / 3, fitness_eval,

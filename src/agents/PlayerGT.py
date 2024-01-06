@@ -10,13 +10,16 @@ from src.agents.AbstractPlayer import AbstractPlayer
 from src.game.GameEstimation import fill_game_with_estimation
 from src.game.PokeGame import PokeGame
 
+
 warnings.filterwarnings("ignore")
 
 
 class PlayerGT(AbstractPlayer):
     """
-        Construct payoff matrix based on the knowledge of the given state and apply game theory algorithms (strictly
-        dominated strategies elimination, Nash equilibrium search) to select most promising move
+        Implementation of the Game Theory approach
+
+        Construct payoff matrix based on the knowledge of the given game state and select a move corresponding to a
+        Nash equilibrium of the game
     """
 
     def __init__(self, role: str):
@@ -26,6 +29,10 @@ class PlayerGT(AbstractPlayer):
 
     @staticmethod
     def compute_player_payoff(state: PokeGame.GameStruct, player: str):
+        """
+            Compute the utility of the given game state for the given player.
+        """
+
         p1_hp, p2_hp = sum([p.cur_hp for p in state.team1]), sum([p.cur_hp for p in state.team2])
         p1_max, p2_max = sum([p.hp for p in state.team1]), sum([p.hp for p in state.team2])
         p1_alive, p2_alive = sum([p.is_alive() for p in state.team1]), sum([p.is_alive() for p in state.team2])
@@ -65,10 +72,12 @@ class PlayerGT(AbstractPlayer):
                 # our moves that opponent doesn't know are considered generic moves ("notype") for them
                 if self.role == "p1":
                     m1_for_p1, m2_for_p1, m2_for_p2 = p1_mv, p2_mv, p2_mv
-                    m1_for_p2 = p1_mv if "switch" in p1_mv or p1_mv in (m.name for m in p2_view_p1_of.moves) else "light_notype"
+                    m1_for_p2 = p1_mv if "switch" in p1_mv or p1_mv in (m.name for m in
+                                                                        p2_view_p1_of.moves) else "light_notype"
                 else:
                     m1_for_p2, m2_for_p2, m1_for_p1 = p1_mv, p2_mv, p1_mv
-                    m2_for_p1 = p2_mv if "switch" in p2_mv or p2_mv in (m.name for m in p1_view_p2_of.moves) else "light_notype"
+                    m2_for_p1 = p2_mv if "switch" in p2_mv or p2_mv in (m.name for m in
+                                                                        p1_view_p2_of.moves) else "light_notype"
 
                 # force_order: pessimistic estimation for both sides
                 p1_po = self.compute_player_payoff(self.game.apply_player_moves(deepcopy(p1_view), m1_for_p1,
@@ -80,6 +89,7 @@ class PlayerGT(AbstractPlayer):
 
     def remove_strictly_dominated_strategies(self):
         """
+            [old]
             From the payoff matrix previously built, search for strictly dominated strategies and remove them from
             the matrix. Dominated strategies are removed for player and opponent (suppose the opponent won't play such
             moves). Only remove strategies dominated by other pure strategy.
@@ -112,6 +122,45 @@ class PlayerGT(AbstractPlayer):
                    for own_move in p1_moves if own_move not in dominated_rows}
             self.payoff_mat = tmp
 
+    def remove_dominated_strategies(self) -> None:
+        """
+            From the payoff matrix previously built, search for strictly or weakly dominated strategies and remove them
+            from the matrix. Dominated strategies are removed for player and opponent (suppose the opponent won't play
+            such moves). Only remove strategies dominated by other pure strategy.
+        """
+
+        dominated_rows, dominated_columns = [None], [None]
+
+        while dominated_columns or dominated_rows:
+            p1_moves = list(self.payoff_mat)
+            p2_moves = list(self.payoff_mat[p1_moves[0]])
+            dominated_columns.clear()
+            dominated_rows.clear()
+
+            # dominated moves for p1, line eliminations
+            for p1_move in p1_moves:
+                if any(all(self.payoff_mat[p1_move][opponent_move][0] <= self.payoff_mat[m2][opponent_move][0] for
+                           opponent_move in p2_moves) for m2 in p1_moves if m2 != p1_move):
+                    dominated_rows.append(p1_move)
+
+            if len(dominated_rows) == len(self.payoff_mat):  # all moves removable, keep 1
+                dominated_rows = dominated_rows[1:]
+
+            # dominated moves for p2, column elimination
+            for p2_move in p2_moves:
+                if any(all(self.payoff_mat[player_move][p2_move][1] <= self.payoff_mat[player_move][m2][1]
+                           for player_move in p1_moves) for m2 in p2_moves if m2 != p2_moves.index(p2_move)):
+                    dominated_columns.append(p2_move)
+
+            if len(dominated_columns) == len(self.payoff_mat[p1_moves[0]]):
+                dominated_columns = dominated_columns[1:]
+
+            # Update the payoff matrix by removing dominated rows and columns
+            tmp = {p1_move: {p2_move: self.payoff_mat[p1_move][p2_move]
+                             for p2_move in p2_moves if p2_move not in dominated_columns}
+                   for p1_move in p1_moves if p1_move not in dominated_rows}
+            self.payoff_mat = tmp
+
     def nash_equilibrium_for_move(self) -> tuple[tuple[np.array, np.array], np.array]:
         """
             Search the Nash equilibria of the game in self.payoff_mat and return the most promising with its expected
@@ -141,6 +190,14 @@ class PlayerGT(AbstractPlayer):
         p2_poffs = np.array([[mat[k1][k2][1] for k2 in mat[k1].keys()] for k1 in mat.keys()])
         game = nash.Game(p1_poffs, p2_poffs)
         neq = list(game.support_enumeration())
+
+        if not len(neq) % 2:  # if game is degenerate, remove dominated strategies
+            self.remove_dominated_strategies()
+            mat = self.payoff_mat
+            p1_poffs = np.array([[mat[k1][k2][0] for k2 in mat[k1].keys()] for k1 in mat.keys()])
+            p2_poffs = np.array([[mat[k1][k2][1] for k2 in mat[k1].keys()] for k1 in mat.keys()])
+            game = nash.Game(p1_poffs, p2_poffs)
+            neq = list(game.support_enumeration())
         exp_payoffs = [game[p1_po, p2_po] for p1_po, p2_po in neq]
 
         # If no NE returned, rest of this function will consider all pure strategies in place of equilibria
@@ -200,7 +257,6 @@ class PlayerGT(AbstractPlayer):
 
         fill_game_with_estimation(self.role, self.game)
         self.build_payoff_matrix()
-        self.remove_strictly_dominated_strategies()
         probs, po = self.nash_equilibrium_for_move()
         probs = probs[0] if self.role == "p1" else probs[1]
 
@@ -211,7 +267,8 @@ class PlayerGT(AbstractPlayer):
                 break
 
         # corresponding move name in payoff matrix
-        return [k for k in self.payoff_mat.keys()][i] if self.role == "p1" else [k2 for k2 in self.payoff_mat[[k1 for k1 in self.payoff_mat.keys()][0]].keys()][i]
+        return [k for k in self.payoff_mat.keys()][i] if self.role == "p1" else \
+            [k2 for k2 in self.payoff_mat[[k1 for k1 in self.payoff_mat.keys()][0]].keys()][i]
 
     def post_faint_move(self):
         """
@@ -229,7 +286,6 @@ class PlayerGT(AbstractPlayer):
             self.game.play_round(p1m, p2m, 0.95, None)
             fill_game_with_estimation(self.role, self.game)
             self.build_payoff_matrix()
-            self.remove_strictly_dominated_strategies()
 
             # see actions possible from induced game state
             mvs_and_expo.append((m, self.nash_equilibrium_for_move()[1][int(self.role == "p2")]))

@@ -234,7 +234,7 @@ class MyTestCase(unittest.TestCase):
 
         if init is not None:
             agent.payoff_mat = init
-        agent.remove_strictly_dominated_strategies()
+        agent.remove_dominated_strategies()
 
         self.assertDictEqual(exp, agent.payoff_mat)
 
@@ -253,7 +253,7 @@ class MyTestCase(unittest.TestCase):
         agent.game = PokeGame(team_specs_for_game2)
         agent.fill_game_with_estimation()
         agent.build_payoff_matrix()
-        agent.remove_strictly_dominated_strategies()
+        agent.remove_dominated_strategies()
         agent.payoff_mat = payoff_mat
         act = agent.nash_equilibrium_for_move()
 
