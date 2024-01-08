@@ -41,12 +41,12 @@ class PlayerNN(AbstractPlayer):
         """ Use the knowledge of the network to make an estimation of the victory probability of the first player
         for a provided game state. """
 
-        W_int = self.network[0]
-        W_out = self.network[1]
-        P_int = self.act_f(np.dot(W_int, state))
-        p_out = self.act_f(P_int.dot(W_out))
+        w_int = self.network[0]
+        w_out = self.network[1]
+        p_int = self.act_f(np.dot(w_int, state))
+        p_out = sigmoid(p_int.dot(w_out))
 
-        return p_out if self.act_f == sigmoid else sigmoid(p_out)
+        return p_out
 
     def move_selector(self, game: PokeGame) -> str:
         """ Returns the move evaluated as most promising

@@ -24,10 +24,9 @@ class PlayerGA(PlayerNN):
 
     # Learning algorithms #
 
-    @staticmethod
-    def evolution(pop_size: int, init_mode: str, net_shape: list[int], n_gen: int, elite_prop: float,
+    def evolution(self, pop_size: int, init_mode: str, net_shape: list[int], n_gen: int, elite_prop: float,
                   fitness_f: Callable, fitness_f_args: tuple, mu_mean: float = 0, mu_std: float = 0.00001,
-                  display: bool = False) -> list[list[np.array], float]:
+                  display: bool = False, comm: list = None) -> list[list[np.array], float]:
         """
             Train the neural network with a genetic algorithm
 
@@ -42,6 +41,7 @@ class PlayerGA(PlayerNN):
             :param mu_mean: Mean of normal random distribution used for mutation term
             :param mu_std: Standard deviation of normal random distribution used for mutation term
             :param display: Display of progression
+            :param comm: If provided, store intermediary results every 10 generations
             :return: Network having achieved the best performance on the fitness function during the training and the
                 performance
         """
@@ -64,6 +64,10 @@ class PlayerGA(PlayerNN):
             if not c % max((n_gen // 10), 1) and display:
                 print("gen {}, score: {}".format(c, population[0][1]))
 
+            # store intermediary results
+            if isinstance(comm, list) and not c % 10:
+                comm.append(population[0][1])
+
             # mutation
             softmax_vals = [np.exp(ind1[1]) / sum([np.exp(ind2[1]) for ind2 in population]) for ind1 in population]
             for indiv in random.choices(population[:elite_idx], softmax_vals, k=(pop_size - elite_idx)):
@@ -71,7 +75,7 @@ class PlayerGA(PlayerNN):
                 for l1, l2 in zip([np.copy(indiv[0][0]), np.copy(indiv[0][1])], init_mutation_nn(net_shape, mu_mean, mu_std)):
                     new.append(l1 + l2)
                 population.append([new, -1])
-
             c += 1
 
+        self.network = population[0][0]
         return population[0]

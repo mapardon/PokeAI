@@ -5,15 +5,21 @@ import numpy as np
 from parameterized import parameterized
 
 from src.agents.PlayerBM import PlayerBM
+from src.agents.PlayerGA import PlayerGA
 from src.agents.PlayerGT import PlayerGT
+from src.agents.PlayerHybrid import PlayerHybrid
 from src.agents.PlayerMDM import PlayerMDM
+from src.agents.PlayerNN import PlayerNN
 from src.agents.PlayerRandom import PlayerRandom
-from src.agents.nn_utils import initialize_nn, N_INPUT
+from src.agents.nn_utils import initialize_nn
 from src.agents.PlayerRL import PlayerRL
+from src.game.GameEstimation import fill_game_with_estimation
 from src.game.PokeGame import PokeGame
 from src.game.constants import MIN_POW
 
 random.seed(19)
+
+N_INPUT = 66
 
 # assert parameters order: (expected, actual)
 team_specs_for_game = [[(("p1", "FIRE", 100, 100, 100, 100),
@@ -41,12 +47,17 @@ team_specs_for_game2 = [[(("p1", "FIRE", 100, 100, 100, 100),
 
 
 class MyTestCase(unittest.TestCase):
+    """"""
+
+    """
+        Players NN operations tests
+    """
 
     @parameterized.expand([
-        ("normal", [10], [(10, N_INPUT), (10,)]),
-        ("xavier", [12], [(12, N_INPUT), (12,)]),
-        ("normalized-xavier", [20], [(20, N_INPUT), (20,)]),
-        ("He", [15, 20, 12], [(15, N_INPUT), (20, 15), (12, 20), (12,)])
+        ("normal", [N_INPUT, 10, 1], [(10, N_INPUT), (10,)]),
+        ("xavier", [N_INPUT, 12, 1], [(12, N_INPUT), (12,)]),
+        ("normalized-xavier", [N_INPUT, 20, 1], [(20, N_INPUT), (20,)]),
+        ("He", [15, 20, 1], [(20, 15), (20,)])
     ])
     def test_init_NN(self, init_mode, shape_in, expected_shape):
         net = initialize_nn(shape_in, init_mode)
@@ -54,71 +65,50 @@ class MyTestCase(unittest.TestCase):
         self.assertListEqual(expected_shape, net_shapes, init_mode)
 
     def test_forward_pass(self):
-        # mode, role, network, ls, lamb, act_f, eps, lr, mvsel
-        sentinel = True
-        network = initialize_nn([10], "normal")
+        error, e = False, str()
+        network = initialize_nn([66, 132, 1], "normal")
+        state = [random.randint(0, 1) for _ in range(N_INPUT)]
+
+        try:
+            player_nn = PlayerNN("p1", network, "sigmoid")
+            _ = player_nn.forward_pass(state)
+        except Exception as e:
+            error = True
+
+        self.assertFalse(error, "Failed forward pass test: {}".format(e))
+
+    def test_rl_training(self):
+        sentinel, e = True, str()
+        network = initialize_nn([N_INPUT, 50, 1], "normal")
         pstate = [random.randint(0, 1) for _ in range(N_INPUT)]
         nstate = [random.randint(0, 1) for _ in range(N_INPUT)]
 
         try:
-            player_ml = PlayerRL("p1", "train", network, "Q-learning", None, "sigmoid", 0.3, 0.15, "eps-greedy")
-            pre = player_ml.forward_pass(pstate)
-            player_ml.backpropagation(PokeGame(team_specs_for_game), pstate, nstate, 0.75)
-            post = player_ml.forward_pass(pstate)
+            player_rl = PlayerRL("p1", "train", network, "SARSA", "sigmoid", 0.1, 0.3)
+            player_rl.cur_state = pstate
+            pre = player_rl.forward_pass(pstate)
+            player_rl.backpropagation(nstate, False, 0.75)
+            post = player_rl.forward_pass(pstate)
         except Exception as e:
+            print(e)
             sentinel = False
 
-        self.assertTrue(sentinel, "Failed test strategy {}".format("Q-learning"))
+        self.assertTrue(sentinel, msg="Failed backpropagation test")
 
-    # test make_move of different agents
-
-    def test_makemove_random(self):
-        game = PokeGame(team_specs_for_game)
-        sentinel = True
-
+    def test_ga_training(self):
+        error, e = False, str()
+        agent = PlayerGA("p1", initialize_nn([66, 132, 1], "normal"), "sigmoid")
         try:
-            agent = PlayerRandom("p1")
-            select = agent.make_move(game)
-        except Exception:
-            sentinel = False
+            agent.evolution(5, "normal", [66, 132, 1], 3, 1/5, lambda x: random.random(), tuple())
+        except Exception as e:
+            print(e)
+            error = True
 
-        self.assertTrue(sentinel)
+        self.assertFalse(error, msg="GA training failed")
 
-    @parameterized.expand([
-        ("p1", "light_psychic", False),
-        ("p2", "light_water", False),
-        ("p2", "switch d2", True)
-    ])
-    def test_makemove_mdm(self, test_player, exp_move, is_ko):
-        game = PokeGame(team_specs_for_game)
-        agent = PlayerMDM(test_player)
-
-        if is_ko:
-            if test_player == "p2":
-                game.game_state.on_field2.cur_hp = 0
-                game.player1_view.on_field2.cur_hp = 0
-                game.player2_view.on_field2.cur_hp = 0
-        test = agent.make_move(game)
-
-        self.assertEqual(exp_move, test)
-
-    @parameterized.expand([
-        ("p1", False, "light_psychic"),
-        ("p2", False, "light_water"),
-        ("p1", True, "switch p2"),
-        ("p2", True, "light_water")
-    ])
-    def test_makemove_bm(self, test_player, full_view, exp_move):
-        game = PokeGame(team_specs_for_game)
-        agent = PlayerBM(test_player)
-
-        if full_view:
-            game.player1_view = copy.deepcopy(game.game_state)
-            game.player2_view = copy.deepcopy(game.game_state)
-
-        test = agent.make_move(game)
-
-        self.assertEqual(exp_move, test)
+    """
+        Player GT operations tests
+    """
 
     @parameterized.expand([
         ([], [],
@@ -196,8 +186,8 @@ class MyTestCase(unittest.TestCase):
         game = PokeGame(team_specs_for_game2)
         gt = PlayerGT(test_player)
 
+        fill_game_with_estimation(test_player, game)
         gt.game = copy.deepcopy(game)
-        gt.fill_game_with_estimation()
         gt.build_payoff_matrix()
         test_mat = gt.payoff_mat
 
@@ -228,8 +218,8 @@ class MyTestCase(unittest.TestCase):
     def test_remove_strictly_dominated_strategies(self, init, exp):
         game = PokeGame(team_specs_for_game2)
         agent = PlayerGT("p1")
+        fill_game_with_estimation("p1", game)
         agent.game = game
-        agent.fill_game_with_estimation()
         agent.build_payoff_matrix()
 
         if init is not None:
@@ -296,15 +286,6 @@ class MyTestCase(unittest.TestCase):
         act = agent.post_faint_move()
         self.assertEqual(exp, act)
 
-    @parameterized.expand([
-        ("p1", "switch p3"),
-        ("p2", "light_water")
-    ])
-    def test_make_move_gt(self, player, exp):
-        agent = PlayerGT(player)
-        act = agent.make_move(PokeGame(team_specs_for_game2))
-        self.assertEqual(exp, act)
-
     def test_player_gt_complete_game(self):
         fail = False
         out = str()
@@ -334,6 +315,102 @@ class MyTestCase(unittest.TestCase):
             fail = True
             out = "-> " + e.__repr__()
         self.assertFalse(fail, msg=out)
+
+    """
+        Test make_move of different agents
+    """
+
+    def test_makemove_random(self):
+        game = PokeGame(team_specs_for_game)
+        sentinel = True
+
+        try:
+            agent = PlayerRandom("p1")
+            select = agent.make_move(game)
+        except Exception:
+            sentinel = False
+
+        self.assertTrue(sentinel)
+
+    @parameterized.expand([
+        ("p1", "light_psychic", False),
+        ("p2", "light_water", False),
+        ("p2", "switch d2", True)
+    ])
+    def test_makemove_mdm(self, test_player, exp_move, is_ko):
+        game = PokeGame(team_specs_for_game)
+        agent = PlayerMDM(test_player)
+
+        if is_ko:
+            if test_player == "p2":
+                game.game_state.on_field2.cur_hp = 0
+                game.player1_view.on_field2.cur_hp = 0
+                game.player2_view.on_field2.cur_hp = 0
+        test = agent.make_move(game)
+
+        self.assertEqual(exp_move, test)
+
+    @parameterized.expand([
+        ("p1", False, "light_psychic"),
+        ("p2", False, "light_water"),
+        ("p1", True, "switch p2"),
+        ("p2", True, "light_water")
+    ])
+    def test_makemove_bm(self, test_player, full_view, exp_move):
+        game = PokeGame(team_specs_for_game)
+        agent = PlayerBM(test_player)
+
+        if full_view:
+            game.player1_view = copy.deepcopy(game.game_state)
+            game.player2_view = copy.deepcopy(game.game_state)
+
+        test = agent.make_move(game)
+
+        self.assertEqual(exp_move, test)
+
+    @parameterized.expand([
+        ("p1", "switch p3"),
+        ("p2", "light_water")
+    ])
+    def test_make_move_gt(self, player, exp):
+        agent = PlayerGT(player)
+        act = agent.make_move(PokeGame(team_specs_for_game2))
+        self.assertEqual(exp, act)
+
+    def test_make_move_rl(self):
+        error, e = False, str()
+        agent = PlayerRL("p1", "compare", initialize_nn([66, 132, 1], "normal"), "SARSA",
+                         "sigmoid", 0.1, 0.0015)
+        agent.cur_state = [random.random() for _ in range(66)]
+        game = PokeGame(team_specs_for_game2)
+        fill_game_with_estimation("p1", game)
+        try:
+            _ = agent.make_move(game)
+        except Exception as e:
+            print(e)
+            error = True
+        self.assertFalse(error, "Failed RL make move")
+
+    def test_make_move_ga(self):
+        error, e = False, str()
+        agent = PlayerGA("p1", initialize_nn([66, 132, 1], "normal"), "sigmoid")
+        game = PokeGame(team_specs_for_game2)
+        fill_game_with_estimation("p1", game)
+        try:
+            _ = agent.make_move(game)
+        except Exception as e:
+            print(e)
+            error = True
+        self.assertFalse(error, msg="Failed GA make move")
+
+    def test_make_move_hybrid(self):
+        error, e = False, str()
+        agent = PlayerHybrid("p1", initialize_nn([66, 132, 1], "normal"), "sigmoid")
+        try:
+            _ = agent.make_move(PokeGame(team_specs_for_game2))
+        except Exception as e:
+            error = True
+        self.assertFalse(error, msg="Failed hybrid make move: {}".format(e))
 
 
 if __name__ == '__main__':

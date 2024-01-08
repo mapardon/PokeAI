@@ -24,6 +24,7 @@ class PlayerGT(AbstractPlayer):
 
     def __init__(self, role: str):
         super().__init__(role)
+        self.role = role
         self.game = None
         self.payoff_mat = None
 

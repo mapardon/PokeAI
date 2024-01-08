@@ -1,6 +1,7 @@
 import random
 import numpy as np
 from src.agents.PlayerNN import PlayerNN
+from src.agents.nn_utils import sigmoid_gradient
 from src.game.PokeGame import PokeGame
 
 
@@ -13,7 +14,7 @@ class PlayerRL(PlayerNN):
         :param role: "p1" or "p2"
         :param mode: tells which mode is being played ('match', 'train' or 'compare')
         :param network: in train mode, both agents must share same NN object, so weights are read from GameEngine
-        :param ls: As ls is fixed with a NN, it is read from database with the network
+        :param ls: As ls is fixed with a NN, it should be read from database with the network
         :param act_f: activation function for the network
         :param eps: random factor
         :param lr: learning rate
@@ -79,7 +80,7 @@ class PlayerRL(PlayerNN):
         """
         Apply backpropagation algorithm with SARSA strategy
 
-        :param game_state: numeric representation of game state (after player moves)
+        :param game_state: numeric representation of game state (after player move)
         :param game_finished: indicates if game_state is an end state
         :param p1_victory: if game_state is an end state, indicates the victory of player 1
         """
@@ -87,13 +88,13 @@ class PlayerRL(PlayerNN):
         cur_prob = self.forward_pass(self.cur_state)
         cmp_prob = self.forward_pass(game_state) if not game_finished else p1_victory
         delta = cur_prob - cmp_prob
-        W_int = self.network[0]
-        W_out = self.network[1]
-        P_int = self.act_f(np.dot(W_int, self.cur_state))
-        p_out = self.act_f(P_int.dot(W_out))
-        grad_out = self.grad(p_out)
-        grad_int = self.grad(P_int)
-        Delta_int = grad_out * W_out * grad_int
+        w_int = self.network[0]
+        w_out = self.network[1]
+        p_int = self.act_f(np.dot(w_int, self.cur_state))
+        p_out = self.act_f(p_int.dot(w_out))
+        grad_out = sigmoid_gradient(p_out)
+        grad_int = self.grad(p_int)
+        delta_int = grad_out * w_out * grad_int
 
-        W_int -= self.lr * delta * np.outer(Delta_int, self.cur_state)
-        W_out -= self.lr * delta * grad_out * P_int
+        w_int -= self.lr * delta * np.outer(delta_int, self.cur_state)
+        w_out -= self.lr * delta * grad_out * p_int
