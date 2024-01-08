@@ -1,3 +1,7 @@
+import sys, os
+
+sys.path.append(os.getcwd() + '/..')
+
 import copy
 import random
 import unittest

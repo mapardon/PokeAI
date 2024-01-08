@@ -1,3 +1,8 @@
+import sys, os
+
+sys.path.append(os.getcwd() + '/..')
+
+import warnings
 import copy
 import unittest, random
 
@@ -16,6 +21,9 @@ from src.agents.PlayerRL import PlayerRL
 from src.game.GameEstimation import fill_game_with_estimation
 from src.game.PokeGame import PokeGame
 from src.game.constants import MIN_POW
+
+
+warnings.filterwarnings("ignore")
 
 random.seed(19)
 
@@ -193,7 +201,6 @@ class MyTestCase(unittest.TestCase):
 
         if test_mat != exp_mat:
             for m, n in zip((test_mat, exp_mat), ("test", "exp")):
-                print(n)
                 for k in m.keys():
                     print(k, m[k])
 
@@ -254,7 +261,6 @@ class MyTestCase(unittest.TestCase):
         for exp_probs, act_probs in zip(exp[0], act[0]):
             for e1, e2 in zip(exp_probs, act_probs):
                 test_prob &= round(e1, 8) == round(e2, 8)
-                print(round(e1, 8) - round(e2, 8))
 
         self.assertTrue(test_payoffs and test_prob, msg="exp: {}\nact: {}".format(exp, act))
 
