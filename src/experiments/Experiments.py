@@ -18,7 +18,7 @@ from src.experiments.AltImplementations import GameEngineAlt, TestParamsAlt
 from src.game.PokeGame import PokeGame
 from src.game.GameEngineParams import TestParams, TrainParams
 
-SHORT = True
+SHORT = False
 if SHORT:
     # Run tests with small repetitions to check if everything goes right
     GT_STATE_EVAL = 5
