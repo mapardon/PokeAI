@@ -2,7 +2,7 @@ import numpy as np
 
 from src.db.Storage import Storage
 
-STORAGE_PATH = "src.db.stored-networks"
+STORAGE_PATH = "db/stored-networks"
 
 
 # ML agents management
