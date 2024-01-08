@@ -16,4 +16,4 @@ MVSEL = ["eps-greedy",
 
 ML_TYPES = ["perceptron"]
 
-PLAYER_TYPES = AGENT_TYPES = ["random", "mdm", "bm", "gt", "ml"]
+PLAYER_TYPES = AGENT_TYPES = ["random", "gt", "rl", "ga"]

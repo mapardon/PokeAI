@@ -48,6 +48,21 @@ class TestMenu:
                 else:
                     warning = "Please provide an existing type of agent"
 
+                if inputted[0] == "agent1":
+                    if inputted[1] == "ga":
+                        pars.ml1 = "ga-ultimate"
+                    elif inputted[1] == "rl":
+                        pars.ml1 = "rl-complete-run"
+                    else:
+                        pars.ml1 = None
+                elif inputted[0] == "agent2":
+                    if inputted[1] == "ga":
+                        pars.ml2 = "ga-ultimate"
+                    elif inputted[1] == "rl":
+                        pars.ml2 = "rl-complete-run"
+                    else:
+                        pars.ml2 = None
+
             elif inputted[0] == "nb" and len(inputted) == 2:
                 try:
                     pars.set_nb(inputted[1])
@@ -89,9 +104,9 @@ class TestMenu:
             "agent1 t   # type of agent 1 {}".format(" - ".join(AGENT_TYPES)),
             "agent2 t   # type of agent 2 {}".format(" - ".join(AGENT_TYPES)),
             "nb n       # set number of games for training",
-            "eps f      # set epsilon greedy to f",
-            "ml1 z      # load AI named z from database for agent1({})".format(' - '.join(available_ml_agents())),
-            "ml2 z      # load AI named z from database for agent2({})".format(' - '.join(available_ml_agents())),
+            "eps f      # random move for epsilon greedy",
+            #"ml1 z      # load AI named z from database for agent1({})".format(' - '.join(available_ml_agents())),
+            #"ml2 z      # load AI named z from database for agent2({})".format(' - '.join(available_ml_agents())),
             "test       # launch test session",
             "leave      # exit program",
             ""]

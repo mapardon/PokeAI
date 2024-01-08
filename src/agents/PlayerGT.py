@@ -137,8 +137,10 @@ class PlayerGT(AbstractPlayer):
 
             # dominated moves for p1, line eliminations
             for p1_move in p1_moves:
-                if any(all(self.payoff_mat[p1_move][opponent_move][0] <= self.payoff_mat[m2][opponent_move][0] for
-                           opponent_move in p2_moves) for m2 in p1_moves if m2 != p1_move):
+                if any(all(self.payoff_mat[p1_move][p2_move][0] <= self.payoff_mat[m2][p2_move][0] for
+                           p2_move in p2_moves) for m2 in p1_moves if m2 != p1_move) and not\
+                        any(all(self.payoff_mat[p1_move][p2_move][0] == self.payoff_mat[m2][p2_move][0] for p2_move in p2_moves)
+                            for m2 in dominated_rows):
                     dominated_rows.append(p1_move)
 
             if len(dominated_rows) == len(self.payoff_mat):  # all moves removable, keep 1
@@ -146,8 +148,10 @@ class PlayerGT(AbstractPlayer):
 
             # dominated moves for p2, column elimination
             for p2_move in p2_moves:
-                if any(all(self.payoff_mat[player_move][p2_move][1] <= self.payoff_mat[player_move][m2][1]
-                           for player_move in p1_moves) for m2 in p2_moves if m2 != p2_moves.index(p2_move)):
+                if any(all(self.payoff_mat[p1_move][p2_move][1] <= self.payoff_mat[p1_move][m2][1]
+                           for p1_move in p1_moves) for m2 in p2_moves if m2 != p2_move) and not\
+                        any(all(self.payoff_mat[p1_move][p2_move][1] == self.payoff_mat[p1_move][m2][1] for p1_move in p1_moves)
+                            for m2 in dominated_columns):
                     dominated_columns.append(p2_move)
 
             if len(dominated_columns) == len(self.payoff_mat[p1_moves[0]]):

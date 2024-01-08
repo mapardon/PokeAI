@@ -1,6 +1,6 @@
-import sys, os
+import os, sys
 
-sys.path.append('/home/mathieu/PycharmProjects/PokeAI' if os.name == 'posix' else 'C:\\Users\\mathi\\PycharmProjects\\PokeAI')
+sys.path.append(os.getcwd() + '/..')
 
 from src.controller.MainController import MainController
 

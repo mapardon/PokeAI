@@ -114,7 +114,7 @@ class MyTestCase(unittest.TestCase):
         act_f = "activator"
         db = Storage(STORAGE_PATH)
         db[network_name] = {"network": network, "ls": ls, "act_f": act_f}
-        self.assertEqual(load_ml_agent(network_name), (network, ls, act_f))
+        self.assertEqual(load_ml_agent(network_name), (network, act_f, ls))
 
     def test_remove_ml_agent(self):
         reset_storage()

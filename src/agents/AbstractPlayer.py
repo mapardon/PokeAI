@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from src.game.PokeGame import PokeGame
+from ..game.PokeGame import PokeGame
 
 
 class AbstractPlayer(ABC):

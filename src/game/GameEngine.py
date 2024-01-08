@@ -93,7 +93,7 @@ class GameEngine:
                 if n == "p1":
                     network, act_f = load_ml_agent(pars.ml1)[:2] if type(pars.ml1) == str else pars.ml1
                 elif n == "p2":
-                    network, act_f, _ = load_ml_agent(pars.ml2)[:2] if type(pars.ml2) == str else pars.ml2
+                    network, act_f = load_ml_agent(pars.ml2)[:2] if type(pars.ml2) == str else pars.ml2
                 players.append(PlayerGA(n, network, act_f))
 
             elif p == "ml":

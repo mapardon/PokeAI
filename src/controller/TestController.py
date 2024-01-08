@@ -1,14 +1,10 @@
-import sys
-from queue import Queue
-
-sys.path.append('/home/mathieu/PycharmProjects/PokeAI')
-
 import os
 from math import ceil
+from queue import Queue
 from threading import Thread
 
-from src.game.GameEngineParams import TestParams
 from src.game.GameEngine import GameEngine
+from src.game.GameEngineParams import TestParams
 from src.view.TestMenu import TestMenu
 
 
@@ -58,7 +54,3 @@ class TestController:
             cur_prog = from_backend.get()
 
         input("Agent 1 win rate: {}%\nPress enter to exit".format(round(100 * from_backend.get(), 2)))
-
-
-if __name__ == '__main__':
-    TestController()

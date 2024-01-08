@@ -1,13 +1,8 @@
-import sys
 from queue import Queue
-
-from src.game.GameEngineParams import FightParams
-
-sys.path.append('/home/mathieu/PycharmProjects/PokeAI')
-
 from threading import Thread
 
 from src.game.GameEngine import GameEngine
+from src.game.GameEngineParams import FightParams
 from src.view.FightMenu import FightMenu
 from src.view.FightView import FightView
 

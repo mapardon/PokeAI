@@ -275,7 +275,7 @@ class PokeGame:
         if not on_field.is_alive():
             moves = switches
         else:
-            moves = [m.name for m in on_field.moves] + switches
+            moves = [m.name for m in on_field.moves if m.name is not None] + switches
         return moves
 
     def is_end_state(self, state: GameStruct = None) -> bool:

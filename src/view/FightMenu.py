@@ -53,6 +53,32 @@ class FightMenu:
                 else:
                     warning = "Please provide an existing type of agent"
 
+                if inputted[0] == "player1":
+                    if inputted[1] == "ml":
+                        pars.ml1 = "ga-ultimate"
+                    else:
+                        pars.ml1 = None
+                elif inputted[1] == "player2":
+                    if inputted[1] == "ml":
+                        pars.ml2 = "ga-ultimate"
+                    else:
+                        pars.ml2 = None
+
+                if inputted[0] == "player1":
+                    if inputted[1] == "ga":
+                        pars.ml1 = "ga-ultimate"
+                    elif inputted[1] == "rl":
+                        pars.ml1 = "rl-complete-run"
+                    else:
+                        pars.ml1 = None
+                elif inputted[0] == "player2":
+                    if inputted[1] == "ga":
+                        pars.ml2 = "ga-ultimate"
+                    elif inputted[1] == "rl":
+                        pars.ml2 = "rl-complete-run"
+                    else:
+                        pars.ml2 = None
+
             elif inputted[0] == "eps" and len(inputted) == 2:
                 try:
                     test = round(float(inputted[1]), 2)
@@ -92,8 +118,8 @@ class FightMenu:
             "player1 t  # type of agent for player 1 ({})".format(' - '.join(PLAYER1_TYPES)),
             "player2 t  # type of agent for player 2 ({})".format(' - '.join(PLAYER2_TYPES)),
             "eps f      # set epsilon greedy to f",
-            "ml1 z      # load AI named z from database for agent1 ({})".format(' - '.join(available_ml_agents())),
-            "ml2 z      # load AI named z from database for agent2 ({})".format(' - '.join(available_ml_agents())),
+            #"ml1 z      # load AI named z from database for agent1 ({})".format(' - '.join(available_ml_agents())),
+            #"ml2 z      # load AI named z from database for agent2 ({})".format(' - '.join(available_ml_agents())),
             "fight      # launch match",
             "leave      # exit program",
             ""]

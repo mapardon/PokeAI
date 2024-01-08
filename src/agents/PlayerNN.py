@@ -53,7 +53,6 @@ class PlayerNN(AbstractPlayer):
 
         :returns: action of the player """
 
-        p2f = (-1) ** (self.role == "p2")  # if agent is player2, estimations are interpreted inversely
         min_lines = list()  # worst outcome for each player option (depending on opponent options)
         pl, opp = ["p1", "p2"][::(-1) ** (self.role == "p2")]
         view = game.player1_view if self.role == "p1" else game.player2_view
@@ -64,7 +63,7 @@ class PlayerNN(AbstractPlayer):
             for omv in game.get_moves_from_state(opp, view):
                 p1mv, p2mv = (pmv, omv) if self.role == "p1" else (omv, pmv)
                 s = game.get_numeric_repr(game.apply_player_moves(game.get_player_view(self.role), p1mv, p2mv))
-                p = p2f * self.forward_pass(s)
+                p = self.forward_pass(s)
                 if p < min_lines[-1][1]:
                     min_lines[-1] = (pmv, p)
 

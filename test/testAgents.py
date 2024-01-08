@@ -231,17 +231,15 @@ class MyTestCase(unittest.TestCase):
     @parameterized.expand([
         ("p1", {'a': {'c': (2, 1), 'd': (0, 0)}, 'b': {'c': (0, 0), 'd': (1, 2)}},
          ((np.array([1., 0.]), np.array([1., 0.])), np.array([2., 1.]))),
-         #((np.array([0., 1.]), np.array([0., 1.])), np.array([1., 2.]))),
         ("p2", {'a': {'c': (5, 5), 'd': (0, 0)}, 'b': {'c': (0, 0), 'd': (5, 5)}},
          ((np.array([1., 0.]), np.array([1., 0.])), np.array([5., 5.]))),
-         #((np.array([0., 1.]), np.array([0., 1.])), np.array([5., 5.]))),
         ("p1", {'a': {'d': (3, -1), 'e': (-1, 1)}, 'b': {'d': (0, 0), 'e': (0, 0)}, 'c': {'d': (-1, 2), 'e': (2, -1)}},
          ((np.array([0.6, 0., 0.4]), np.array([0.42857143, 0.57142857])), np.array([0.71428571, 0.2])))
     ])
     def test_ne_for_move(self, player, payoff_mat, exp):
         agent = PlayerGT(player)
         agent.game = PokeGame(team_specs_for_game2)
-        agent.fill_game_with_estimation()
+        fill_game_with_estimation(player, agent.game)
         agent.build_payoff_matrix()
         agent.remove_dominated_strategies()
         agent.payoff_mat = payoff_mat

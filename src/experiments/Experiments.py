@@ -1,13 +1,12 @@
 import os, sys
 
-from matplotlib import pyplot as plt
-
-sys.path.append(
-    '/home/mathieu/PycharmProjects/PokeAI' if os.name == 'posix' else 'C:\\Users\\mathi\\PycharmProjects\\PokeAI')
+sys.path.append(os.getcwd() + '/..')
 
 import copy
 import multiprocessing
 import time
+
+from matplotlib import pyplot as plt
 
 from src.db.dbmanager import save_new_ml_agent
 from src.agents.nn_utils import initialize_nn
@@ -15,11 +14,11 @@ from src.agents.PlayerRL import PlayerRL
 from src.agents.PlayerGA import PlayerGA
 from src.game.GameEngine import GameEngine
 from src.game.GameEstimation import fill_game_with_estimation
-from src.experiments.AltImplementations import GameEngineAlt, PokeGameAlt1, PokeGameAlt2, TestParamsAlt
+from src.experiments.AltImplementations import GameEngineAlt, TestParamsAlt
 from src.game.PokeGame import PokeGame
 from src.game.GameEngineParams import TestParams, TrainParams
 
-SHORT = False
+SHORT = True
 if SHORT:
     # Run tests with small repetitions to check if everything goes right
     GT_STATE_EVAL = 5
@@ -33,6 +32,7 @@ if SHORT:
     GA_STATE_VEC_LOOPS = 1
     GA_TRAIN_PARS = 2, "xavier", [66, 77, 1], 1, 1 / 3, 0.0, 0.00001
     POP_SIZE_FULL_GAME = 2
+    PLOT_NAMES = ("testrl.pdf", "testga.pdf")
 else:
     # Run complete tests
     GT_STATE_EVAL = 1000
@@ -46,6 +46,7 @@ else:
     GA_STATE_VEC_LOOPS = 10
     GA_TRAIN_PARS = 10, "xavier", [66, 77, 1], 10, 1 / 3, 0.0, 0.00001
     POP_SIZE_FULL_GAME = 10
+    PLOT_NAMES = ("plots/rl_perf.pdf", "plots/ga_perf.pdf")
 
 
 class Experiments:
@@ -58,12 +59,12 @@ class Experiments:
     def run_all_tests():
 
         ts = [
-            # multiprocessing.Process(target=Experiments.weights_for_gt_state_eval, args=()),  # finished
-            # multiprocessing.Process(target=Experiments.training_rl_agent, args=()),  # finished
-            # multiprocessing.Process(target=Experiments.training_ga_agent, args=()),  # finished
+            multiprocessing.Process(target=Experiments.weights_for_gt_state_eval, args=()),
+            multiprocessing.Process(target=Experiments.training_rl_agent, args=()),
+            multiprocessing.Process(target=Experiments.training_ga_agent, args=()),
             multiprocessing.Process(target=Experiments.training_params_for_rl, args=()),
-            # multiprocessing.Process(target=Experiments.state_vector_with_ga, args=()),  # finished
-            multiprocessing.Process(target=Experiments.training_params_for_ga, args=()),  # finished
+            multiprocessing.Process(target=Experiments.state_vector_with_ga, args=()),
+            multiprocessing.Process(target=Experiments.training_params_for_ga, args=()),
             multiprocessing.Process(target=Experiments.full_game_rl_perf, args=()),
             multiprocessing.Process(target=Experiments.full_game_ga_perf, args=())
         ]
@@ -576,8 +577,8 @@ class Experiments:
         ax.set_xlabel("Training epochs (e+4)")
         ax.set_ylabel("Victory rate (%)")
         plt.legend()
-        # plt.savefig("plots/rl_perf.pdf")
-        plt.show()
+        plt.savefig(PLOT_NAMES[0])
+        #plt.show()
         save_new_ml_agent("rl-complete-run", nn, "sigmoid", "SARSA")
 
         print(out)
@@ -625,7 +626,7 @@ class Experiments:
         ax.set_xlabel("Generations (e+1)")
         ax.set_ylabel("Victory rate (%)")
         plt.legend()
-        plt.savefig("plots/ga_perf.pdf")
+        plt.savefig(PLOT_NAMES[1])
         save_new_ml_agent("ga-ultimate", res[0], "sigmoid", None)
         #plt.show()
 
@@ -641,12 +642,5 @@ class Experiments:
 
 
 if __name__ == '__main__':
-    #Experiments.run_all_tests()
-    #Experiments.state_vector_with_ga()
-    Experiments.full_game_ga_perf()
 
-    """
-    t = time.perf_counter()
     Experiments.run_all_tests()
-    print(time.perf_counter() - t)
-    """
