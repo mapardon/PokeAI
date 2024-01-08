@@ -4,6 +4,7 @@
   - numpy
   - nashpy
   - matplotlib
+  - parameterized
 
  * Suggested interpreter
 
